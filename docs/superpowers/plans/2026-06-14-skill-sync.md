@@ -63,7 +63,7 @@ ai-sync/
   },
   "scripts": {
     "start": "node bin/sync.js",
-    "test": "node --test --experimental-test-coverage --test-coverage-include=\"src/**/*.js\" --test-coverage-lines=1 --test-coverage-functions=1 --test-coverage-branches=1"
+    "test": "node --test --experimental-test-coverage --test-coverage-include=\"src/**/*.js\" --test-coverage-lines=100 --test-coverage-functions=100 --test-coverage-branches=100"
   },
   "dependencies": {
     "gray-matter": "^4.0.3"
