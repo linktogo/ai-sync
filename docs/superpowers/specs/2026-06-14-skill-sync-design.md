@@ -193,20 +193,36 @@ node src/index.js --config repos.json
 
 Runner : `node:test` + `node:assert` natifs.
 
-**Unitaires :**
-- **Renderers** : pour chacun, un skill canonique → assertion du chemin ET du contenu
-  (frontmatter correct + corps préservé). Cas `globs` présent/absent (`alwaysApply`
-  Cursor, `applyTo` défaut Copilot).
+**Règle de couverture : tout le code produit dans ce repo doit être testé.** Aucun
+module sous `src/` ne ship sans test. Couverture mesurée via le runner natif
+(`node --test --experimental-test-coverage`), avec un seuil minimal vérifié en CI
+(objectif : 100 % des lignes/branches sur `src/`, hors lignes explicitement marquées
+non-testables). Tout nouveau module ajouté doit arriver avec ses tests.
+
+Chaque module de `src/` a une couverture dédiée :
+
+**Unitaires (modules purs) :**
+- **Renderers** (`renderers/*.js`) : pour chacun, un skill canonique → assertion du
+  chemin ET du contenu (frontmatter correct + corps préservé). Cas `globs`
+  présent/absent (`alwaysApply` Cursor, `applyTo` défaut Copilot).
+- **renderers/index.js** : résolution d'une cible vers son renderer ; cible inconnue
+  → erreur.
 - **config.js** : config valide OK ; cible inconnue → erreur ; champs requis manquants
   → erreur ; résolution `targets ?? defaultTargets`.
 - **skills.js** : union multi-techno, déduplication par `name`, techno sans dossier
   → warning sans crash.
 
 **Intégration (sans réseau ni gh) :**
-- **git.js / pipeline** : repo git local *bare* comme remote dans un tmpdir, clone,
-  génération depuis une arborescence `skills/` fixture, vérification : branche créée,
-  fichiers aux bons chemins, commit présent, push vers le bare remote. `gh` mocké
-  (ou skip si `--pr` absent).
+- **git.js** : repo git local *bare* comme remote dans un tmpdir → clone, branche,
+  add, commit, push vérifiés contre le bare remote. `gh pr create` mocké (binaire
+  factice sur le `PATH` du test ou injection de dépendance) pour couvrir le chemin
+  `--pr` sans réseau.
+- **pipeline.js** : run complet depuis une arborescence `skills/` fixture vers un ou
+  plusieurs bare repos → fichiers aux bons chemins, commit/push présents, rapport
+  final correct.
+- **index.js (CLI)** : parsing des flags (`--pr`, `--dry-run`, `--work-dir`,
+  `--repo`), `--dry-run` n'effectue aucune opération git, code de sortie non-zero en
+  cas d'échec. Le pipeline est injecté/mocké pour isoler le parsing.
 - **No-op** : second run sans changement → aucune nouvelle branche/commit.
 - **Isolation d'erreur** : un repo à l'URL invalide → loggé, les autres passent, code
   de sortie non-zero.
