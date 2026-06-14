@@ -1,0 +1,19 @@
+{
+  "name": "ai-sync",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "ai-sync": "bin/sync.js"
+  },
+  "scripts": {
+    "start": "node bin/sync.js",
+    "test": "node --test --experimental-test-coverage --test-coverage-include=\"src/**/*.js\" --test-coverage-lines=1 --test-coverage-functions=1 --test-coverage-branches=1"
+  },
+  "dependencies": {
+    "gray-matter": "^4.0.3"
+  }
+}
