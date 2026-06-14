@@ -193,11 +193,12 @@ node src/index.js --config repos.json
 
 Runner : `node:test` + `node:assert` natifs.
 
-**Règle de couverture : tout le code produit dans ce repo doit être testé.** Aucun
-module sous `src/` ne ship sans test. Couverture mesurée via le runner natif
-(`node --test --experimental-test-coverage`), avec un seuil minimal vérifié en CI
-(objectif : 100 % des lignes/branches sur `src/`, hors lignes explicitement marquées
-non-testables). Tout nouveau module ajouté doit arriver avec ses tests.
+**Règle de couverture : 100 % strict sur `src/`.** Aucun module ne ship sans test.
+Couverture mesurée via le runner natif (`node --test --experimental-test-coverage`),
+avec un seuil **bloquant à 100 %** des lignes, branches et fonctions sur `src/`,
+vérifié en CI (le build échoue en dessous de 100 %). Aucune exclusion par défaut :
+toute ligne non couverte doit être soit testée, soit supprimée. Tout nouveau module
+ajouté doit arriver avec ses tests.
 
 Chaque module de `src/` a une couverture dédiée :
 
