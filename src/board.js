@@ -42,3 +42,15 @@ export async function setStatus(boardPath, repo, state, opts = {}) {
   await writeBoard(boardPath, board, io);
   return board;
 }
+
+export async function initRepos(boardPath, repoNames, opts = {}) {
+  const { now = () => new Date().toISOString(), ...io } = opts;
+  const board = await readBoard(boardPath, io);
+  for (const name of repoNames) {
+    if (!board.repos[name]) {
+      board.repos[name] = { status: 'todo', updatedAt: now(), lastEvent: 'init' };
+    }
+  }
+  await writeBoard(boardPath, board, io);
+  return board;
+}

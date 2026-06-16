@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import { STATES, resolveBoardPath, readBoard, writeBoard, setStatus } from '../src/board.js';
+import { STATES, resolveBoardPath, readBoard, writeBoard, setStatus, initRepos } from '../src/board.js';
 
 test('STATES are the four kanban columns in order', () => {
   assert.deepEqual(STATES, ['todo', 'inprogress', 'question', 'done']);
@@ -65,4 +65,14 @@ test('setStatus defaults lastEvent to manual', async () => {
 });
 test('setStatus rejects an invalid state', async () => {
   await assert.rejects(() => setStatus('/x', 'a', 'bogus', {}), /Invalid state "bogus"/);
+});
+
+test('initRepos adds missing repos as todo without clobbering existing ones', async () => {
+  const board = await initRepos('/x', ['a', 'b'], {
+    now: () => 'T',
+    read: async () => JSON.stringify({ version: 1, repos: { a: { status: 'done', updatedAt: 'old', lastEvent: 'done' } } }),
+    write: async () => {}, move: async () => {}, ensureDir: async () => {}, tmpSuffix: '.tmp',
+  });
+  assert.deepEqual(board.repos.a, { status: 'done', updatedAt: 'old', lastEvent: 'done' });
+  assert.deepEqual(board.repos.b, { status: 'todo', updatedAt: 'T', lastEvent: 'init' });
 });
