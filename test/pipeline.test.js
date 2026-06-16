@@ -111,6 +111,22 @@ test('errors are isolated per repo and recorded', async () => {
   assert.equal(results[1].status, 'pushed');
 });
 
+test('warn callback from resolveSkills is forwarded to logger.warn', async () => {
+  const warnings = [];
+  const resolveSkillsWithWarn = async (_dir, _tech, { warn }) => {
+    warn('missing technology xyz');
+    return [skill];
+  };
+  const workDir = await mkdtemp(path.join(tmpdir(), 'pipe-'));
+  const state = { cloned: [], hasChanges: false };
+  await run(config, {
+    skillsDir: 'x', workDir, resolveSkills: resolveSkillsWithWarn,
+    clone: fakeCloneFactory(state),
+    logger: { log() {}, warn: (m) => warnings.push(m), error() {} },
+  });
+  assert.ok(warnings.some((w) => w.includes('missing technology xyz')));
+});
+
 test('repoFilter restricts processing to one repo', async () => {
   const twoRepos = {
     defaultTargets: ['claude'],
