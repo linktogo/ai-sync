@@ -1,0 +1,20 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import windsurf from '../../src/renderers/windsurf.js';
+
+const base = { name: 'x', description: 'D', body: '# B' };
+
+test('windsurf with globs includes globs key', () => {
+  const { path, content } = windsurf.render({ ...base, globs: ['**/*.ts'] });
+  assert.equal(path, '.windsurf/rules/x.md');
+  assert.equal(content, '---\ndescription: "D"\nglobs: "**/*.ts"\n---\n\n# B\n');
+});
+
+test('windsurf without globs omits globs key', () => {
+  const { content } = windsurf.render(base);
+  assert.equal(content, '---\ndescription: "D"\n---\n\n# B\n');
+});
+
+test('windsurf id is "windsurf"', () => {
+  assert.equal(windsurf.id, 'windsurf');
+});
