@@ -31,3 +31,14 @@ export async function writeBoard(boardPath, board, opts = {}) {
   await write(tmp, JSON.stringify(board, null, 2) + '\n');
   await move(tmp, boardPath);
 }
+
+export async function setStatus(boardPath, repo, state, opts = {}) {
+  const { lastEvent = 'manual', now = () => new Date().toISOString(), ...io } = opts;
+  if (!STATES.includes(state)) {
+    throw new Error(`Invalid state "${state}" (valid: ${STATES.join(', ')})`);
+  }
+  const board = await readBoard(boardPath, io);
+  board.repos[repo] = { status: state, updatedAt: now(), lastEvent };
+  await writeBoard(boardPath, board, io);
+  return board;
+}
