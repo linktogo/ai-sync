@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import { STATES, resolveBoardPath, readBoard } from '../src/board.js';
+import { STATES, resolveBoardPath, readBoard, writeBoard } from '../src/board.js';
 
 test('STATES are the four kanban columns in order', () => {
   assert.deepEqual(STATES, ['todo', 'inprogress', 'question', 'done']);
@@ -27,4 +27,19 @@ test('readBoard returns an empty board when the file is missing', async () => {
 test('readBoard rethrows non-ENOENT errors', async () => {
   const read = async () => { const e = new Error('boom'); e.code = 'EACCES'; throw e; };
   await assert.rejects(() => readBoard('/x', { read }), /boom/);
+});
+
+test('writeBoard ensures the dir, writes a temp file, then renames (atomic)', async () => {
+  const calls = [];
+  await writeBoard('/d/board.json', { version: 1, repos: {} }, {
+    ensureDir: async (dir, opts) => calls.push(['ensureDir', dir, opts]),
+    write: async (file, data) => calls.push(['write', file, data]),
+    move: async (from, to) => calls.push(['move', from, to]),
+    tmpSuffix: '.tmp',
+  });
+  assert.deepEqual(calls, [
+    ['ensureDir', '/d', { recursive: true }],
+    ['write', '/d/board.json.tmp', '{\n  "version": 1,\n  "repos": {}\n}\n'],
+    ['move', '/d/board.json.tmp', '/d/board.json'],
+  ]);
 });

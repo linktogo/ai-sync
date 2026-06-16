@@ -18,3 +18,16 @@ export async function readBoard(boardPath, { read = readFile } = {}) {
     throw err;
   }
 }
+
+export async function writeBoard(boardPath, board, opts = {}) {
+  const {
+    write = writeFile,
+    move = rename,
+    ensureDir = mkdir,
+    tmpSuffix = `.${process.pid}.tmp`,
+  } = opts;
+  await ensureDir(path.dirname(boardPath), { recursive: true });
+  const tmp = `${boardPath}${tmpSuffix}`;
+  await write(tmp, JSON.stringify(board, null, 2) + '\n');
+  await move(tmp, boardPath);
+}
