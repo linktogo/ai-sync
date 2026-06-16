@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import { STATES, resolveBoardPath } from '../src/board.js';
+import { STATES, resolveBoardPath, readBoard } from '../src/board.js';
 
 test('STATES are the four kanban columns in order', () => {
   assert.deepEqual(STATES, ['todo', 'inprogress', 'question', 'done']);
@@ -14,4 +14,17 @@ test('resolveBoardPath falls back to AI_SYNC_BOARD', () => {
 });
 test('resolveBoardPath throws when neither is set', () => {
   assert.throws(() => resolveBoardPath({ env: {} }), /No board path/);
+});
+
+test('readBoard parses an existing board and fills defaults', async () => {
+  const read = async () => JSON.stringify({ repos: { a: { status: 'done' } } });
+  assert.deepEqual(await readBoard('/x', { read }), { version: 1, repos: { a: { status: 'done' } } });
+});
+test('readBoard returns an empty board when the file is missing', async () => {
+  const read = async () => { const e = new Error('nope'); e.code = 'ENOENT'; throw e; };
+  assert.deepEqual(await readBoard('/x', { read }), { version: 1, repos: {} });
+});
+test('readBoard rethrows non-ENOENT errors', async () => {
+  const read = async () => { const e = new Error('boom'); e.code = 'EACCES'; throw e; };
+  await assert.rejects(() => readBoard('/x', { read }), /boom/);
 });
