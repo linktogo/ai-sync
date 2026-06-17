@@ -1,0 +1,11 @@
+{
+  "defaultTargets": ["claude", "copilot"],
+  "repos": [
+    {
+      "name": "oc-be",
+      "url": "git@github.com:oclair-org/oc-be.git",
+      "technologies": ["nestjs", "postgres"],
+      "targets": ["claude", "cursor"]
+    }
+  ]
+}

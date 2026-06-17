@@ -1,0 +1,27 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/fabien/.claude/plugins/marketplaces/claude-plugins-official/hooks/session-start",
+            "async": false
+          }
+        ]
+      }
+    ]
+  },
+  "plugins": {
+    "superpowers": {
+      "marketplaceName": "claude-plugins-official",
+      "installLocation": "/Users/fabien/.claude/plugins/marketplaces/claude-plugins-official"
+    }
+  },
+  "permissions": {
+    "allow": [
+      "Bash(node *)"
+    ]
+  }
+}
