@@ -152,6 +152,7 @@ export async function main(argv, deps = {}) {
       worktree: { type: 'string' },
       'no-install': { type: 'boolean', default: false },
       'dry-run': { type: 'boolean', default: false },
+      offline: { type: 'boolean', default: false },
     },
   });
 
@@ -174,6 +175,7 @@ export async function main(argv, deps = {}) {
     worktree: values.worktree,
     install: !values['no-install'],
     dryRun: values['dry-run'],
+    offline: values.offline,
     onExisting: isInteractive ? onExisting : undefined,
     logger,
   });

@@ -420,7 +420,7 @@ test('main requires --workspace', async () => {
 test('main loads config, resolves the workspace path, and forwards flags', async () => {
   let received;
   const code = await main(
-    ['--config', 'repos.json', '--workspace', 'ws', '--editor', 'vscode', '--repo', 'a', '--worktree', 'feat/z', '--no-install', '--dry-run'],
+    ['--config', 'repos.json', '--workspace', 'ws', '--editor', 'vscode', '--repo', 'a', '--worktree', 'feat/z', '--no-install', '--dry-run', '--offline'],
     {
       loadConfig: async (p) => { assert.equal(p, 'repos.json'); return config; },
       runBootstrap: async (cfg, opts) => { received = opts; return {}; },
@@ -434,6 +434,7 @@ test('main loads config, resolves the workspace path, and forwards flags', async
   assert.equal(received.worktree, 'feat/z');
   assert.equal(received.install, false);
   assert.equal(received.dryRun, true);
+  assert.equal(received.offline, true);
   assert.equal(received.workspaceDir, path.resolve('ws'));
 });
 
@@ -481,5 +482,6 @@ test('main defaults editor to claude and install to true', async () => {
   assert.equal(received.editor, 'claude');
   assert.equal(received.install, true);
   assert.equal(received.dryRun, false);
+  assert.equal(received.offline, false);
   assert.equal(received.repoFilter, undefined);
 });
