@@ -3,7 +3,8 @@ import path from 'node:path';
 import { mkdir, access, rm } from 'node:fs/promises';
 import { clone as defaultClone, defaultExec } from './git.js';
 import { loadConfig as defaultLoadConfig } from './config.js';
-import { pnpmCommand, EDITORS, launchCommand } from './platform.js';
+import { EDITORS, launchCommand } from './platform.js';
+import { planInstall } from './installers.js';
 
 async function pathExists(p) {
   try {
@@ -35,6 +36,7 @@ export async function bootstrap(config, options = {}) {
     worktree,
     install = true,
     dryRun = false,
+    offline = false,
     clone = defaultClone,
     exec = defaultExec,
     exists = pathExists,
@@ -104,10 +106,13 @@ export async function bootstrap(config, options = {}) {
     workDirs.push(workDir);
 
     let installed = false;
-    if (install && (await exists(path.join(workDir, 'package.json')))) {
-      if (!dryRun) await exec(pnpmCommand(), ['install'], { cwd: workDir });
-      logger.log(`  ${tag}${repo.name}: ${dryRun ? 'would pnpm install' : 'pnpm install done'}`);
-      installed = true;
+    if (install) {
+      const plan = await planInstall(workDir, { exists, offline });
+      if (plan) {
+        if (!dryRun) await exec(plan.command, plan.args, { cwd: workDir });
+        logger.log(`  ${tag}${repo.name}: ${dryRun ? 'would' : 'ran'} ${plan.label} install${offline ? ' (offline)' : ''}`);
+        installed = true;
+      }
     }
 
     results.push({ repo: repo.name, status, installed });

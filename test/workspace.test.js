@@ -48,7 +48,7 @@ test('clones missing repos, reuses present ones, and installs when package.json 
     { repo: 'a', status: 'cloned', installed: true },
     { repo: 'b', status: 'reused', installed: false },
   ]);
-  assert.deepEqual(execCalls, [{ file: 'pnpm', args: ['install'], opts: { cwd: path.join(ws, 'a') } }]);
+  assert.deepEqual(execCalls, [{ file: 'pnpm', args: ['install', '--prefer-offline'], opts: { cwd: path.join(ws, 'a') } }]);
   assert.equal(result.command, `cd "${rel(ws)}" && claude`);
   await rm(ws, { recursive: true, force: true });
 });
@@ -149,7 +149,7 @@ test('claude + --worktree adds a worktree, installs in it, and launches there', 
   const wt = path.join(ws, 'a.feat-x');
   assert.deepEqual(execCalls, [
     { file: 'git', args: ['-C', path.join(ws, 'a'), 'worktree', 'add', wt, '-b', 'feat/x'], opts: {} },
-    { file: 'pnpm', args: ['install'], opts: { cwd: wt } },
+    { file: 'pnpm', args: ['install', '--prefer-offline'], opts: { cwd: wt } },
   ]);
   assert.deepEqual(result.results, [{ repo: 'a', status: 'reused', installed: true }]);
   assert.equal(result.command, `cd "${rel(wt)}" && claude`);
@@ -347,6 +347,59 @@ test('reinstall against the real filesystem removes the stale dir (default remov
 
   assert.deepEqual(result.results, [{ repo: 'a', status: 'cloned', installed: false }]);
   await assert.rejects(() => access(path.join(ws, 'a-reinstall', 'stale.txt')));
+  await rm(ws, { recursive: true, force: true });
+});
+
+test('offline mode installs with --offline and logs it', async () => {
+  const ws = await mkdtemp(path.join(tmpdir(), 'ws-'));
+  const execCalls = [];
+  const logs = [];
+  await bootstrap(config, {
+    workspaceDir: ws,
+    repoFilter: 'a',
+    offline: true,
+    clone: async () => {},
+    exec: async (file, args) => { execCalls.push({ file, args }); },
+    exists: async (p) => p === path.join(ws, 'a', 'package.json'),
+    logger: { log: (m) => logs.push(m), warn() {}, error() {} },
+  });
+
+  assert.deepEqual(execCalls, [{ file: 'pnpm', args: ['install', '--offline'] }]);
+  assert.ok(logs.some((m) => m.includes('ran pnpm install (offline)')));
+  await rm(ws, { recursive: true, force: true });
+});
+
+test('a Maven project runs dependency:go-offline', async () => {
+  const ws = await mkdtemp(path.join(tmpdir(), 'ws-'));
+  const execCalls = [];
+  const result = await bootstrap(config, {
+    workspaceDir: ws,
+    repoFilter: 'a',
+    clone: async () => {},
+    exec: async (file, args) => { execCalls.push({ file, args }); },
+    exists: async (p) => p === path.join(ws, 'a', 'pom.xml'),
+    logger: silentLogger(),
+  });
+
+  assert.deepEqual(execCalls, [{ file: 'mvn', args: ['dependency:go-offline'] }]);
+  assert.deepEqual(result.results, [{ repo: 'a', status: 'cloned', installed: true }]);
+  await rm(ws, { recursive: true, force: true });
+});
+
+test('a repo with no recognised marker file is not installed', async () => {
+  const ws = await mkdtemp(path.join(tmpdir(), 'ws-'));
+  const execCalls = [];
+  const result = await bootstrap(config, {
+    workspaceDir: ws,
+    repoFilter: 'a',
+    clone: async () => {},
+    exec: async (...c) => { execCalls.push(c); },
+    exists: async () => false,
+    logger: silentLogger(),
+  });
+
+  assert.equal(execCalls.length, 0);
+  assert.deepEqual(result.results, [{ repo: 'a', status: 'cloned', installed: false }]);
   await rm(ws, { recursive: true, force: true });
 });
 
