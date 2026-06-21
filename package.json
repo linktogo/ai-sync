@@ -11,10 +11,16 @@
     "ai-workspace": "bin/workspace.js"
   },
   "scripts": {
-    "start": "node bin/sync.js",
-    "test": "node --test --experimental-test-coverage --test-coverage-include=\"src/**/*.js\" --test-coverage-lines=100 --test-coverage-functions=100 --test-coverage-branches=100"
+    "prestart": "npm run board:build",
+    "start": "node apps/board/server.js",
+    "sync": "node bin/sync.js",
+    "wk": "node bin/workspace.js --config repos.json --workspace wk",
+    "board:build": "pnpm --dir apps/board install && pnpm --dir apps/board build",
+    "test": "node --test --experimental-test-coverage --test-coverage-include=\"src/**/*.js\" --test-coverage-lines=100 --test-coverage-functions=100 --test-coverage-branches=100 'test/**/*.test.js'",
+    "test:board": "pnpm --dir apps/board test"
   },
   "dependencies": {
+    "@inquirer/prompts": "^7.2.0",
     "gray-matter": "^4.0.3"
   }
 }
