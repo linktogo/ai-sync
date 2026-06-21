@@ -1,13 +1,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, rm, access } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { bootstrap, main } from '../src/workspace.js';
+import { bootstrap, main, formatTimestamp } from '../src/workspace.js';
 
 function silentLogger() {
   return { log() {}, warn() {}, error() {} };
 }
+
+const rel = (p) => path.relative(process.cwd(), p) || '.';
 
 const config = {
   defaultTargets: ['claude'],
@@ -47,7 +49,7 @@ test('clones missing repos, reuses present ones, and installs when package.json 
     { repo: 'b', status: 'reused', installed: false },
   ]);
   assert.deepEqual(execCalls, [{ file: 'pnpm', args: ['install'], opts: { cwd: path.join(ws, 'a') } }]);
-  assert.equal(result.command, `cd ${ws} && claude`);
+  assert.equal(result.command, `cd "${rel(ws)}" && claude`);
   await rm(ws, { recursive: true, force: true });
 });
 
@@ -67,7 +69,7 @@ test('--no-install path skips pnpm and the vscode editor yields a code command',
 
   assert.equal(execCalls.length, 0);
   assert.deepEqual(result.results, [{ repo: 'a', status: 'cloned', installed: false }]);
-  assert.equal(result.command, `code ${ws}`);
+  assert.equal(result.command, `code "${rel(path.join(ws, 'a'))}"`);
   await rm(ws, { recursive: true, force: true });
 });
 
@@ -150,7 +152,7 @@ test('claude + --worktree adds a worktree, installs in it, and launches there', 
     { file: 'pnpm', args: ['install'], opts: { cwd: wt } },
   ]);
   assert.deepEqual(result.results, [{ repo: 'a', status: 'reused', installed: true }]);
-  assert.equal(result.command, `cd ${wt} && claude`);
+  assert.equal(result.command, `cd "${rel(wt)}" && claude`);
   await rm(ws, { recursive: true, force: true });
 });
 
@@ -174,7 +176,7 @@ test('reuses existing worktrees and launches at the workspace root for multiple 
     { repo: 'b', status: 'cloned', installed: false },
   ]);
   assert.equal(execCalls.length, 0);
-  assert.equal(result.command, `cd ${ws} && claude`);
+  assert.equal(result.command, `cd "${rel(ws)}" && claude`);
   await rm(ws, { recursive: true, force: true });
 });
 
@@ -196,7 +198,155 @@ test('dry-run previews worktree creation without side effects', async () => {
 
   assert.equal(execCalls.length, 0);
   assert.ok(logs.some((m) => m.includes('[dry-run]') && m.includes('would add worktree')));
-  assert.equal(result.command, `cd ${path.join(ws, 'a.feat-y')} && claude`);
+  assert.equal(result.command, `cd "${rel(path.join(ws, 'a.feat-y'))}" && claude`);
+  await rm(ws, { recursive: true, force: true });
+});
+
+test('launch command falls back to "." when the launch dir is the cwd', async () => {
+  const result = await bootstrap(config, {
+    workspaceDir: process.cwd(),
+    dryRun: true,
+    clone: async () => {},
+    exec: async () => {},
+    exists: async () => false,
+    logger: silentLogger(),
+  });
+
+  assert.equal(result.command, 'cd "." && claude');
+});
+
+test('formatTimestamp renders a zero-padded YYYYMMDD-HHMMSS stamp', () => {
+  assert.equal(formatTimestamp(new Date(2026, 5, 21, 14, 30, 5)), '20260621-143005');
+});
+
+test('onExisting "reuse" keeps the existing checkout and does not clone', async () => {
+  const ws = await mkdtemp(path.join(tmpdir(), 'ws-'));
+  const cloned = [];
+  const result = await bootstrap(config, {
+    workspaceDir: ws,
+    repoFilter: 'a',
+    install: false,
+    onExisting: async (repo) => { assert.equal(repo.name, 'a'); return 'reuse'; },
+    clone: async (url, dir) => { cloned.push(dir); },
+    exec: async () => {},
+    exists: async (p) => p === path.join(ws, 'a'),
+    logger: silentLogger(),
+  });
+
+  assert.deepEqual(cloned, []);
+  assert.deepEqual(result.results, [{ repo: 'a', status: 'reused', installed: false }]);
+  await rm(ws, { recursive: true, force: true });
+});
+
+test('onExisting "reinstall" clones into <name>-reinstall (no removal when absent)', async () => {
+  const ws = await mkdtemp(path.join(tmpdir(), 'ws-'));
+  const cloned = [];
+  const removed = [];
+  const result = await bootstrap(config, {
+    workspaceDir: ws,
+    repoFilter: 'a',
+    install: false,
+    onExisting: async () => 'reinstall',
+    clone: async (url, dir) => { cloned.push(dir); },
+    exec: async () => {},
+    remove: async (p) => { removed.push(p); },
+    exists: async (p) => p === path.join(ws, 'a'),
+    logger: silentLogger(),
+  });
+
+  assert.deepEqual(removed, []);
+  assert.deepEqual(cloned, [path.join(ws, 'a-reinstall')]);
+  assert.deepEqual(result.results, [{ repo: 'a', status: 'cloned', installed: false }]);
+  assert.equal(result.command, `cd "${rel(path.join(ws, 'a-reinstall'))}" && claude`);
+  await rm(ws, { recursive: true, force: true });
+});
+
+test('onExisting "reinstall" removes a previous -reinstall checkout first', async () => {
+  const ws = await mkdtemp(path.join(tmpdir(), 'ws-'));
+  const cloned = [];
+  const removed = [];
+  const present = new Set([path.join(ws, 'a'), path.join(ws, 'a-reinstall')]);
+  await bootstrap(config, {
+    workspaceDir: ws,
+    repoFilter: 'a',
+    install: false,
+    onExisting: async () => 'reinstall',
+    clone: async (url, dir) => { cloned.push(dir); },
+    exec: async () => {},
+    remove: async (p) => { removed.push(p); },
+    exists: async (p) => present.has(p),
+    logger: silentLogger(),
+  });
+
+  assert.deepEqual(removed, [path.join(ws, 'a-reinstall')]);
+  assert.deepEqual(cloned, [path.join(ws, 'a-reinstall')]);
+  await rm(ws, { recursive: true, force: true });
+});
+
+test('onExisting "timestamp" clones into a uniquely stamped directory', async () => {
+  const ws = await mkdtemp(path.join(tmpdir(), 'ws-'));
+  const cloned = [];
+  const result = await bootstrap(config, {
+    workspaceDir: ws,
+    repoFilter: 'a',
+    install: false,
+    onExisting: async () => 'timestamp',
+    timestamp: () => '20260621-143005',
+    clone: async (url, dir) => { cloned.push(dir); },
+    exec: async () => {},
+    exists: async (p) => p === path.join(ws, 'a'),
+    logger: silentLogger(),
+  });
+
+  assert.deepEqual(cloned, [path.join(ws, 'a-20260621-143005')]);
+  assert.equal(result.command, `cd "${rel(path.join(ws, 'a-20260621-143005'))}" && claude`);
+  await rm(ws, { recursive: true, force: true });
+});
+
+test('dry-run reinstall previews removal and clone without side effects', async () => {
+  const ws = await mkdtemp(path.join(tmpdir(), 'ws-'));
+  const cloned = [];
+  const removed = [];
+  const logs = [];
+  const present = new Set([path.join(ws, 'a'), path.join(ws, 'a-reinstall')]);
+  await bootstrap(config, {
+    workspaceDir: ws,
+    repoFilter: 'a',
+    install: false,
+    dryRun: true,
+    onExisting: async () => 'reinstall',
+    clone: async (url, dir) => { cloned.push(dir); },
+    exec: async () => {},
+    remove: async (p) => { removed.push(p); },
+    exists: async (p) => present.has(p),
+    logger: { log: (m) => logs.push(m), warn() {}, error() {} },
+  });
+
+  assert.deepEqual(removed, []);
+  assert.deepEqual(cloned, []);
+  assert.ok(logs.some((m) => m.includes('[dry-run]') && m.includes('would remove')));
+  assert.ok(logs.some((m) => m.includes('[dry-run]') && m.includes('would clone into a-reinstall')));
+  await rm(ws, { recursive: true, force: true });
+});
+
+test('reinstall against the real filesystem removes the stale dir (default remove)', async () => {
+  const ws = await mkdtemp(path.join(tmpdir(), 'ws-'));
+  await mkdir(path.join(ws, 'a'), { recursive: true });
+  await mkdir(path.join(ws, 'a-reinstall'), { recursive: true });
+  await writeFile(path.join(ws, 'a-reinstall', 'stale.txt'), 'x');
+
+  const result = await bootstrap(config, {
+    workspaceDir: ws,
+    repoFilter: 'a',
+    install: false,
+    onExisting: async () => 'reinstall',
+    clone: async (url, dir) => { await mkdir(dir, { recursive: true }); },
+    exec: async () => {},
+    logger: silentLogger(),
+  });
+
+  assert.deepEqual(result.results, [{ repo: 'a', status: 'cloned', installed: false }]);
+  await assert.rejects(() => access(path.join(ws, 'a-reinstall', 'stale.txt')));
   await rm(ws, { recursive: true, force: true });
 });
 
@@ -232,6 +382,39 @@ test('main loads config, resolves the workspace path, and forwards flags', async
   assert.equal(received.install, false);
   assert.equal(received.dryRun, true);
   assert.equal(received.workspaceDir, path.resolve('ws'));
+});
+
+test('main prompts for a single repo and forwards onExisting on an interactive TTY', async () => {
+  let promptedWith;
+  let received;
+  const onExisting = async () => 'reuse';
+  await main(['--config', 'repos.json', '--workspace', '/tmp/ws'], {
+    loadConfig: async () => config,
+    isInteractive: true,
+    selectRepo: async (repos) => { promptedWith = repos; return 'b'; },
+    onExisting,
+    runBootstrap: async (cfg, opts) => { received = opts; return {}; },
+    logger: silentLogger(),
+  });
+
+  assert.deepEqual(promptedWith, config.repos);
+  assert.equal(received.repoFilter, 'b');
+  assert.equal(received.onExisting, onExisting);
+});
+
+test('main does not prompt when --repo is provided even interactively', async () => {
+  let prompted = false;
+  let received;
+  await main(['--config', 'repos.json', '--workspace', '/tmp/ws', '--repo', 'a'], {
+    loadConfig: async () => config,
+    isInteractive: true,
+    selectRepo: async () => { prompted = true; return 'b'; },
+    runBootstrap: async (cfg, opts) => { received = opts; return {}; },
+    logger: silentLogger(),
+  });
+
+  assert.equal(prompted, false);
+  assert.equal(received.repoFilter, 'a');
 });
 
 test('main defaults editor to claude and install to true', async () => {

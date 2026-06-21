@@ -1,13 +1,9 @@
 import { parseArgs } from 'node:util';
 import path from 'node:path';
-import { mkdir, access } from 'node:fs/promises';
+import { mkdir, access, rm } from 'node:fs/promises';
 import { clone as defaultClone, defaultExec } from './git.js';
 import { loadConfig as defaultLoadConfig } from './config.js';
-
-const EDITORS = {
-  claude: (dir) => `cd ${dir} && claude`,
-  vscode: (dir) => `code ${dir}`,
-};
+import { pnpmCommand, EDITORS, launchCommand } from './platform.js';
 
 async function pathExists(p) {
   try {
@@ -16,6 +12,19 @@ async function pathExists(p) {
   } catch {
     return false;
   }
+}
+
+async function defaultRemove(p) {
+  await rm(p, { recursive: true, force: true });
+}
+
+// Compact, filesystem-safe stamp like "20260621-143005" for suffixed checkouts.
+export function formatTimestamp(date = new Date()) {
+  const p = (n) => String(n).padStart(2, '0');
+  return (
+    `${date.getFullYear()}${p(date.getMonth() + 1)}${p(date.getDate())}` +
+    `-${p(date.getHours())}${p(date.getMinutes())}${p(date.getSeconds())}`
+  );
 }
 
 export async function bootstrap(config, options = {}) {
@@ -29,12 +38,15 @@ export async function bootstrap(config, options = {}) {
     clone = defaultClone,
     exec = defaultExec,
     exists = pathExists,
+    remove = defaultRemove,
+    onExisting,
+    timestamp = formatTimestamp,
     logger = console,
   } = options;
 
   if (!workspaceDir) throw new Error('bootstrap requires a workspaceDir');
-  if (!EDITORS[editor]) {
-    throw new Error(`Unknown editor "${editor}" (known: ${Object.keys(EDITORS).join(', ')})`);
+  if (!EDITORS.includes(editor)) {
+    throw new Error(`Unknown editor "${editor}" (known: ${EDITORS.join(', ')})`);
   }
   if (worktree && editor !== 'claude') {
     throw new Error('--worktree is only supported with --editor claude');
@@ -50,12 +62,28 @@ export async function bootstrap(config, options = {}) {
   const results = [];
   const workDirs = [];
   for (const repo of repos) {
-    const checkout = path.join(workspaceDir, repo.name);
+    let checkout = path.join(workspaceDir, repo.name);
 
     let status;
     if (await exists(checkout)) {
-      logger.log(`${tag}= ${repo.name}: reusing existing checkout`);
-      status = 'reused';
+      // Existing checkout: reuse it, or (interactively) re-clone elsewhere.
+      // "reinstall" reuses a fixed "-reinstall" dir (overwritten each time);
+      // "timestamp" clones into a fresh, uniquely stamped dir.
+      const action = onExisting ? await onExisting(repo) : 'reuse';
+      if (action === 'reuse') {
+        logger.log(`${tag}= ${repo.name}: reusing existing checkout`);
+        status = 'reused';
+      } else {
+        const suffix = action === 'reinstall' ? 'reinstall' : timestamp();
+        checkout = path.join(workspaceDir, `${repo.name}-${suffix}`);
+        if (action === 'reinstall' && (await exists(checkout))) {
+          if (!dryRun) await remove(checkout);
+          logger.log(`  ${tag}${repo.name}: ${dryRun ? 'would remove' : 'removed'} previous ${path.basename(checkout)}`);
+        }
+        if (!dryRun) await clone(repo.url, checkout);
+        logger.log(`${tag}✓ ${repo.name}: ${dryRun ? 'would clone' : 'cloned'} into ${path.basename(checkout)}`);
+        status = 'cloned';
+      }
     } else {
       if (!dryRun) await clone(repo.url, checkout);
       logger.log(`${tag}✓ ${repo.name}: ${dryRun ? 'would clone' : 'cloned'}`);
@@ -77,7 +105,7 @@ export async function bootstrap(config, options = {}) {
 
     let installed = false;
     if (install && (await exists(path.join(workDir, 'package.json')))) {
-      if (!dryRun) await exec('pnpm', ['install'], { cwd: workDir });
+      if (!dryRun) await exec(pnpmCommand(), ['install'], { cwd: workDir });
       logger.log(`  ${tag}${repo.name}: ${dryRun ? 'would pnpm install' : 'pnpm install done'}`);
       installed = true;
     }
@@ -85,8 +113,11 @@ export async function bootstrap(config, options = {}) {
     results.push({ repo: repo.name, status, installed });
   }
 
-  const launchDir = worktree && workDirs.length === 1 ? workDirs[0] : workspaceDir;
-  const command = EDITORS[editor](launchDir);
+  // Launch at the project directory itself when a single repo is targeted
+  // (selected, --repo, or a single worktree); otherwise at the workspace root.
+  const launchDir = workDirs.length === 1 ? workDirs[0] : workspaceDir;
+  const relativeLaunch = path.relative(process.cwd(), launchDir) || '.';
+  const command = launchCommand(editor, relativeLaunch);
   logger.log(`\nWorkspace ready at ${workspaceDir}`);
   logger.log(`Launch ${editor}:\n  ${command}`);
   if (editor === 'claude' && !worktree) {
@@ -100,6 +131,9 @@ export async function main(argv, deps = {}) {
   const {
     loadConfig = defaultLoadConfig,
     runBootstrap = bootstrap,
+    selectRepo,
+    onExisting,
+    isInteractive = process.stdin.isTTY,
     logger = console,
   } = deps;
 
@@ -120,13 +154,22 @@ export async function main(argv, deps = {}) {
   if (!values.workspace) throw new Error('Missing required --workspace <dir>');
 
   const config = await loadConfig(values.config);
+
+  // Without an explicit --repo, prompt for a single project to load when
+  // running interactively; non-interactive runs keep bootstrapping every repo.
+  let repoFilter = values.repo;
+  if (!repoFilter && isInteractive) {
+    repoFilter = await selectRepo(config.repos);
+  }
+
   await runBootstrap(config, {
     workspaceDir: path.resolve(values.workspace),
     editor: values.editor,
-    repoFilter: values.repo,
+    repoFilter,
     worktree: values.worktree,
     install: !values['no-install'],
     dryRun: values['dry-run'],
+    onExisting: isInteractive ? onExisting : undefined,
     logger,
   });
 
