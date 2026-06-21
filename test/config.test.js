@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { writeFile, mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { parseConfig, loadConfig } from '../src/config.js';
+import { parseConfig, loadConfig, toHttpsUrl } from '../src/config.js';
 
 test('parseConfig resolves repo targets, falling back to defaultTargets', () => {
   const cfg = parseConfig(JSON.stringify({
@@ -66,6 +66,34 @@ test('parseConfig rejects non-array defaultTargets', () => {
     () => parseConfig('{"defaultTargets":"claude","repos":[{"name":"a","url":"u","technologies":["t"]}]}'),
     /must be an array/,
   );
+});
+
+test('toHttpsUrl rewrites scp-style SSH urls to https', () => {
+  assert.equal(
+    toHttpsUrl('git@github.com:linktog/repo1.git'),
+    'https://github.com/linktog/repo1.git',
+  );
+});
+
+test('toHttpsUrl rewrites ssh:// urls to https', () => {
+  assert.equal(
+    toHttpsUrl('ssh://git@github.com/linktog/repo1.git'),
+    'https://github.com/linktog/repo1.git',
+  );
+});
+
+test('toHttpsUrl leaves https urls untouched', () => {
+  assert.equal(
+    toHttpsUrl('https://github.com/linktog/repo1.git'),
+    'https://github.com/linktog/repo1.git',
+  );
+});
+
+test('parseConfig normalizes a repo SSH url to https', () => {
+  const cfg = parseConfig(JSON.stringify({
+    repos: [{ name: 'a', url: 'git@github.com:org/a.git', technologies: ['t'], targets: ['claude'] }],
+  }));
+  assert.equal(cfg.repos[0].url, 'https://github.com/org/a.git');
 });
 
 test('loadConfig reads and parses a file', async () => {

@@ -2,8 +2,8 @@
   "defaultTargets": ["claude", "copilot"],
   "repos": [
     {
-      "name": "repo1",
-      "url": "git@github.com:linktog/repo1.git",
+      "name": "oc-be",
+      "url": "https://github.com/oclair-org/oc-be.git",
       "technologies": ["nestjs", "postgres"],
       "targets": ["claude", "cursor"]
     }

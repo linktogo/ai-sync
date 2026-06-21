@@ -34,7 +34,16 @@ function normalizeRepo(repo, index, defaultTargets, valid) {
   if (targets.length === 0) {
     throw new Error(`${label}: no targets (set repo.targets or defaultTargets)`);
   }
-  return { name: repo.name, url: repo.url, technologies: repo.technologies, targets };
+  return { name: repo.name, url: toHttpsUrl(repo.url), technologies: repo.technologies, targets };
+}
+
+// Clone over HTTPS rather than SSH: rewrite scp-style and ssh:// URLs.
+export function toHttpsUrl(url) {
+  const scp = url.match(/^[^@/]+@([^:/]+):(.+)$/);
+  if (scp) return `https://${scp[1]}/${scp[2]}`;
+  const ssh = url.match(/^ssh:\/\/(?:[^@/]+@)?(.+)$/);
+  if (ssh) return `https://${ssh[1]}`;
+  return url;
 }
 
 function validateTargets(targets, valid, label) {

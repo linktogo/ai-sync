@@ -1,4 +1,10 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(node *)",
+      "Bash(rtk yarn *)"
+    ]
+  },
   "hooks": {
     "SessionStart": [
       {
@@ -18,10 +24,5 @@
       "marketplaceName": "claude-plugins-official",
       "installLocation": "/Users/fabien/.claude/plugins/marketplaces/claude-plugins-official"
     }
-  },
-  "permissions": {
-    "allow": [
-      "Bash(node *)"
-    ]
   }
 }

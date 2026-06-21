@@ -66,6 +66,13 @@ test('setStatus defaults lastEvent to manual', async () => {
 test('setStatus rejects an invalid state', async () => {
   await assert.rejects(() => setStatus('/x', 'a', 'bogus', {}), /Invalid state "bogus"/);
 });
+test('setStatus stamps an ISO timestamp by default', async () => {
+  const board = await setStatus('/x', 'a', 'done', {
+    read: async () => '{"repos":{}}',
+    write: async () => {}, move: async () => {}, ensureDir: async () => {}, tmpSuffix: '.tmp',
+  });
+  assert.match(board.repos.a.updatedAt, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+});
 
 test('initRepos adds missing repos as todo without clobbering existing ones', async () => {
   const board = await initRepos('/x', ['a', 'b'], {
@@ -75,4 +82,11 @@ test('initRepos adds missing repos as todo without clobbering existing ones', as
   });
   assert.deepEqual(board.repos.a, { status: 'done', updatedAt: 'old', lastEvent: 'done' });
   assert.deepEqual(board.repos.b, { status: 'todo', updatedAt: 'T', lastEvent: 'init' });
+});
+test('initRepos stamps an ISO timestamp by default', async () => {
+  const board = await initRepos('/x', ['a'], {
+    read: async () => '{"repos":{}}',
+    write: async () => {}, move: async () => {}, ensureDir: async () => {}, tmpSuffix: '.tmp',
+  });
+  assert.match(board.repos.a.updatedAt, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
 });
