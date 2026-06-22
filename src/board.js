@@ -3,6 +3,8 @@ import path from 'node:path';
 
 export const STATES = ['todo', 'inprogress', 'question', 'done'];
 
+export const MAX_EVENTS = 20;
+
 export function resolveBoardPath({ board, env = process.env } = {}) {
   const p = board || env.AI_SYNC_BOARD;
   if (!p) throw new Error('No board path (pass --board <path> or set AI_SYNC_BOARD)');
@@ -38,7 +40,10 @@ export async function setStatus(boardPath, repo, state, opts = {}) {
     throw new Error(`Invalid state "${state}" (valid: ${STATES.join(', ')})`);
   }
   const board = await readBoard(boardPath, io);
-  board.repos[repo] = { status: state, updatedAt: now(), lastEvent };
+  const at = now();
+  const prev = board.repos[repo];
+  const events = [{ event: lastEvent, at }, ...(prev?.events ?? [])].slice(0, MAX_EVENTS);
+  board.repos[repo] = { status: state, updatedAt: at, lastEvent, events };
   await writeBoard(boardPath, board, io);
   return board;
 }
@@ -48,7 +53,8 @@ export async function initRepos(boardPath, repoNames, opts = {}) {
   const board = await readBoard(boardPath, io);
   for (const name of repoNames) {
     if (!board.repos[name]) {
-      board.repos[name] = { status: 'todo', updatedAt: now(), lastEvent: 'init' };
+      const at = now();
+      board.repos[name] = { status: 'todo', updatedAt: at, lastEvent: 'init', events: [{ event: 'init', at }] };
     }
   }
   await writeBoard(boardPath, board, io);

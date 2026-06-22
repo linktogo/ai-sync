@@ -53,8 +53,25 @@ test('setStatus reads, applies the transition with timestamp + event, and writes
     write: async (_f, data) => { written = data; },
     move: async () => {}, ensureDir: async () => {}, tmpSuffix: '.tmp',
   });
-  assert.deepEqual(board.repos['oc-be'], { status: 'question', updatedAt: '2026-06-16T10:00:00Z', lastEvent: 'Notification' });
+  assert.deepEqual(board.repos['oc-be'], {
+    status: 'question',
+    updatedAt: '2026-06-16T10:00:00Z',
+    lastEvent: 'Notification',
+    events: [{ event: 'Notification', at: '2026-06-16T10:00:00Z' }],
+  });
   assert.match(written, /"status": "question"/);
+});
+
+test('setStatus prepends events newest-first and caps the history', async () => {
+  const prior = Array.from({ length: 20 }, (_, i) => ({ event: `e${i}`, at: 'old' }));
+  const board = await setStatus('/x', 'a', 'done', {
+    lastEvent: 'pushed', now: () => 'NOW',
+    read: async () => JSON.stringify({ version: 1, repos: { a: { status: 'inprogress', events: prior } } }),
+    write: async () => {}, move: async () => {}, ensureDir: async () => {}, tmpSuffix: '.tmp',
+  });
+  assert.equal(board.repos.a.events.length, 20);
+  assert.deepEqual(board.repos.a.events[0], { event: 'pushed', at: 'NOW' });
+  assert.equal(board.repos.a.events[19].event, 'e18'); // oldest entry dropped
 });
 test('setStatus defaults lastEvent to manual', async () => {
   const board = await setStatus('/x', 'a', 'done', {
@@ -81,7 +98,7 @@ test('initRepos adds missing repos as todo without clobbering existing ones', as
     write: async () => {}, move: async () => {}, ensureDir: async () => {}, tmpSuffix: '.tmp',
   });
   assert.deepEqual(board.repos.a, { status: 'done', updatedAt: 'old', lastEvent: 'done' });
-  assert.deepEqual(board.repos.b, { status: 'todo', updatedAt: 'T', lastEvent: 'init' });
+  assert.deepEqual(board.repos.b, { status: 'todo', updatedAt: 'T', lastEvent: 'init', events: [{ event: 'init', at: 'T' }] });
 });
 test('initRepos stamps an ISO timestamp by default', async () => {
   const board = await initRepos('/x', ['a'], {
