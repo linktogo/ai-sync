@@ -16,9 +16,28 @@ test('resolveBoardPath throws when neither is set', () => {
   assert.throws(() => resolveBoardPath({ env: {} }), /No board path/);
 });
 
-test('readBoard parses an existing board and fills defaults', async () => {
+test('readBoard parses an existing board and backfills an empty events array', async () => {
   const read = async () => JSON.stringify({ repos: { a: { status: 'done' } } });
-  assert.deepEqual(await readBoard('/x', { read }), { version: 1, repos: { a: { status: 'done' } } });
+  assert.deepEqual(await readBoard('/x', { read }), { version: 1, repos: { a: { status: 'done', events: [] } } });
+});
+
+test('readBoard backfills events from lastEvent for legacy files', async () => {
+  const read = async () => JSON.stringify({ repos: { a: { status: 'done', lastEvent: 'pushed', updatedAt: 'T' } } });
+  const board = await readBoard('/x', { read });
+  assert.deepEqual(board.repos.a.events, [{ event: 'pushed', at: 'T' }]);
+});
+
+test('readBoard backfills with a null timestamp when updatedAt is absent', async () => {
+  const read = async () => JSON.stringify({ repos: { a: { status: 'done', lastEvent: 'pushed' } } });
+  const board = await readBoard('/x', { read });
+  assert.deepEqual(board.repos.a.events, [{ event: 'pushed', at: null }]);
+});
+
+test('readBoard leaves an existing events array untouched', async () => {
+  const events = [{ event: 'x', at: 'T' }];
+  const read = async () => JSON.stringify({ repos: { a: { status: 'done', lastEvent: 'x', updatedAt: 'T', events } } });
+  const board = await readBoard('/x', { read });
+  assert.deepEqual(board.repos.a.events, events);
 });
 test('readBoard returns an empty board when the file is missing', async () => {
   const read = async () => { const e = new Error('nope'); e.code = 'ENOENT'; throw e; };
@@ -97,7 +116,7 @@ test('initRepos adds missing repos as todo without clobbering existing ones', as
     read: async () => JSON.stringify({ version: 1, repos: { a: { status: 'done', updatedAt: 'old', lastEvent: 'done' } } }),
     write: async () => {}, move: async () => {}, ensureDir: async () => {}, tmpSuffix: '.tmp',
   });
-  assert.deepEqual(board.repos.a, { status: 'done', updatedAt: 'old', lastEvent: 'done' });
+  assert.deepEqual(board.repos.a, { status: 'done', updatedAt: 'old', lastEvent: 'done', events: [{ event: 'done', at: 'old' }] });
   assert.deepEqual(board.repos.b, { status: 'todo', updatedAt: 'T', lastEvent: 'init', events: [{ event: 'init', at: 'T' }] });
 });
 test('initRepos stamps an ISO timestamp by default', async () => {

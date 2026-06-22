@@ -14,7 +14,13 @@ export function resolveBoardPath({ board, env = process.env } = {}) {
 export async function readBoard(boardPath, { read = readFile } = {}) {
   try {
     const parsed = JSON.parse(await read(boardPath, 'utf8'));
-    return { version: 1, repos: {}, ...parsed };
+    const board = { version: 1, repos: {}, ...parsed };
+    for (const entry of Object.values(board.repos)) {
+      if (!Array.isArray(entry.events)) {
+        entry.events = entry.lastEvent ? [{ event: entry.lastEvent, at: entry.updatedAt ?? null }] : [];
+      }
+    }
+    return board;
   } catch (err) {
     if (err.code === 'ENOENT') return { version: 1, repos: {} };
     throw err;
