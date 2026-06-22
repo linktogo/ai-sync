@@ -86,6 +86,7 @@ npm start                                     # build + serve on http://localhos
 npm start -- --board /tmp/board.json          # use a specific board file
 AI_SYNC_BOARD=/tmp/board.json npm start       # board path via env instead of --flag
 npm start -- --board /tmp/board.json --port 8080   # custom port
+npm start -- --config repos.json              # also serve repo metadata at /api/config
 npm run board:build                           # build only, without starting the server
 ```
 
