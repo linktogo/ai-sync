@@ -403,6 +403,43 @@ test('a repo with no recognised marker file is not installed', async () => {
   await rm(ws, { recursive: true, force: true });
 });
 
+test('bootstrap installs hooks per repo and initializes the board (skipped on dry-run)', async () => {
+  const ws = await mkdtemp(path.join(tmpdir(), 'ws-'));
+  const installed = [];
+  let inited;
+  await bootstrap(config, {
+    workspaceDir: ws,
+    clone: async () => {},
+    exec: async () => {},
+    exists: async () => false,
+    installRepoHooks: async (dir, repo, boardPath) => { installed.push({ dir, repo, boardPath }); },
+    initBoard: async (boardPath, names) => { inited = { boardPath, names }; },
+    logger: silentLogger(),
+  });
+  const boardPath = path.join(ws, '.ai-sync', 'board.json');
+  assert.deepEqual(installed, [
+    { dir: path.join(ws, 'a'), repo: 'a', boardPath },
+    { dir: path.join(ws, 'b'), repo: 'b', boardPath },
+  ]);
+  assert.deepEqual(inited, { boardPath, names: ['a', 'b'] });
+  await rm(ws, { recursive: true, force: true });
+});
+
+test('bootstrap dry-run does not install hooks or init the board', async () => {
+  const installed = [];
+  let inited = false;
+  await bootstrap(config, {
+    workspaceDir: '/tmp/ws-dry',
+    dryRun: true,
+    clone: async () => {}, exec: async () => {}, exists: async () => false,
+    installRepoHooks: async () => { installed.push(1); },
+    initBoard: async () => { inited = true; },
+    logger: silentLogger(),
+  });
+  assert.equal(installed.length, 0);
+  assert.equal(inited, false);
+});
+
 test('main requires --config', async () => {
   await assert.rejects(
     () => main([], { loadConfig: async () => config, logger: silentLogger() }),
