@@ -1,3 +1,6 @@
 node_modules/
 wk/
 apps/board/dist/
+
+# Visual brainstorming companion
+.superpowers/
