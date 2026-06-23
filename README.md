@@ -72,6 +72,33 @@ node bin/workspace.js --config repos.json --workspace ~/work/oclair --worktree f
 # → adds oc-be.feat-login/, then: cd "~/work/oclair/oc-be.feat-login" && claude
 ```
 
+### Status tracking
+
+Bootstrap wires each checkout to report its kanban status into a shared
+`board.json` at `<workspace>/.ai-sync/board.json` (the four states are `todo`,
+`inprogress`, `question`, `done`). It does this by merging Claude Code hooks into
+each repo's `.claude/settings.local.json`, so a running session updates the board
+automatically:
+
+- `UserPromptSubmit` → `inprogress` (work resumed)
+- `Notification` (permission/idle prompt) → `question` (waiting on you)
+- `Stop` → `question`
+
+The hooks shell out to this CLI's `status` subcommand, which you can also run by
+hand — e.g. to mark a repo done:
+
+```bash
+node bin/workspace.js status oc-be done --board ~/work/oclair/.ai-sync/board.json
+# or, if installed on PATH: ai-workspace status oc-be done --board <board.json>
+```
+
+The board is seeded (`todo` for every repo) at bootstrap and updated atomically.
+Hook install and seeding are skipped on `--dry-run`. Only repos listed in the
+config are tracked — a directory you create under the workspace by hand gets no
+hooks and never appears on the board.
+
+> **To see it in the dashboard, point the server at this same file** — see below.
+
 ## Board dashboard
 
 A read-only kanban dashboard (Vue 3 + Tailwind) that displays each repo's status
@@ -94,6 +121,12 @@ With no `--board`/`AI_SYNC_BOARD`, the server defaults to `board.json` in the cu
 directory and serves an empty board until that file exists. If the chosen port is
 already in use, the server falls back to the next free port (à la Angular CLI) and
 prints the one it settled on.
+
+> **Common gotcha:** the board written by [Status tracking](#status-tracking) lives at
+> `<workspace>/.ai-sync/board.json`, *not* in the current directory. To view it, start the
+> server with `--board <workspace>/.ai-sync/board.json` (or set `AI_SYNC_BOARD`). Pointing
+> the server at the default `./board.json` is the usual reason the dashboard looks empty even
+> though sessions are running.
 
 `board.json` has the shape `{ version: 1, repos: { <name>: { status, updatedAt, lastEvent, events } } }`,
 where `status` is one of `todo`, `inprogress`, `question`, `done` and `events` is a bounded
