@@ -21,3 +21,32 @@ test('useBoard polls on the interval', async () => {
   stop();
   vi.useRealTimers();
 });
+
+test('useBoard reports no transitions on the first fetch (baseline)', async () => {
+  const fetchImpl = vi.fn().mockResolvedValue({ json: async () => ({ repos: { a: { status: 'question' } } }) });
+  const { transitions, stop } = useBoard({ intervalMs: 100000, fetchImpl });
+  await nextTick(); await Promise.resolve(); await nextTick();
+  expect(transitions.value).toEqual([]);
+  stop();
+});
+
+test('useBoard detects transitions into question/done on later fetches', async () => {
+  const responses = [
+    { repos: { a: { status: 'inprogress' }, b: { status: 'todo' } } },
+    { repos: { a: { status: 'question' }, b: { status: 'done' } } },
+  ];
+  const fetchImpl = vi.fn().mockImplementation(() => Promise.resolve({ json: async () => responses.shift() }));
+  const { transitions, refresh, stop } = useBoard({ intervalMs: 100000, fetchImpl });
+  await nextTick(); await Promise.resolve(); await nextTick();
+  await refresh();
+  expect(transitions.value).toEqual([{ name: 'a', status: 'question' }, { name: 'b', status: 'done' }]);
+  stop();
+});
+
+test('useBoard sets connected=false on a fetch error', async () => {
+  const fetchImpl = vi.fn().mockRejectedValue(new Error('down'));
+  const { connected, stop } = useBoard({ intervalMs: 100000, fetchImpl });
+  await nextTick(); await Promise.resolve(); await nextTick();
+  expect(connected.value).toBe(false);
+  stop();
+});

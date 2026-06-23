@@ -60,6 +60,42 @@ test('unknown path falls back to index.html (SPA)', async () => {
   await rm(dir, { recursive: true, force: true });
 });
 
+test('GET /api/config maps repos.json to name -> metadata', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
+  const configPath = path.join(dir, 'repos.json');
+  await writeFile(configPath, JSON.stringify({
+    repos: [{ name: 'oc-be', url: 'https://h/oc-be.git', technologies: ['nestjs'], targets: ['claude'] }],
+  }));
+  const server = createBoardServer({ boardPath: path.join(dir, 'board.json'), distDir: dir, configPath });
+  const port = await listen(server);
+  const res = await fetch(`http://127.0.0.1:${port}/api/config`);
+  assert.deepEqual(await res.json(), {
+    repos: { 'oc-be': { url: 'https://h/oc-be.git', technologies: ['nestjs'], targets: ['claude'] } },
+  });
+  server.close();
+  await rm(dir, { recursive: true, force: true });
+});
+
+test('GET /api/config returns empty repos when no config is configured', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
+  const server = createBoardServer({ boardPath: path.join(dir, 'board.json'), distDir: dir });
+  const port = await listen(server);
+  const res = await fetch(`http://127.0.0.1:${port}/api/config`);
+  assert.deepEqual(await res.json(), { repos: {} });
+  server.close();
+  await rm(dir, { recursive: true, force: true });
+});
+
+test('GET /api/config returns empty repos when the config file is missing', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
+  const server = createBoardServer({ boardPath: path.join(dir, 'board.json'), distDir: dir, configPath: path.join(dir, 'nope.json') });
+  const port = await listen(server);
+  const res = await fetch(`http://127.0.0.1:${port}/api/config`);
+  assert.deepEqual(await res.json(), { repos: {} });
+  server.close();
+  await rm(dir, { recursive: true, force: true });
+});
+
 test('startFromArgv falls back to the next port when the chosen one is busy', async () => {
   const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
   const blocker = createServer((_req, res) => res.end());

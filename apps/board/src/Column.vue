@@ -4,7 +4,9 @@ defineProps({
   title: { type: String, required: true },
   accent: { type: String, default: 'bg-slate-100' },
   entries: { type: Array, required: true }, // [{ name, repo }]
+  now: { type: Number, default: () => Date.now() },
 });
+defineEmits(['open']);
 </script>
 
 <template>
@@ -13,7 +15,7 @@ defineProps({
       {{ title }} <span class="text-slate-400">({{ entries.length }})</span>
     </h2>
     <div class="flex flex-col gap-2 bg-slate-50 p-2 rounded-b-md min-h-[4rem]">
-      <Card v-for="e in entries" :key="e.name" :name="e.name" :repo="e.repo" />
+      <Card v-for="e in entries" :key="e.name" :name="e.name" :repo="e.repo" :now="now" @open="$emit('open', $event)" />
     </div>
   </section>
 </template>

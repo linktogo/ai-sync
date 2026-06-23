@@ -86,6 +86,7 @@ npm start                                     # build + serve on http://localhos
 npm start -- --board /tmp/board.json          # use a specific board file
 AI_SYNC_BOARD=/tmp/board.json npm start       # board path via env instead of --flag
 npm start -- --board /tmp/board.json --port 8080   # custom port
+npm start -- --config repos.json              # also serve repo metadata at /api/config
 npm run board:build                           # build only, without starting the server
 ```
 
@@ -94,9 +95,21 @@ directory and serves an empty board until that file exists. If the chosen port i
 already in use, the server falls back to the next free port (à la Angular CLI) and
 prints the one it settled on.
 
-`board.json` has the shape `{ version: 1, repos: { <name>: { status, updatedAt, lastEvent } } }`,
-where `status` is one of `todo`, `inprogress`, `question`, `done`. The dashboard only
-reads it — writers (e.g. the `board.js` state module) work whether or not the server is running.
+`board.json` has the shape `{ version: 1, repos: { <name>: { status, updatedAt, lastEvent, events } } }`,
+where `status` is one of `todo`, `inprogress`, `question`, `done` and `events` is a bounded
+(last 20, newest-first) per-repo history of `{ event, at }` entries. The version stays `1`:
+the `events` field is additive and legacy files are backfilled transparently on read. The
+dashboard only reads it — writers (e.g. the `board.js` state module) work whether or not the
+server is running.
+
+Beyond the plain board, the dashboard fires a **browser notification** (with an optional,
+off-by-default sound toggle persisted in `localStorage`) and a tab-title badge whenever a repo
+transitions into `question` (an agent is blocked on you) or `done`. A **summary header** shows
+per-status counts and a done-progress bar, a **filter bar** narrows the board by repo name or
+technology, and clicking a card opens a **detail side panel** with the repo URL, technology/target
+chips, and its event timeline. When started with `--config repos.json` (or `AI_SYNC_CONFIG`), the
+server also exposes `GET /api/config` to power the links and technology filter; without it the
+board still runs in a degraded mode (no links/filter).
 
 ## Tests
 

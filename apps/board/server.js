@@ -21,6 +21,22 @@ async function serveBoard(boardPath, res) {
   res.end(body);
 }
 
+async function serveConfig(configPath, res) {
+  const repos = {};
+  if (configPath) {
+    try {
+      const parsed = JSON.parse(await readFile(configPath, 'utf8'));
+      for (const r of parsed.repos ?? []) {
+        if (r?.name) repos[r.name] = { url: r.url, technologies: r.technologies ?? [], targets: r.targets ?? [] };
+      }
+    } catch (err) {
+      if (err.code !== 'ENOENT') throw err;
+    }
+  }
+  res.writeHead(200, { 'content-type': 'application/json' });
+  res.end(JSON.stringify({ repos }));
+}
+
 async function serveStatic(distDir, pathname, res) {
   const rel = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
   const file = path.join(distDir, rel);
@@ -40,11 +56,12 @@ async function serveStatic(distDir, pathname, res) {
   }
 }
 
-export function createBoardServer({ boardPath, distDir }) {
+export function createBoardServer({ boardPath, distDir, configPath = null }) {
   return createServer(async (req, res) => {
     try {
       const url = new URL(req.url, 'http://localhost');
       if (url.pathname === '/api/board') return await serveBoard(boardPath, res);
+      if (url.pathname === '/api/config') return await serveConfig(configPath, res);
       return await serveStatic(distDir, url.pathname, res);
     } catch (err) {
       res.writeHead(500, { 'content-type': 'text/plain' });
@@ -56,11 +73,16 @@ export function createBoardServer({ boardPath, distDir }) {
 export function startFromArgv(argv, { log = console.log } = {}) {
   const { values } = parseArgs({
     args: argv,
-    options: { board: { type: 'string' }, port: { type: 'string', default: '4180' }, dist: { type: 'string' } },
+    options: {
+      board: { type: 'string' }, port: { type: 'string', default: '4180' },
+      dist: { type: 'string' }, config: { type: 'string' },
+    },
   });
   const boardPath = path.resolve(values.board ?? process.env.AI_SYNC_BOARD ?? 'board.json');
+  const configSrc = values.config ?? process.env.AI_SYNC_CONFIG ?? null;
+  const configPath = configSrc ? path.resolve(configSrc) : null;
   const distDir = values.dist ?? path.join(path.dirname(fileURLToPath(import.meta.url)), 'dist');
-  const server = createBoardServer({ boardPath, distDir });
+  const server = createBoardServer({ boardPath, distDir, configPath });
 
   // Like the Angular CLI: if the port is taken, fall back to the next one.
   const maxAttempts = 10;

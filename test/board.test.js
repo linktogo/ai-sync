@@ -16,9 +16,28 @@ test('resolveBoardPath throws when neither is set', () => {
   assert.throws(() => resolveBoardPath({ env: {} }), /No board path/);
 });
 
-test('readBoard parses an existing board and fills defaults', async () => {
+test('readBoard parses an existing board and backfills an empty events array', async () => {
   const read = async () => JSON.stringify({ repos: { a: { status: 'done' } } });
-  assert.deepEqual(await readBoard('/x', { read }), { version: 1, repos: { a: { status: 'done' } } });
+  assert.deepEqual(await readBoard('/x', { read }), { version: 1, repos: { a: { status: 'done', events: [] } } });
+});
+
+test('readBoard backfills events from lastEvent for legacy files', async () => {
+  const read = async () => JSON.stringify({ repos: { a: { status: 'done', lastEvent: 'pushed', updatedAt: 'T' } } });
+  const board = await readBoard('/x', { read });
+  assert.deepEqual(board.repos.a.events, [{ event: 'pushed', at: 'T' }]);
+});
+
+test('readBoard backfills with a null timestamp when updatedAt is absent', async () => {
+  const read = async () => JSON.stringify({ repos: { a: { status: 'done', lastEvent: 'pushed' } } });
+  const board = await readBoard('/x', { read });
+  assert.deepEqual(board.repos.a.events, [{ event: 'pushed', at: null }]);
+});
+
+test('readBoard leaves an existing events array untouched', async () => {
+  const events = [{ event: 'x', at: 'T' }];
+  const read = async () => JSON.stringify({ repos: { a: { status: 'done', lastEvent: 'x', updatedAt: 'T', events } } });
+  const board = await readBoard('/x', { read });
+  assert.deepEqual(board.repos.a.events, events);
 });
 test('readBoard returns an empty board when the file is missing', async () => {
   const read = async () => { const e = new Error('nope'); e.code = 'ENOENT'; throw e; };
@@ -53,8 +72,25 @@ test('setStatus reads, applies the transition with timestamp + event, and writes
     write: async (_f, data) => { written = data; },
     move: async () => {}, ensureDir: async () => {}, tmpSuffix: '.tmp',
   });
-  assert.deepEqual(board.repos['oc-be'], { status: 'question', updatedAt: '2026-06-16T10:00:00Z', lastEvent: 'Notification' });
+  assert.deepEqual(board.repos['oc-be'], {
+    status: 'question',
+    updatedAt: '2026-06-16T10:00:00Z',
+    lastEvent: 'Notification',
+    events: [{ event: 'Notification', at: '2026-06-16T10:00:00Z' }],
+  });
   assert.match(written, /"status": "question"/);
+});
+
+test('setStatus prepends events newest-first and caps the history', async () => {
+  const prior = Array.from({ length: 20 }, (_, i) => ({ event: `e${i}`, at: 'old' }));
+  const board = await setStatus('/x', 'a', 'done', {
+    lastEvent: 'pushed', now: () => 'NOW',
+    read: async () => JSON.stringify({ version: 1, repos: { a: { status: 'inprogress', events: prior } } }),
+    write: async () => {}, move: async () => {}, ensureDir: async () => {}, tmpSuffix: '.tmp',
+  });
+  assert.equal(board.repos.a.events.length, 20);
+  assert.deepEqual(board.repos.a.events[0], { event: 'pushed', at: 'NOW' });
+  assert.equal(board.repos.a.events[19].event, 'e18'); // oldest entry dropped
 });
 test('setStatus defaults lastEvent to manual', async () => {
   const board = await setStatus('/x', 'a', 'done', {
@@ -80,8 +116,8 @@ test('initRepos adds missing repos as todo without clobbering existing ones', as
     read: async () => JSON.stringify({ version: 1, repos: { a: { status: 'done', updatedAt: 'old', lastEvent: 'done' } } }),
     write: async () => {}, move: async () => {}, ensureDir: async () => {}, tmpSuffix: '.tmp',
   });
-  assert.deepEqual(board.repos.a, { status: 'done', updatedAt: 'old', lastEvent: 'done' });
-  assert.deepEqual(board.repos.b, { status: 'todo', updatedAt: 'T', lastEvent: 'init' });
+  assert.deepEqual(board.repos.a, { status: 'done', updatedAt: 'old', lastEvent: 'done', events: [{ event: 'done', at: 'old' }] });
+  assert.deepEqual(board.repos.b, { status: 'todo', updatedAt: 'T', lastEvent: 'init', events: [{ event: 'init', at: 'T' }] });
 });
 test('initRepos stamps an ISO timestamp by default', async () => {
   const board = await initRepos('/x', ['a'], {
