@@ -471,6 +471,40 @@ test('main does not prompt when --repo is provided even interactively', async ()
   assert.equal(received.repoFilter, 'a');
 });
 
+test('main routes the status subcommand to setStatus', async () => {
+  const calls = [];
+  const code = await main(['status', 'oc-be', 'question', '--board', '/b.json', '--event', 'Stop'], {
+    setStatus: async (boardPath, repo, state, o) => { calls.push({ boardPath, repo, state, o }); },
+    logger: silentLogger(),
+  });
+  assert.equal(code, 0);
+  assert.deepEqual(calls, [{ boardPath: path.resolve('/b.json'), repo: 'oc-be', state: 'question', o: { lastEvent: 'Stop' } }]);
+});
+
+test('status subcommand requires repo and state', async () => {
+  await assert.rejects(
+    () => main(['status', 'oc-be', '--board', '/b.json'], { setStatus: async () => {}, logger: silentLogger() }),
+    /Usage: .*status <repo> <state>/,
+  );
+});
+
+test('status subcommand defaults lastEvent to manual', async () => {
+  let received;
+  await main(['status', 'a', 'done', '--board', '/b.json'], {
+    setStatus: async (_p, _r, _s, o) => { received = o; }, logger: silentLogger(),
+  });
+  assert.deepEqual(received, { lastEvent: 'manual' });
+});
+
+test('main accepts an explicit bootstrap subcommand', async () => {
+  let received;
+  await main(['bootstrap', '--config', 'repos.json', '--workspace', '/tmp/ws'], {
+    loadConfig: async () => config, runBootstrap: async (_c, opts) => { received = opts; return {}; },
+    logger: silentLogger(),
+  });
+  assert.equal(received.editor, 'claude');
+});
+
 test('main defaults editor to claude and install to true', async () => {
   let received;
   await main(['--config', 'repos.json', '--workspace', '/tmp/ws'], {

@@ -1,10 +1,13 @@
 import { parseArgs } from 'node:util';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { mkdir, access, rm } from 'node:fs/promises';
 import { clone as defaultClone, defaultExec } from './git.js';
 import { loadConfig as defaultLoadConfig } from './config.js';
 import { EDITORS, launchCommand } from './platform.js';
 import { planInstall } from './installers.js';
+import { setStatus as defaultSetStatus, resolveBoardPath, initRepos } from './board.js';
+import { installHooks as defaultInstallHooks } from './hooks.js';
 
 async function pathExists(p) {
   try {
@@ -133,6 +136,28 @@ export async function bootstrap(config, options = {}) {
 }
 
 export async function main(argv, deps = {}) {
+  const [sub, ...rest] = argv;
+  if (sub === 'status') return runStatus(rest, deps);
+  if (sub === 'bootstrap') return runBootstrapMain(rest, deps);
+  return runBootstrapMain(argv, deps);
+}
+
+async function runStatus(argv, deps = {}) {
+  const { setStatus = defaultSetStatus, logger = console } = deps;
+  const { values, positionals } = parseArgs({
+    args: argv,
+    allowPositionals: true,
+    options: { board: { type: 'string' }, event: { type: 'string' } },
+  });
+  const [repo, state] = positionals;
+  if (!repo || !state) throw new Error('Usage: ai-workspace status <repo> <state> [--board <path>] [--event <name>]');
+  const boardPath = resolveBoardPath({ board: values.board });
+  await setStatus(boardPath, repo, state, { lastEvent: values.event ?? 'manual' });
+  logger.log(`${repo} → ${state}`);
+  return 0;
+}
+
+async function runBootstrapMain(argv, deps = {}) {
   const {
     loadConfig = defaultLoadConfig,
     runBootstrap = bootstrap,
