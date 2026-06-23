@@ -24,3 +24,20 @@ export function hookSettings(repo, boardPath, { command = 'ai-workspace' } = {})
   }
   return { hooks };
 }
+
+export async function installHooks(checkoutDir, repo, boardPath, opts = {}) {
+  const { read = readFile, write = writeFile, ensureDir = mkdir, command } = opts;
+  const dir = path.join(checkoutDir, '.claude');
+  const file = path.join(dir, 'settings.local.json');
+  let existing = {};
+  try {
+    existing = JSON.parse(await read(file, 'utf8'));
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
+  }
+  const { hooks } = hookSettings(repo, boardPath, { command });
+  const merged = { ...existing, hooks: { ...existing.hooks, ...hooks } };
+  await ensureDir(dir, { recursive: true });
+  await write(file, JSON.stringify(merged, null, 2) + '\n');
+  return { file, merged };
+}
