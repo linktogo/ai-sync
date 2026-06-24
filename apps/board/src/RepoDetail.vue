@@ -2,7 +2,7 @@
 import { onMounted, onUnmounted } from 'vue';
 import { relativeTime } from './useRelativeTime.js';
 
-const props = defineProps({
+defineProps({
   name: { type: String, default: null },
   repo: { type: Object, default: null },
   meta: { type: Object, default: null },

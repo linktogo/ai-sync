@@ -4,3 +4,4 @@ apps/board/dist/
 
 # Visual brainstorming companion
 .superpowers/
+.claude/settings.json

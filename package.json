@@ -11,6 +11,7 @@
     "ai-workspace": "bin/workspace.js"
   },
   "scripts": {
+    "lint": "eslint src bin test eslint.config.js",
     "prestart": "npm run board:build",
     "start": "node apps/board/server.js",
     "sync": "node bin/sync.js",
@@ -22,5 +23,10 @@
   "dependencies": {
     "@inquirer/prompts": "^7.2.0",
     "gray-matter": "^4.0.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "eslint": "^9.39.4",
+    "globals": "^17.7.0"
   }
 }
