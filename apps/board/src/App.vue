@@ -64,7 +64,7 @@ const selectedMeta = computed(() => (selected.value ? config.value[selected.valu
   <main class="min-h-screen bg-slate-100 p-4">
     <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
       <h1 class="text-lg font-bold text-slate-800">ai-sync · workspace board</h1>
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 flex-wrap">
         <FilterBar
           :name="nameFilter" :tech="techFilter" :technologies="technologies"
           @update:name="nameFilter = $event" @update:tech="techFilter = $event"
@@ -87,7 +87,7 @@ const selectedMeta = computed(() => (selected.value ? config.value[selected.valu
 
     <SummaryHeader :repos="repos" />
 
-    <div class="flex gap-3">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
       <Column
         v-for="c in grouped" :key="c.status"
         :title="c.title" :accent="c.accent" :entries="c.entries" :now="now"

@@ -10,7 +10,7 @@ defineEmits(['open']);
 </script>
 
 <template>
-  <section class="flex-1 min-w-[14rem]">
+  <section class="min-w-0">
     <h2 :class="['rounded-t-md px-3 py-2 text-sm font-semibold text-slate-700', accent]">
       {{ title }} <span class="text-slate-400">({{ entries.length }})</span>
     </h2>
