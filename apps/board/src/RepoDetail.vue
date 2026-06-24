@@ -18,7 +18,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey));
 <template>
   <div v-if="name" class="fixed inset-0 z-20">
     <div data-test="overlay" class="absolute inset-0 bg-slate-900/30" @click="emit('close')"></div>
-    <aside class="absolute right-0 top-0 h-full w-80 bg-white shadow-xl p-4 overflow-y-auto">
+    <aside class="absolute right-0 top-0 h-full w-full sm:w-80 max-w-full bg-white shadow-xl p-4 overflow-y-auto">
       <button class="float-right text-slate-400 hover:text-slate-600" @click="emit('close')">✕</button>
       <h2 class="font-bold text-slate-800">{{ name }}</h2>
       <a v-if="meta?.url" :href="meta.url" target="_blank" rel="noopener"

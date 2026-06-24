@@ -8,13 +8,13 @@ defineEmits(['update:name', 'update:tech']);
 </script>
 
 <template>
-  <div class="flex items-center gap-2">
+  <div class="flex items-center gap-2 flex-wrap">
     <input
       data-test="search"
       :value="name"
       @input="$emit('update:name', $event.target.value)"
       placeholder="🔍 filtrer un repo…"
-      class="border border-slate-300 rounded-md px-3 py-1.5 text-sm bg-white"
+      class="border border-slate-300 rounded-md px-3 py-1.5 text-sm bg-white flex-1 min-w-0"
     />
     <select
       data-test="tech"

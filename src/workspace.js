@@ -1,10 +1,13 @@
 import { parseArgs } from 'node:util';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { mkdir, access, rm } from 'node:fs/promises';
 import { clone as defaultClone, defaultExec } from './git.js';
 import { loadConfig as defaultLoadConfig } from './config.js';
 import { EDITORS, launchCommand } from './platform.js';
 import { planInstall } from './installers.js';
+import { setStatus as defaultSetStatus, resolveBoardPath, initRepos } from './board.js';
+import { installHooks as defaultInstallHooks } from './hooks.js';
 
 async function pathExists(p) {
   try {
@@ -43,6 +46,10 @@ export async function bootstrap(config, options = {}) {
     remove = defaultRemove,
     onExisting,
     timestamp = formatTimestamp,
+    boardPath: boardPathOption,
+    installRepoHooks = defaultInstallHooks,
+    initBoard = initRepos,
+    hookCommand,
     logger = console,
   } = options;
 
@@ -60,6 +67,11 @@ export async function bootstrap(config, options = {}) {
     : config.repos;
 
   if (!dryRun) await mkdir(workspaceDir, { recursive: true });
+
+  // The board lives beside the checkouts so the viewer and the per-repo hooks
+  // agree on one path; the hooks shell out to this CLI to record transitions.
+  const boardPath = boardPathOption ?? path.join(workspaceDir, '.ai-sync', 'board.json');
+  const hookCmd = hookCommand ?? `node ${fileURLToPath(new URL('../bin/workspace.js', import.meta.url))}`;
 
   const results = [];
   const workDirs = [];
@@ -105,6 +117,8 @@ export async function bootstrap(config, options = {}) {
     }
     workDirs.push(workDir);
 
+    if (!dryRun) await installRepoHooks(workDir, repo.name, boardPath, { command: hookCmd });
+
     let installed = false;
     if (install) {
       const plan = await planInstall(workDir, { exists, offline });
@@ -117,6 +131,8 @@ export async function bootstrap(config, options = {}) {
 
     results.push({ repo: repo.name, status, installed });
   }
+
+  if (!dryRun) await initBoard(boardPath, repos.map((r) => r.name));
 
   // Launch at the project directory itself when a single repo is targeted
   // (selected, --repo, or a single worktree); otherwise at the workspace root.
@@ -133,6 +149,28 @@ export async function bootstrap(config, options = {}) {
 }
 
 export async function main(argv, deps = {}) {
+  const [sub, ...rest] = argv;
+  if (sub === 'status') return runStatus(rest, deps);
+  if (sub === 'bootstrap') return runBootstrapMain(rest, deps);
+  return runBootstrapMain(argv, deps);
+}
+
+async function runStatus(argv, deps = {}) {
+  const { setStatus = defaultSetStatus, logger = console } = deps;
+  const { values, positionals } = parseArgs({
+    args: argv,
+    allowPositionals: true,
+    options: { board: { type: 'string' }, event: { type: 'string' } },
+  });
+  const [repo, state] = positionals;
+  if (!repo || !state) throw new Error('Usage: ai-workspace status <repo> <state> [--board <path>] [--event <name>]');
+  const boardPath = resolveBoardPath({ board: values.board });
+  await setStatus(boardPath, repo, state, { lastEvent: values.event ?? 'manual' });
+  logger.log(`${repo} → ${state}`);
+  return 0;
+}
+
+async function runBootstrapMain(argv, deps = {}) {
   const {
     loadConfig = defaultLoadConfig,
     runBootstrap = bootstrap,

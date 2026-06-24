@@ -403,6 +403,43 @@ test('a repo with no recognised marker file is not installed', async () => {
   await rm(ws, { recursive: true, force: true });
 });
 
+test('bootstrap installs hooks per repo and initializes the board (skipped on dry-run)', async () => {
+  const ws = await mkdtemp(path.join(tmpdir(), 'ws-'));
+  const installed = [];
+  let inited;
+  await bootstrap(config, {
+    workspaceDir: ws,
+    clone: async () => {},
+    exec: async () => {},
+    exists: async () => false,
+    installRepoHooks: async (dir, repo, boardPath) => { installed.push({ dir, repo, boardPath }); },
+    initBoard: async (boardPath, names) => { inited = { boardPath, names }; },
+    logger: silentLogger(),
+  });
+  const boardPath = path.join(ws, '.ai-sync', 'board.json');
+  assert.deepEqual(installed, [
+    { dir: path.join(ws, 'a'), repo: 'a', boardPath },
+    { dir: path.join(ws, 'b'), repo: 'b', boardPath },
+  ]);
+  assert.deepEqual(inited, { boardPath, names: ['a', 'b'] });
+  await rm(ws, { recursive: true, force: true });
+});
+
+test('bootstrap dry-run does not install hooks or init the board', async () => {
+  const installed = [];
+  let inited = false;
+  await bootstrap(config, {
+    workspaceDir: '/tmp/ws-dry',
+    dryRun: true,
+    clone: async () => {}, exec: async () => {}, exists: async () => false,
+    installRepoHooks: async () => { installed.push(1); },
+    initBoard: async () => { inited = true; },
+    logger: silentLogger(),
+  });
+  assert.equal(installed.length, 0);
+  assert.equal(inited, false);
+});
+
 test('main requires --config', async () => {
   await assert.rejects(
     () => main([], { loadConfig: async () => config, logger: silentLogger() }),
@@ -469,6 +506,40 @@ test('main does not prompt when --repo is provided even interactively', async ()
 
   assert.equal(prompted, false);
   assert.equal(received.repoFilter, 'a');
+});
+
+test('main routes the status subcommand to setStatus', async () => {
+  const calls = [];
+  const code = await main(['status', 'oc-be', 'question', '--board', '/b.json', '--event', 'Stop'], {
+    setStatus: async (boardPath, repo, state, o) => { calls.push({ boardPath, repo, state, o }); },
+    logger: silentLogger(),
+  });
+  assert.equal(code, 0);
+  assert.deepEqual(calls, [{ boardPath: path.resolve('/b.json'), repo: 'oc-be', state: 'question', o: { lastEvent: 'Stop' } }]);
+});
+
+test('status subcommand requires repo and state', async () => {
+  await assert.rejects(
+    () => main(['status', 'oc-be', '--board', '/b.json'], { setStatus: async () => {}, logger: silentLogger() }),
+    /Usage: .*status <repo> <state>/,
+  );
+});
+
+test('status subcommand defaults lastEvent to manual', async () => {
+  let received;
+  await main(['status', 'a', 'done', '--board', '/b.json'], {
+    setStatus: async (_p, _r, _s, o) => { received = o; }, logger: silentLogger(),
+  });
+  assert.deepEqual(received, { lastEvent: 'manual' });
+});
+
+test('main accepts an explicit bootstrap subcommand', async () => {
+  let received;
+  await main(['bootstrap', '--config', 'repos.json', '--workspace', '/tmp/ws'], {
+    loadConfig: async () => config, runBootstrap: async (_c, opts) => { received = opts; return {}; },
+    logger: silentLogger(),
+  });
+  assert.equal(received.editor, 'claude');
 });
 
 test('main defaults editor to claude and install to true', async () => {
