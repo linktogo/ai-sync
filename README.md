@@ -109,7 +109,7 @@ exposes `GET /api/board` and serves the built front-end.
 `npm start` builds the front-end (deps install + Vite build) and then serves it:
 
 ```bash
-npm start                                     # build + serve on http://localhost:4180 (board.json in cwd)
+npm start                                     # build + serve on http://localhost:4180 (auto-detects wk/.ai-sync/board.json)
 npm start -- --board /tmp/board.json          # use a specific board file
 AI_SYNC_BOARD=/tmp/board.json npm start       # board path via env instead of --flag
 npm start -- --board /tmp/board.json --port 8080   # custom port
@@ -117,16 +117,13 @@ npm start -- --config repos.json              # also serve repo metadata at /api
 npm run board:build                           # build only, without starting the server
 ```
 
-With no `--board`/`AI_SYNC_BOARD`, the server defaults to `board.json` in the current
-directory and serves an empty board until that file exists. If the chosen port is
-already in use, the server falls back to the next free port (à la Angular CLI) and
-prints the one it settled on.
-
-> **Common gotcha:** the board written by [Status tracking](#status-tracking) lives at
-> `<workspace>/.ai-sync/board.json`, *not* in the current directory. To view it, start the
-> server with `--board <workspace>/.ai-sync/board.json` (or set `AI_SYNC_BOARD`). Pointing
-> the server at the default `./board.json` is the usual reason the dashboard looks empty even
-> though sessions are running.
+**Board path resolution** (first match wins): `--board <path>` → `AI_SYNC_BOARD` env →
+auto-detected `wk/.ai-sync/board.json` (the workspace board that [Status tracking](#status-tracking)
+hooks write to) → `board.json` in the current directory. So a plain `npm start` from the repo
+root picks up a live `wk/` workspace automatically; you only need `--board`/`AI_SYNC_BOARD` for a
+workspace somewhere else. The startup log prints the resolved path (`board on … (data: …)`) — check
+it if the board looks empty. If the chosen port is already in use, the server falls back to the next
+free port (à la Angular CLI) and prints the one it settled on, so avoid starting a second instance.
 
 `board.json` has the shape `{ version: 1, repos: { <name>: { status, updatedAt, lastEvent, events } } }`,
 where `status` is one of `todo`, `inprogress`, `question`, `done` and `events` is a bounded
