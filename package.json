@@ -23,7 +23,7 @@
     "wk": "node apps/workspace/bin/workspace.js --config repos.json --workspace wk",
     "board:build": "nx run board:build",
     "test:board": "nx run board:test",
-    "publish": "echo 'Publishing is not yet set up for this workspace (private package, no registry configured) — see docs/superpowers/specs/2026-07-21-nx-migration-design.md sub-project 2' && exit 1"
+    "publish:verdaccio": "npm publish --workspace @ai-sync/git --workspace @ai-sync/renderers --workspace @ai-sync/config --workspace @ai-sync/skill-sync --workspace @ai-sync/workspace-bootstrap --registry http://localhost:4873"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

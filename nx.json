@@ -59,5 +59,6 @@
         "testMode": "run"
       }
     }
-  ]
+  ],
+  "analytics": false
 }

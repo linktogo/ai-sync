@@ -1,7 +1,9 @@
 {
   "name": "@ai-sync/git",
   "version": "0.0.1",
-  "private": true,
   "type": "module",
-  "main": "./src/git.js"
+  "main": "./src/git.js",
+  "publishConfig": {
+    "registry": "http://localhost:4873"
+  }
 }

@@ -1,7 +1,9 @@
 {
   "name": "@ai-sync/renderers",
   "version": "0.0.1",
-  "private": true,
   "type": "module",
-  "main": "./src/renderers/index.js"
+  "main": "./src/renderers/index.js",
+  "publishConfig": {
+    "registry": "http://localhost:4873"
+  }
 }
