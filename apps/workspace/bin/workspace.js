@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { select } from '@inquirer/prompts';
-import { main } from '../src/workspace.js';
+import { main } from '../src/main.js';
 
 // Interactive single-project picker shown when --repo is omitted on a TTY.
 function selectRepo(repos) {

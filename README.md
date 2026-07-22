@@ -33,10 +33,10 @@ Both commands read a JSON config (see `repos.json`) describing the target repos:
 ## Usage
 
 ```bash
-node bin/sync.js --config repos.json          # clone, generate, branch, commit, push
-node bin/sync.js --config repos.json --pr      # also open a PR via gh
-node bin/sync.js --config repos.json --dry-run # preview generated files, no git
-node bin/sync.js --config repos.json --repo oc-be   # one repo only
+node apps/sync/bin/sync.js --config repos.json          # clone, generate, branch, commit, push
+node apps/sync/bin/sync.js --config repos.json --pr      # also open a PR via gh
+node apps/sync/bin/sync.js --config repos.json --dry-run # preview generated files, no git
+node apps/sync/bin/sync.js --config repos.json --repo oc-be   # one repo only
 ```
 
 ## Workspace bootstrap
@@ -51,12 +51,12 @@ refreshes their dependencies), so the same command both creates a new workspace
 and resumes an existing one.
 
 ```bash
-node bin/workspace.js --config repos.json --workspace ~/work/oclair                 # clone + install, prints `cd … && claude`
-node bin/workspace.js --config repos.json --workspace ~/work/oclair --editor vscode  # prints `code …`
-node bin/workspace.js --config repos.json --workspace ~/work/oclair --repo oc-be     # one repo only
-node bin/workspace.js --config repos.json --workspace ~/work/oclair --no-install     # skip dependency install
-node bin/workspace.js --config repos.json --workspace ~/work/oclair --dry-run         # preview clone/install actions, no side effects
-node bin/workspace.js --config repos.json --workspace ~/work/oclair --offline        # strict offline: fail if a dep is not already cached
+node apps/workspace/bin/workspace.js --config repos.json --workspace ~/work/oclair                 # clone + install, prints `cd … && claude`
+node apps/workspace/bin/workspace.js --config repos.json --workspace ~/work/oclair --editor vscode  # prints `code …`
+node apps/workspace/bin/workspace.js --config repos.json --workspace ~/work/oclair --repo oc-be     # one repo only
+node apps/workspace/bin/workspace.js --config repos.json --workspace ~/work/oclair --no-install     # skip dependency install
+node apps/workspace/bin/workspace.js --config repos.json --workspace ~/work/oclair --dry-run         # preview clone/install actions, no side effects
+node apps/workspace/bin/workspace.js --config repos.json --workspace ~/work/oclair --offline        # strict offline: fail if a dep is not already cached
 ```
 
 ### Worktrees (Claude Code)
@@ -68,7 +68,7 @@ worktree, and points the launch command at it. Re-running reuses an existing
 worktree. Without the flag the tool prints a tip suggesting it.
 
 ```bash
-node bin/workspace.js --config repos.json --workspace ~/work/oclair --worktree feat/login
+node apps/workspace/bin/workspace.js --config repos.json --workspace ~/work/oclair --worktree feat/login
 # → adds oc-be.feat-login/, then: cd "~/work/oclair/oc-be.feat-login" && claude
 ```
 
@@ -88,7 +88,7 @@ The hooks shell out to this CLI's `status` subcommand, which you can also run by
 hand — e.g. to mark a repo done:
 
 ```bash
-node bin/workspace.js status oc-be done --board ~/work/oclair/.ai-sync/board.json
+node apps/workspace/bin/workspace.js status oc-be done --board ~/work/oclair/.ai-sync/board.json
 # or, if installed on PATH: ai-workspace status oc-be done --board <board.json>
 ```
 
@@ -109,7 +109,7 @@ exposes `GET /api/board` and serves the built front-end.
 `npm start` builds the front-end (deps install + Vite build) and then serves it:
 
 ```bash
-npm start                                     # build + serve on http://localhost:4180 (board.json in cwd)
+npm start                                     # build + serve on http://localhost:4180 (auto-detects wk/.ai-sync/board.json)
 npm start -- --board /tmp/board.json          # use a specific board file
 AI_SYNC_BOARD=/tmp/board.json npm start       # board path via env instead of --flag
 npm start -- --board /tmp/board.json --port 8080   # custom port
@@ -117,16 +117,13 @@ npm start -- --config repos.json              # also serve repo metadata at /api
 npm run board:build                           # build only, without starting the server
 ```
 
-With no `--board`/`AI_SYNC_BOARD`, the server defaults to `board.json` in the current
-directory and serves an empty board until that file exists. If the chosen port is
-already in use, the server falls back to the next free port (à la Angular CLI) and
-prints the one it settled on.
-
-> **Common gotcha:** the board written by [Status tracking](#status-tracking) lives at
-> `<workspace>/.ai-sync/board.json`, *not* in the current directory. To view it, start the
-> server with `--board <workspace>/.ai-sync/board.json` (or set `AI_SYNC_BOARD`). Pointing
-> the server at the default `./board.json` is the usual reason the dashboard looks empty even
-> though sessions are running.
+**Board path resolution** (first match wins): `--board <path>` → `AI_SYNC_BOARD` env →
+auto-detected `wk/.ai-sync/board.json` (the workspace board that [Status tracking](#status-tracking)
+hooks write to) → `board.json` in the current directory. So a plain `npm start` from the repo
+root picks up a live `wk/` workspace automatically; you only need `--board`/`AI_SYNC_BOARD` for a
+workspace somewhere else. The startup log prints the resolved path (`board on … (data: …)`) — check
+it if the board looks empty. If the chosen port is already in use, the server falls back to the next
+free port (à la Angular CLI) and prints the one it settled on, so avoid starting a second instance.
 
 `board.json` has the shape `{ version: 1, repos: { <name>: { status, updatedAt, lastEvent, events } } }`,
 where `status` is one of `todo`, `inprogress`, `question`, `done` and `events` is a bounded
@@ -147,6 +144,6 @@ board still runs in a degraded mode (no links/filter).
 ## Tests
 
 ```bash
-npm test          # root suite: 100% coverage gate on src/
-npm run test:board # apps/board suite: server (node:test) + front-end (vitest)
+npm test          # nx run-many -t test: every lib/app, 100% coverage gate each (except board)
+npm run test:board # apps/board suite only: server (node:test) + front-end (vitest)
 ```

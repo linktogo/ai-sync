@@ -1,8 +1,8 @@
 import { parseArgs } from 'node:util';
 import path from 'node:path';
 import os from 'node:os';
-import { loadConfig as defaultLoadConfig } from './config.js';
-import { run as defaultRun } from './pipeline.js';
+import { loadConfig as defaultLoadConfig } from '@ai-sync/config';
+import { run as defaultRun } from '@ai-sync/skill-sync';
 
 export async function main(argv, deps = {}) {
   const {

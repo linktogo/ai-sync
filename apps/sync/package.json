@@ -1,0 +1,11 @@
+{
+  "name": "@ai-sync/sync",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "bin": { "ai-sync": "./bin/sync.js" },
+  "dependencies": {
+    "@ai-sync/config": "*",
+    "@ai-sync/skill-sync": "*"
+  }
+}

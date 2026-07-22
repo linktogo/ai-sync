@@ -1,8 +1,8 @@
 import path from 'node:path';
 import { mkdir, writeFile, rm } from 'node:fs/promises';
-import { clone as defaultClone } from './git.js';
+import { clone as defaultClone } from '@ai-sync/git';
 import { resolveSkills as defaultResolveSkills } from './skills.js';
-import { getRenderer as defaultGetRenderer } from './renderers/index.js';
+import { getRenderer as defaultGetRenderer } from '@ai-sync/renderers';
 
 const BRANCH = 'ai-sync/update-skills';
 const COMMIT_MESSAGE = 'chore: sync AI agent skills';

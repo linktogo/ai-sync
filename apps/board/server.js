@@ -1,8 +1,26 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
+
+// Resolve the board file the server should read. Explicit --board and the
+// AI_SYNC_BOARD env var always win; otherwise auto-detect the workspace board
+// (`wk/.ai-sync/board.json`, where bootstrap's hooks write) so `npm start` with
+// no flags "just works" instead of reading an empty `./board.json`.
+export function resolveServerBoardPath({
+  board,
+  env = process.env,
+  cwd = process.cwd(),
+  exists = existsSync,
+} = {}) {
+  if (board) return path.resolve(cwd, board);
+  if (env.AI_SYNC_BOARD) return path.resolve(cwd, env.AI_SYNC_BOARD);
+  const workspaceBoard = path.resolve(cwd, 'wk', '.ai-sync', 'board.json');
+  if (exists(workspaceBoard)) return workspaceBoard;
+  return path.resolve(cwd, 'board.json');
+}
 
 const MIME = {
   '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
@@ -78,7 +96,7 @@ export function startFromArgv(argv, { log = console.log } = {}) {
       dist: { type: 'string' }, config: { type: 'string' },
     },
   });
-  const boardPath = path.resolve(values.board ?? process.env.AI_SYNC_BOARD ?? 'board.json');
+  const boardPath = resolveServerBoardPath({ board: values.board });
   const configSrc = values.config ?? process.env.AI_SYNC_CONFIG ?? null;
   const configPath = configSrc ? path.resolve(configSrc) : null;
   const distDir = values.dist ?? path.join(path.dirname(fileURLToPath(import.meta.url)), 'dist');

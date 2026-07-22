@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { knownTargets } from './renderers/index.js';
+import { knownTargets } from '@ai-sync/renderers';
 
 export async function loadConfig(filePath) {
   return parseConfig(await readFile(filePath, 'utf8'));

@@ -1,0 +1,12 @@
+{
+  "name": "@ai-sync/config",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./src/config.js",
+  "dependencies": {
+    "@ai-sync/renderers": "*"
+  },
+  "publishConfig": {
+    "registry": "http://localhost:4873"
+  }
+}

@@ -4,7 +4,7 @@ import { createServer } from 'node:http';
 import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { createBoardServer, startFromArgv } from './server.js';
+import { createBoardServer, startFromArgv, resolveServerBoardPath } from './server.js';
 
 function listen(server) {
   return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server.address().port)));
@@ -94,6 +94,37 @@ test('GET /api/config returns empty repos when the config file is missing', asyn
   assert.deepEqual(await res.json(), { repos: {} });
   server.close();
   await rm(dir, { recursive: true, force: true });
+});
+
+test('resolveServerBoardPath: explicit --board wins over everything', () => {
+  const wkBoard = path.resolve('/c', 'wk', '.ai-sync', 'board.json');
+  assert.equal(
+    resolveServerBoardPath({ board: 'x/b.json', env: { AI_SYNC_BOARD: '/e.json' }, cwd: '/c', exists: () => true }),
+    path.resolve('/c', 'x/b.json'),
+  );
+  assert.notEqual(resolveServerBoardPath({ board: 'x/b.json', cwd: '/c', exists: () => true }), wkBoard);
+});
+
+test('resolveServerBoardPath: AI_SYNC_BOARD wins over auto-detect', () => {
+  assert.equal(
+    resolveServerBoardPath({ env: { AI_SYNC_BOARD: '/e/board.json' }, cwd: '/c', exists: () => true }),
+    path.resolve('/c', '/e/board.json'),
+  );
+});
+
+test('resolveServerBoardPath: auto-detects wk/.ai-sync/board.json when present', () => {
+  const wkBoard = path.resolve('/c', 'wk', '.ai-sync', 'board.json');
+  assert.equal(
+    resolveServerBoardPath({ env: {}, cwd: '/c', exists: (p) => p === wkBoard }),
+    wkBoard,
+  );
+});
+
+test('resolveServerBoardPath: falls back to ./board.json when no workspace board exists', () => {
+  assert.equal(
+    resolveServerBoardPath({ env: {}, cwd: '/c', exists: () => false }),
+    path.resolve('/c', 'board.json'),
+  );
 });
 
 test('startFromArgv falls back to the next port when the chosen one is busy', async () => {

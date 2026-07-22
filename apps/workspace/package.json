@@ -1,0 +1,12 @@
+{
+  "name": "@ai-sync/workspace",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "bin": { "ai-workspace": "./bin/workspace.js" },
+  "dependencies": {
+    "@ai-sync/config": "*",
+    "@ai-sync/workspace-bootstrap": "*",
+    "@inquirer/prompts": "^7.2.0"
+  }
+}
