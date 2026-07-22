@@ -6,27 +6,43 @@
   "engines": {
     "node": ">=22"
   },
+  "workspaces": [
+    "apps/*",
+    "libs/*"
+  ],
   "bin": {
-    "ai-sync": "bin/sync.js",
-    "ai-workspace": "bin/workspace.js"
+    "ai-sync": "apps/sync/bin/sync.js",
+    "ai-workspace": "apps/workspace/bin/workspace.js"
   },
   "scripts": {
-    "lint": "eslint src bin test eslint.config.js",
-    "prestart": "npm run board:build",
-    "start": "node apps/board/server.js",
-    "sync": "node bin/sync.js",
-    "wk": "node bin/workspace.js --config repos.json --workspace wk",
-    "board:build": "pnpm --dir apps/board install && pnpm --dir apps/board build",
-    "test": "node --test --experimental-test-coverage --test-coverage-include=\"src/**/*.js\" --test-coverage-lines=100 --test-coverage-functions=100 --test-coverage-branches=100 'test/**/*.test.js'",
-    "test:board": "pnpm --dir apps/board test"
-  },
-  "dependencies": {
-    "@inquirer/prompts": "^7.2.0",
-    "gray-matter": "^4.0.3"
+    "lint": "nx run-many -t lint",
+    "test": "nx run-many -t test",
+    "build": "nx run-many -t build",
+    "start": "nx run board:start",
+    "sync": "node apps/sync/bin/sync.js",
+    "wk": "node apps/workspace/bin/workspace.js --config repos.json --workspace wk",
+    "board:build": "nx run board:build",
+    "test:board": "nx run board:test",
+    "publish": "echo 'Publishing is not yet set up for this workspace (private package, no registry configured) — see docs/superpowers/specs/2026-07-21-nx-migration-design.md sub-project 2' && exit 1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@nx/eslint": "^23.1.0",
+    "@nx/eslint-plugin": "^23.1.0",
+    "@nx/js": "23.1.0",
+    "@nx/vite": "23.1.0",
+    "@nx/vitest": "23.1.0",
+    "@nx/vue": "^23.1.0",
+    "@types/node": "^22.0.0",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "@vue/test-utils": "^2.4.6",
     "eslint": "^9.39.4",
-    "globals": "^17.7.0"
+    "eslint-plugin-vue": "^9.16.1",
+    "globals": "^17.7.0",
+    "jsdom": "^27.1.0",
+    "nx": "^23.1.0",
+    "typescript": "~6.0.3",
+    "vite": "^8.0.0",
+    "vitest": "~4.1.0"
   }
 }

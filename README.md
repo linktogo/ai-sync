@@ -33,10 +33,10 @@ Both commands read a JSON config (see `repos.json`) describing the target repos:
 ## Usage
 
 ```bash
-node bin/sync.js --config repos.json          # clone, generate, branch, commit, push
-node bin/sync.js --config repos.json --pr      # also open a PR via gh
-node bin/sync.js --config repos.json --dry-run # preview generated files, no git
-node bin/sync.js --config repos.json --repo oc-be   # one repo only
+node apps/sync/bin/sync.js --config repos.json          # clone, generate, branch, commit, push
+node apps/sync/bin/sync.js --config repos.json --pr      # also open a PR via gh
+node apps/sync/bin/sync.js --config repos.json --dry-run # preview generated files, no git
+node apps/sync/bin/sync.js --config repos.json --repo oc-be   # one repo only
 ```
 
 ## Workspace bootstrap
@@ -51,12 +51,12 @@ refreshes their dependencies), so the same command both creates a new workspace
 and resumes an existing one.
 
 ```bash
-node bin/workspace.js --config repos.json --workspace ~/work/oclair                 # clone + install, prints `cd … && claude`
-node bin/workspace.js --config repos.json --workspace ~/work/oclair --editor vscode  # prints `code …`
-node bin/workspace.js --config repos.json --workspace ~/work/oclair --repo oc-be     # one repo only
-node bin/workspace.js --config repos.json --workspace ~/work/oclair --no-install     # skip dependency install
-node bin/workspace.js --config repos.json --workspace ~/work/oclair --dry-run         # preview clone/install actions, no side effects
-node bin/workspace.js --config repos.json --workspace ~/work/oclair --offline        # strict offline: fail if a dep is not already cached
+node apps/workspace/bin/workspace.js --config repos.json --workspace ~/work/oclair                 # clone + install, prints `cd … && claude`
+node apps/workspace/bin/workspace.js --config repos.json --workspace ~/work/oclair --editor vscode  # prints `code …`
+node apps/workspace/bin/workspace.js --config repos.json --workspace ~/work/oclair --repo oc-be     # one repo only
+node apps/workspace/bin/workspace.js --config repos.json --workspace ~/work/oclair --no-install     # skip dependency install
+node apps/workspace/bin/workspace.js --config repos.json --workspace ~/work/oclair --dry-run         # preview clone/install actions, no side effects
+node apps/workspace/bin/workspace.js --config repos.json --workspace ~/work/oclair --offline        # strict offline: fail if a dep is not already cached
 ```
 
 ### Worktrees (Claude Code)
@@ -68,7 +68,7 @@ worktree, and points the launch command at it. Re-running reuses an existing
 worktree. Without the flag the tool prints a tip suggesting it.
 
 ```bash
-node bin/workspace.js --config repos.json --workspace ~/work/oclair --worktree feat/login
+node apps/workspace/bin/workspace.js --config repos.json --workspace ~/work/oclair --worktree feat/login
 # → adds oc-be.feat-login/, then: cd "~/work/oclair/oc-be.feat-login" && claude
 ```
 
@@ -88,7 +88,7 @@ The hooks shell out to this CLI's `status` subcommand, which you can also run by
 hand — e.g. to mark a repo done:
 
 ```bash
-node bin/workspace.js status oc-be done --board ~/work/oclair/.ai-sync/board.json
+node apps/workspace/bin/workspace.js status oc-be done --board ~/work/oclair/.ai-sync/board.json
 # or, if installed on PATH: ai-workspace status oc-be done --board <board.json>
 ```
 
@@ -144,6 +144,6 @@ board still runs in a degraded mode (no links/filter).
 ## Tests
 
 ```bash
-npm test          # root suite: 100% coverage gate on src/
-npm run test:board # apps/board suite: server (node:test) + front-end (vitest)
+npm test          # nx run-many -t test: every lib/app, 100% coverage gate each (except board)
+npm run test:board # apps/board suite only: server (node:test) + front-end (vitest)
 ```

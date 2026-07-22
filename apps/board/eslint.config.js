@@ -4,7 +4,18 @@ import globals from 'globals';
 
 export default [
   {
-    ignores: ['node_modules/**', 'dist/**'],
+    // vite.config.*.timestamp-*.mjs / vitest.config.*.timestamp-*.mjs are
+    // short-lived files Vite writes and deletes while loading its ESM
+    // config. Excluded so `eslint .` can't race a concurrent build/test
+    // run and crash with ENOENT trying to read one after Vite removes it
+    // (this happens under `nx run-many`, which runs lint/test/build for a
+    // project in parallel by default).
+    ignores: [
+      'node_modules/**',
+      'dist/**',
+      '**/vite.config.*.timestamp*',
+      '**/vitest.config.*.timestamp*',
+    ],
   },
   js.configs.recommended,
   // vue3-essential: error-prevention rules only, no opinionated template

@@ -1,0 +1,10 @@
+{
+  "name": "@ai-sync/workspace-bootstrap",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.js",
+  "dependencies": {
+    "@ai-sync/git": "*"
+  }
+}
