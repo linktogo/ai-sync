@@ -1,7 +1,6 @@
 {
-  "name": "ai-sync",
+  "name": "@linktogo/ai-sync",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
   "engines": {
     "node": ">=22"
@@ -9,6 +8,20 @@
   "workspaces": [
     "apps/*",
     "libs/*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/linktogo/ai-sync.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "LICENSE"
   ],
   "bin": {
     "ai-sync": "apps/sync/bin/sync.js",

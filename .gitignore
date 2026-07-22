@@ -11,3 +11,5 @@ apps/board/dist/
 
 vite.config.*.timestamp*
 vitest.config.*.timestamp*
+
+.nx/
