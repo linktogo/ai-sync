@@ -103,3 +103,24 @@ test('loadConfig reads and parses a file', async () => {
   const cfg = await loadConfig(file);
   assert.equal(cfg.repos[0].name, 'a');
 });
+
+test('parseConfig passes through an optional path field', () => {
+  const cfg = parseConfig(JSON.stringify({
+    repos: [{ name: 'a', url: 'u', path: '/tmp/checkouts/a', technologies: ['t'], targets: ['claude'] }],
+  }));
+  assert.equal(cfg.repos[0].path, '/tmp/checkouts/a');
+});
+
+test('parseConfig omits path when not provided', () => {
+  const cfg = parseConfig(JSON.stringify({
+    repos: [{ name: 'a', url: 'u', technologies: ['t'], targets: ['claude'] }],
+  }));
+  assert.equal('path' in cfg.repos[0], false);
+});
+
+test('parseConfig rejects a non-string path', () => {
+  assert.throws(
+    () => parseConfig('{"repos":[{"name":"a","url":"u","technologies":["t"],"targets":["claude"],"path":123}]}'),
+    /"path" must be a string/,
+  );
+});

@@ -72,7 +72,7 @@ export async function bootstrap(config, options = {}) {
   const results = [];
   const workDirs = [];
   for (const repo of repos) {
-    let checkout = path.join(workspaceDir, repo.name);
+    let checkout = repo.path ? path.resolve(repo.path) : path.join(workspaceDir, repo.name);
 
     let status;
     if (await exists(checkout)) {
@@ -84,8 +84,9 @@ export async function bootstrap(config, options = {}) {
         logger.log(`${tag}= ${repo.name}: reusing existing checkout`);
         status = 'reused';
       } else {
+        const baseDir = path.dirname(checkout);
         const suffix = action === 'reinstall' ? 'reinstall' : timestamp();
-        checkout = path.join(workspaceDir, `${repo.name}-${suffix}`);
+        checkout = path.join(baseDir, `${repo.name}-${suffix}`);
         if (action === 'reinstall' && (await exists(checkout))) {
           if (!dryRun) await remove(checkout);
           logger.log(`  ${tag}${repo.name}: ${dryRun ? 'would remove' : 'removed'} previous ${path.basename(checkout)}`);
@@ -102,7 +103,7 @@ export async function bootstrap(config, options = {}) {
 
     let workDir = checkout;
     if (worktree) {
-      const wt = path.join(workspaceDir, `${repo.name}.${worktree.replace(/\//g, '-')}`);
+      const wt = path.join(path.dirname(checkout), `${repo.name}.${worktree.replace(/\//g, '-')}`);
       if (await exists(wt)) {
         logger.log(`  ${tag}${repo.name}: reusing worktree ${path.basename(wt)}`);
       } else {

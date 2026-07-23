@@ -17,7 +17,9 @@
       "Bash(rtk wc *)",
       "Bash(git ls-tree *)",
       "Bash(mkdir -p /private/tmp/claude-501/-Users-fabien-workspace-linktogo-org-ai-sync/38a4302a-314d-4c5d-a4be-12eb21cb4473/scratchpad/ci-test)",
-      "Bash(cp /Users/fabien/workspace/linktogo-org/ai-sync/package.json /Users/fabien/workspace/linktogo-org/ai-sync/package-lock.json /private/tmp/claude-501/-Users-fabien-workspace-linktogo-org-ai-sync/38a4302a-314d-4c5d-a4be-12eb21cb4473/scratchpad/ci-test/)"
+      "Bash(cp /Users/fabien/workspace/linktogo-org/ai-sync/package.json /Users/fabien/workspace/linktogo-org/ai-sync/package-lock.json /private/tmp/claude-501/-Users-fabien-workspace-linktogo-org-ai-sync/38a4302a-314d-4c5d-a4be-12eb21cb4473/scratchpad/ci-test/)",
+      "Bash(mdfind -name \"lk-mind\")",
+      "Bash(mdfind \"board.json\")"
     ]
   },
   "hooks": {

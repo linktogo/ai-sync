@@ -29,12 +29,21 @@ function normalizeRepo(repo, index, defaultTargets, valid) {
   if (!Array.isArray(repo.technologies) || repo.technologies.length === 0) {
     throw new Error(`${label}: "technologies" must be a non-empty array`);
   }
+  if (repo.path !== undefined && typeof repo.path !== 'string') {
+    throw new Error(`${label}: "path" must be a string`);
+  }
   const targets = repo.targets ?? defaultTargets;
   validateTargets(targets, valid, `${label}.targets`);
   if (targets.length === 0) {
     throw new Error(`${label}: no targets (set repo.targets or defaultTargets)`);
   }
-  return { name: repo.name, url: toHttpsUrl(repo.url), technologies: repo.technologies, targets };
+  return {
+    name: repo.name,
+    url: toHttpsUrl(repo.url),
+    technologies: repo.technologies,
+    targets,
+    ...(repo.path ? { path: repo.path } : {}),
+  };
 }
 
 // Clone over HTTPS rather than SSH: rewrite scp-style and ssh:// URLs.

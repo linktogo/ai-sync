@@ -29,6 +29,13 @@ Both commands read a JSON config (see `repos.json`) describing the target repos:
   when omitted. Known targets: `claude`, `copilot`, `cursor`, `windsurf`.
 - `url`: SSH and scp-style URLs (`git@host:org/repo.git`, `ssh://…`) are
   rewritten to HTTPS automatically before cloning.
+- `path`: optional path (typically absolute — a relative value resolves
+  against the current working directory, not `repos.json`'s location) to
+  an existing local checkout. When set, `ai-workspace bootstrap` wires up
+  status tracking, hooks, and dependency install there instead of cloning
+  into the `--workspace` folder (cloning straight into `path` first if it
+  doesn't exist yet). Only consumed by `ai-workspace`; `ai-sync` (the
+  skill-push CLI) always clones into its own temporary work dir regardless.
 
 ## Usage
 
@@ -95,7 +102,9 @@ node apps/workspace/bin/workspace.js status oc-be done --board ~/work/oclair/.ai
 The board is seeded (`todo` for every repo) at bootstrap and updated atomically.
 Hook install and seeding are skipped on `--dry-run`. Only repos listed in the
 config are tracked — a directory you create under the workspace by hand gets no
-hooks and never appears on the board.
+hooks and never appears on the board. A repo can also point at an existing
+checkout **outside** the workspace via `path` (see [Configuration](#configuration))
+— it's tracked on the same board exactly like a repo cloned into the workspace.
 
 > **To see it in the dashboard, point the server at this same file** — see below.
 

@@ -439,3 +439,93 @@ test('bootstrap dry-run does not install hooks or init the board', async () => {
   assert.equal(installed.length, 0);
   assert.equal(inited, false);
 });
+
+const configWithPath = {
+  defaultTargets: ['claude'],
+  repos: [
+    { name: 'ext', url: 'git@host:ext.git', path: '/abs/external/ext', technologies: ['nestjs'], targets: ['claude'] },
+  ],
+};
+
+test('reuses an existing repo at its external "path", installing hooks there, without cloning into workspaceDir', async () => {
+  const ws = await mkdtemp(path.join(tmpdir(), 'ws-'));
+  const cloned = [];
+  const hooksInstalled = [];
+  const result = await bootstrap(configWithPath, {
+    workspaceDir: ws,
+    clone: async (url, dir) => { cloned.push({ url, dir }); },
+    exec: async () => {},
+    exists: async (p) => p === '/abs/external/ext',
+    installRepoHooks: async (dir, repo, boardPath) => { hooksInstalled.push({ dir, repo, boardPath }); },
+    initBoard: async () => {},
+    logger: silentLogger(),
+  });
+
+  assert.deepEqual(cloned, []);
+  assert.deepEqual(hooksInstalled, [
+    { dir: '/abs/external/ext', repo: 'ext', boardPath: path.join(ws, '.ai-sync', 'board.json') },
+  ]);
+  assert.deepEqual(result.results, [{ repo: 'ext', status: 'reused', installed: false }]);
+  assert.equal(result.command, `cd "${rel('/abs/external/ext')}" && claude`);
+  await rm(ws, { recursive: true, force: true });
+});
+
+test('clones into an external "path" that does not exist yet, instead of workspaceDir', async () => {
+  const ws = await mkdtemp(path.join(tmpdir(), 'ws-'));
+  const cloned = [];
+  const result = await bootstrap(configWithPath, {
+    workspaceDir: ws,
+    clone: async (url, dir) => { cloned.push({ url, dir }); },
+    exec: async () => {},
+    exists: async () => false,
+    installRepoHooks: async () => {},
+    initBoard: async () => {},
+    logger: silentLogger(),
+  });
+
+  assert.deepEqual(cloned, [{ url: 'git@host:ext.git', dir: '/abs/external/ext' }]);
+  assert.deepEqual(result.results, [{ repo: 'ext', status: 'cloned', installed: false }]);
+  await rm(ws, { recursive: true, force: true });
+});
+
+test('--worktree places the worktree beside an external "path" repo, not inside workspaceDir', async () => {
+  const ws = await mkdtemp(path.join(tmpdir(), 'ws-'));
+  const execCalls = [];
+  const wt = '/abs/external/ext.feat-x';
+  const result = await bootstrap(configWithPath, {
+    workspaceDir: ws,
+    editor: 'claude',
+    worktree: 'feat/x',
+    clone: async () => { throw new Error('should not clone'); },
+    exec: async (file, args, opts) => { execCalls.push({ file, args, opts }); },
+    exists: async (p) => p === '/abs/external/ext',
+    installRepoHooks: async () => {},
+    initBoard: async () => {},
+    logger: silentLogger(),
+  });
+
+  assert.deepEqual(execCalls, [
+    { file: 'git', args: ['-C', '/abs/external/ext', 'worktree', 'add', wt, '-b', 'feat/x'], opts: {} },
+  ]);
+  assert.equal(result.command, `cd "${rel(wt)}" && claude`);
+  await rm(ws, { recursive: true, force: true });
+});
+
+test('onExisting "reinstall" for a path-based repo clones beside the external path, not into workspaceDir', async () => {
+  const ws = await mkdtemp(path.join(tmpdir(), 'ws-'));
+  const cloned = [];
+  const result = await bootstrap(configWithPath, {
+    workspaceDir: ws,
+    onExisting: async () => 'reinstall',
+    clone: async (url, dir) => { cloned.push(dir); },
+    exec: async () => {},
+    exists: async (p) => p === '/abs/external/ext',
+    installRepoHooks: async () => {},
+    initBoard: async () => {},
+    logger: silentLogger(),
+  });
+
+  assert.deepEqual(cloned, ['/abs/external/ext-reinstall']);
+  assert.equal(result.command, `cd "${rel('/abs/external/ext-reinstall')}" && claude`);
+  await rm(ws, { recursive: true, force: true });
+});
