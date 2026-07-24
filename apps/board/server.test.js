@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createBoardServer, startFromArgv, resolveServerBoardPath } from './server.js';
@@ -133,7 +133,7 @@ test('startFromArgv falls back to the next port when the chosen one is busy', as
   // Bind on all interfaces (no host) so it conflicts with startFromArgv's default bind.
   const busyPort = await new Promise((resolve) => blocker.listen(0, () => resolve(blocker.address().port)));
   const logs = [];
-  const server = startFromArgv(
+  const server = await startFromArgv(
     ['--board', path.join(dir, 'board.json'), '--port', String(busyPort), '--dist', dir],
     { log: (m) => logs.push(m) },
   );
@@ -142,5 +142,84 @@ test('startFromArgv falls back to the next port when the chosen one is busy', as
   assert.ok(logs.some((m) => m.includes(`Port ${busyPort} is already in use`)));
   server.close();
   blocker.close();
+  await rm(dir, { recursive: true, force: true });
+});
+
+test('startFromArgv reconciles a repo\'s hooks on start and logs what changed', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
+  const checkout = path.join(dir, 'checkout');
+  await mkdir(checkout, { recursive: true });
+  const boardPath = path.join(dir, '.ai-sync', 'board.json');
+  const configPath = path.join(dir, 'repos.json');
+  await writeFile(configPath, JSON.stringify({
+    repos: [{ name: 'demo', url: 'https://h/demo.git', path: checkout, technologies: ['nestjs'], targets: ['claude'] }],
+  }));
+  const logs = [];
+  const server = await startFromArgv(
+    ['--board', boardPath, '--config', configPath, '--port', '0', '--dist', dir],
+    { log: (m) => logs.push(m) },
+  );
+  await listening(server);
+  assert.ok(logs.some((m) => m.includes('✓ demo: hooks repointed')));
+  const settings = JSON.parse(await readFile(path.join(checkout, '.claude', 'settings.local.json'), 'utf8'));
+  assert.match(settings.hooks.UserPromptSubmit[0].hooks[0].command, /status demo inprogress --board/);
+  server.close();
+  await rm(dir, { recursive: true, force: true });
+});
+
+test('startFromArgv logs "all up to date" on a second start once hooks are already correct', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
+  const checkout = path.join(dir, 'checkout');
+  await mkdir(checkout, { recursive: true });
+  const boardPath = path.join(dir, '.ai-sync', 'board.json');
+  const configPath = path.join(dir, 'repos.json');
+  await writeFile(configPath, JSON.stringify({
+    repos: [{ name: 'demo', url: 'https://h/demo.git', path: checkout, technologies: ['nestjs'], targets: ['claude'] }],
+  }));
+  const firstServer = await startFromArgv(
+    ['--board', boardPath, '--config', configPath, '--port', '0', '--dist', dir],
+    { log: () => {} },
+  );
+  await listening(firstServer);
+  firstServer.close();
+
+  const logs = [];
+  const secondServer = await startFromArgv(
+    ['--board', boardPath, '--config', configPath, '--port', '0', '--dist', dir],
+    { log: (m) => logs.push(m) },
+  );
+  await listening(secondServer);
+  assert.ok(logs.some((m) => m.includes('hooks verified for 1 repo(s), all up to date')));
+  secondServer.close();
+  await rm(dir, { recursive: true, force: true });
+});
+
+test('startFromArgv performs no hook reconciliation when --config is not given', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
+  const boardPath = path.join(dir, 'board.json');
+  const logs = [];
+  const server = await startFromArgv(
+    ['--board', boardPath, '--port', '0', '--dist', dir],
+    { log: (m) => logs.push(m) },
+  );
+  await listening(server);
+  assert.ok(!logs.some((m) => m.includes('hooks')));
+  server.close();
+  await rm(dir, { recursive: true, force: true });
+});
+
+test('startFromArgv logs a warning and still starts when the config file is invalid', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
+  const boardPath = path.join(dir, 'board.json');
+  const configPath = path.join(dir, 'repos.json');
+  await writeFile(configPath, '{not json');
+  const logs = [];
+  const server = await startFromArgv(
+    ['--board', boardPath, '--config', configPath, '--port', '0', '--dist', dir],
+    { log: (m) => logs.push(m) },
+  );
+  await listening(server);
+  assert.ok(logs.some((m) => m.includes('⚠ hook reconciliation skipped')));
+  server.close();
   await rm(dir, { recursive: true, force: true });
 });

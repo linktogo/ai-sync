@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@ai-sync/config": "*",
+    "@ai-sync/workspace-bootstrap": "*",
     "vue": "^3.5.0"
   },
   "devDependencies": {

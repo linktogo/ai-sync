@@ -4,6 +4,8 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
+import { loadConfig } from '@ai-sync/config';
+import { reconcileHooks } from '@ai-sync/workspace-bootstrap';
 
 // Resolve the board file the server should read. Explicit --board and the
 // AI_SYNC_BOARD env var always win; otherwise auto-detect the workspace board
@@ -88,7 +90,7 @@ export function createBoardServer({ boardPath, distDir, configPath = null }) {
   });
 }
 
-export function startFromArgv(argv, { log = console.log } = {}) {
+export async function startFromArgv(argv, { log = console.log } = {}) {
   const { values } = parseArgs({
     args: argv,
     options: {
@@ -99,6 +101,23 @@ export function startFromArgv(argv, { log = console.log } = {}) {
   const boardPath = resolveServerBoardPath({ board: values.board });
   const configSrc = values.config ?? process.env.AI_SYNC_CONFIG ?? null;
   const configPath = configSrc ? path.resolve(configSrc) : null;
+  if (configPath) {
+    try {
+      const config = await loadConfig(configPath);
+      const hookCommand = fileURLToPath(new URL('../workspace/bin/workspace.js', import.meta.url));
+      const results = await reconcileHooks(config, { boardPath, hookCommand });
+      for (const r of results) {
+        if (r.status === 'repointed') log(`  ✓ ${r.repo}: hooks repointed`);
+        else if (r.status === 'error') log(`  ⚠ ${r.repo}: ${r.error}`);
+      }
+      const upToDate = results.filter((r) => r.status === 'up-to-date').length;
+      if (upToDate > 0 && !results.some((r) => r.status === 'repointed' || r.status === 'error')) {
+        log(`  hooks verified for ${upToDate} repo(s), all up to date`);
+      }
+    } catch (err) {
+      log(`  ⚠ hook reconciliation skipped: ${err.message}`);
+    }
+  }
   const distDir = values.dist ?? path.join(path.dirname(fileURLToPath(import.meta.url)), 'dist');
   const server = createBoardServer({ boardPath, distDir, configPath });
 
@@ -121,5 +140,5 @@ export function startFromArgv(argv, { log = console.log } = {}) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  startFromArgv(process.argv.slice(2));
+  await startFromArgv(process.argv.slice(2));
 }
