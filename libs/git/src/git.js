@@ -32,7 +32,10 @@ export function createRepo(dir, { exec = defaultExec } = {}) {
   };
 }
 
-export async function clone(url, dir, { exec = defaultExec } = {}) {
-  await exec('git', ['clone', url, dir], {});
+export async function clone(url, dir, { exec = defaultExec, depth } = {}) {
+  const args = ['clone'];
+  if (depth) args.push('--depth', String(depth));
+  args.push(url, dir);
+  await exec('git', args, {});
   return createRepo(dir, { exec });
 }

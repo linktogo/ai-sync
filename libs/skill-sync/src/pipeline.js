@@ -15,6 +15,7 @@ export async function run(config, options = {}) {
     workDir,
     pr = false,
     dryRun = false,
+    strict = false,
     repoFilter,
     clone = defaultClone,
     resolveSkills = defaultResolveSkills,
@@ -30,7 +31,7 @@ export async function run(config, options = {}) {
   for (const repo of repos) {
     try {
       results.push(await syncRepo(repo, {
-        skillsDir, workDir, pr, dryRun, clone, resolveSkills, getRenderer, logger,
+        skillsDir, workDir, pr, dryRun, strict, clone, resolveSkills, getRenderer, logger,
       }));
     } catch (err) {
       logger.error(`✗ ${repo.name}: ${err.message}`);
@@ -43,10 +44,17 @@ export async function run(config, options = {}) {
 }
 
 async function syncRepo(repo, ctx) {
-  const { skillsDir, workDir, pr, dryRun, clone, resolveSkills, getRenderer, logger } = ctx;
+  const { skillsDir, workDir, pr, dryRun, strict, clone, resolveSkills, getRenderer, logger } = ctx;
   const skills = await resolveSkills(skillsDir, repo.technologies, {
     warn: (m) => logger.warn(m),
+    strict,
   });
+
+  if (skills.length === 0) {
+    const message = `${repo.name}: no skills resolved for technologies [${repo.technologies.join(', ')}]`;
+    if (strict) throw new Error(message);
+    logger.warn(message);
+  }
 
   const files = [];
   for (const skill of skills) {

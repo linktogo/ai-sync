@@ -50,6 +50,15 @@ test('hasChanges is false on a clean clone', async () => {
   assert.equal(await repo.hasChanges(), false);
 });
 
+test('clone passes --depth when a depth is given, and omits it otherwise', async () => {
+  const calls = [];
+  const exec = async (file, args) => { calls.push(args); return ''; };
+  await clone('url', '/dest', { exec, depth: 1 });
+  await clone('url', '/dest', { exec });
+  assert.deepEqual(calls[0], ['clone', '--depth', '1', 'url', '/dest']);
+  assert.deepEqual(calls[1], ['clone', 'url', '/dest']);
+});
+
 test('createPR invokes gh with title and body', async () => {
   const calls = [];
   const repo = createRepo('/somewhere', {
