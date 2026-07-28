@@ -1,8 +1,40 @@
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdtemp, rm } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import { knownTargets } from '@ai-sync/renderers';
+import { clone as defaultClone } from '@ai-sync/git';
 
 export async function loadConfig(filePath) {
   return parseConfig(await readFile(filePath, 'utf8'));
+}
+
+// Resolve where the CLI config comes from: a local file (`config`) or a git
+// repository holding it (`configRepo`, e.g. the central lk-config repo).
+// Exactly one must be provided.
+export async function resolveConfigSource(
+  { config, configRepo, configFile } = {},
+  { loadConfig: load = loadConfig, loadConfigFromRepo: loadFromRepo = loadConfigFromRepo } = {},
+) {
+  if (config && configRepo) {
+    throw new Error('Pass either --config or --config-repo, not both');
+  }
+  if (configRepo) return loadFromRepo(configRepo, { configFile });
+  if (config) return load(config);
+  throw new Error('Missing required --config <path> or --config-repo <url>');
+}
+
+// Fetch the config from a separate git repository (e.g. a central lk-config
+// repo) instead of a local file. Shallow-clones into a temp dir, reads the
+// config file, and removes the checkout afterwards.
+export async function loadConfigFromRepo(repoUrl, { configFile = 'repos.json', clone = defaultClone } = {}) {
+  const tmp = await mkdtemp(path.join(os.tmpdir(), 'ai-sync-config-'));
+  const checkout = path.join(tmp, 'repo');
+  try {
+    await clone(toHttpsUrl(repoUrl), checkout, { depth: 1 });
+    return parseConfig(await readFile(path.join(checkout, configFile), 'utf8'));
+  } finally {
+    await rm(tmp, { recursive: true, force: true });
+  }
 }
 
 export function parseConfig(raw) {

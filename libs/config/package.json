@@ -4,6 +4,7 @@
   "type": "module",
   "main": "./src/config.js",
   "dependencies": {
+    "@ai-sync/git": "*",
     "@ai-sync/renderers": "*"
   },
   "publishConfig": {

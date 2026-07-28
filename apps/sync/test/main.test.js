@@ -8,11 +8,32 @@ function silentLogger() {
 
 const fakeConfig = { defaultTargets: ['claude'], repos: [] };
 
-test('main requires --config', async () => {
+test('main requires --config or --config-repo', async () => {
   await assert.rejects(
     () => main([], { loadConfig: async () => fakeConfig, runPipeline: async () => [], logger: silentLogger() }),
-    /Missing required --config/,
+    /Missing required --config <path> or --config-repo/,
   );
+});
+
+test('main rejects passing both --config and --config-repo', async () => {
+  await assert.rejects(
+    () => main(['--config', 'repos.json', '--config-repo', 'https://x/c.git'], {
+      loadConfig: async () => fakeConfig, runPipeline: async () => [], logger: silentLogger(),
+    }),
+    /Pass either --config or --config-repo, not both/,
+  );
+});
+
+test('main loads config from a repo via --config-repo (with --config-file)', async () => {
+  let repoArgs;
+  const code = await main(['--config-repo', 'git@github.com:o/lk-config.git', '--config-file', 'sub/repos.json'], {
+    loadConfigFromRepo: async (url, opts) => { repoArgs = { url, opts }; return fakeConfig; },
+    runPipeline: async () => [{ status: 'pushed' }],
+    logger: silentLogger(),
+  });
+  assert.equal(code, 0);
+  assert.equal(repoArgs.url, 'git@github.com:o/lk-config.git');
+  assert.equal(repoArgs.opts.configFile, 'sub/repos.json');
 });
 
 test('main passes parsed flags to the pipeline and returns 0 on success', async () => {

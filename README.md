@@ -27,7 +27,11 @@ sync.
 
 ## Configuration
 
-Both commands read a JSON config (see `repos.json`) describing the target repos:
+Both commands read a JSON config describing the target repos. The canonical
+config lives in a **separate repository**,
+[`linktogo-org/lk-config`](https://github.com/linktogo-org/lk-config), and is
+fetched with `--config-repo` (see [Config source](#config-source) below). A local
+`repos.example.json` in this repo documents the shape:
 
 ```json
 {
@@ -50,21 +54,44 @@ Both commands read a JSON config (see `repos.json`) describing the target repos:
 - `url`: SSH and scp-style URLs (`git@host:org/repo.git`, `ssh://…`) are
   rewritten to HTTPS automatically before cloning.
 - `path`: optional path (typically absolute — a relative value resolves
-  against the current working directory, not `repos.json`'s location) to
+  against the current working directory, not the config file's location) to
   an existing local checkout. When set, `ai-workspace bootstrap` wires up
   status tracking, hooks, and dependency install there instead of cloning
   into the `--workspace` folder (cloning straight into `path` first if it
   doesn't exist yet). Only consumed by `ai-workspace`; `ai-sync` (the
   skill-push CLI) always clones into its own temporary work dir regardless.
 
+### Config source
+
+Both CLIs resolve their config from **exactly one** of two flags:
+
+- `--config <path>` — read a local JSON file (e.g. `--config repos.example.json`).
+- `--config-repo <url>` — shallow-clone a git repository into a temp dir and read
+  the config from it. This is how the shared `lk-config` repo is consumed:
+
+  ```bash
+  --config-repo https://github.com/linktogo-org/lk-config.git
+  ```
+
+  The file read defaults to `repos.json` at the repo root; override it with
+  `--config-file <path-in-repo>` (e.g. `--config-file environments/prod.json`).
+  SSH/scp-style repo URLs are rewritten to HTTPS automatically, and the checkout
+  is cleaned up after the config is read.
+
+Passing both `--config` and `--config-repo` (or neither) is an error.
+
 ## Usage
 
 ```bash
-node apps/sync/bin/sync.js --config repos.json          # clone, generate, branch, commit, push
-node apps/sync/bin/sync.js --config repos.json --pr      # also open a PR via gh
-node apps/sync/bin/sync.js --config repos.json --dry-run # preview generated files, no git
-node apps/sync/bin/sync.js --config repos.json --repo oc-be   # one repo only
-node apps/sync/bin/sync.js --config repos.json --strict  # fail if a technology has no skills
+# Local file
+node apps/sync/bin/sync.js --config repos.example.json          # clone, generate, branch, commit, push
+
+# Shared config repo (lk-config)
+node apps/sync/bin/sync.js --config-repo https://github.com/linktogo-org/lk-config.git
+node apps/sync/bin/sync.js --config-repo <url> --config-file repos.json --pr   # also open a PR via gh
+node apps/sync/bin/sync.js --config-repo <url> --dry-run        # preview generated files, no git
+node apps/sync/bin/sync.js --config-repo <url> --repo oc-be     # one repo only
+node apps/sync/bin/sync.js --config-repo <url> --strict         # fail if a technology has no skills
 ```
 
 By default a repo whose `technologies` list references a technology with no
@@ -75,7 +102,8 @@ catch a typo'd technology or a skill folder that never got created.
 
 ## Workspace bootstrap
 
-Clone the repos from `repos.json` into a workspace folder, install dependencies
+Clone the repos from the config (`--config-repo` or `--config`) into a workspace
+folder, install dependencies
 (Node via `pnpm`, Java via `mvn dependency:go-offline`, detected from
 `package.json` / `pom.xml`), and print the command to open the workspace in
 Claude Code or VS Code. Installs are cache-first (`pnpm --prefer-offline`;
@@ -84,13 +112,17 @@ Re-running against an existing folder reuses the checkouts already present (and
 refreshes their dependencies), so the same command both creates a new workspace
 and resumes an existing one.
 
+The examples below use the shared `lk-config` repo via `--config-repo`; swap in
+`--config repos.example.json` to point at a local file instead.
+
 ```bash
-node apps/workspace/bin/workspace.js --config repos.json --workspace ~/work/oclair                 # clone + install, prints `cd … && claude`
-node apps/workspace/bin/workspace.js --config repos.json --workspace ~/work/oclair --editor vscode  # prints `code …`
-node apps/workspace/bin/workspace.js --config repos.json --workspace ~/work/oclair --repo oc-be     # one repo only
-node apps/workspace/bin/workspace.js --config repos.json --workspace ~/work/oclair --no-install     # skip dependency install
-node apps/workspace/bin/workspace.js --config repos.json --workspace ~/work/oclair --dry-run         # preview clone/install actions, no side effects
-node apps/workspace/bin/workspace.js --config repos.json --workspace ~/work/oclair --offline        # strict offline: fail if a dep is not already cached
+CFG="--config-repo https://github.com/linktogo-org/lk-config.git"
+node apps/workspace/bin/workspace.js $CFG --workspace ~/work/oclair                 # clone + install, prints `cd … && claude`
+node apps/workspace/bin/workspace.js $CFG --workspace ~/work/oclair --editor vscode  # prints `code …`
+node apps/workspace/bin/workspace.js $CFG --workspace ~/work/oclair --repo oc-be     # one repo only
+node apps/workspace/bin/workspace.js $CFG --workspace ~/work/oclair --no-install     # skip dependency install
+node apps/workspace/bin/workspace.js $CFG --workspace ~/work/oclair --dry-run         # preview clone/install actions, no side effects
+node apps/workspace/bin/workspace.js $CFG --workspace ~/work/oclair --offline        # strict offline: fail if a dep is not already cached
 ```
 
 ### Worktrees (Claude Code)
@@ -102,7 +134,7 @@ worktree, and points the launch command at it. Re-running reuses an existing
 worktree. Without the flag the tool prints a tip suggesting it.
 
 ```bash
-node apps/workspace/bin/workspace.js --config repos.json --workspace ~/work/oclair --worktree feat/login
+node apps/workspace/bin/workspace.js --config-repo https://github.com/linktogo-org/lk-config.git --workspace ~/work/oclair --worktree feat/login
 # → adds oc-be.feat-login/, then: cd "~/work/oclair/oc-be.feat-login" && claude
 ```
 
@@ -149,7 +181,7 @@ npm start                                     # build + serve on http://localhos
 npm start -- --board /tmp/board.json          # use a specific board file
 AI_SYNC_BOARD=/tmp/board.json npm start       # board path via env instead of --flag
 npm start -- --board /tmp/board.json --port 8080   # custom port
-npm start -- --config repos.json              # also serve repo metadata at /api/config
+npm start -- --config repos.example.json      # also serve repo metadata at /api/config
 npm run board:build                           # build only, without starting the server
 ```
 
@@ -173,7 +205,7 @@ off-by-default sound toggle persisted in `localStorage`) and a tab-title badge w
 transitions into `question` (an agent is blocked on you) or `done`. A **summary header** shows
 per-status counts and a done-progress bar, a **filter bar** narrows the board by repo name or
 technology, and clicking a card opens a **detail side panel** with the repo URL, technology/target
-chips, and its event timeline. When started with `--config repos.json` (or `AI_SYNC_CONFIG`), the
+chips, and its event timeline. When started with `--config repos.example.json` (or `AI_SYNC_CONFIG`), the
 server also exposes `GET /api/config` to power the links and technology filter; without it the
 board still runs in a degraded mode (no links/filter).
 

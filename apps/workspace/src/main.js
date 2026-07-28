@@ -1,7 +1,7 @@
 import { parseArgs } from 'node:util';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadConfig as defaultLoadConfig } from '@ai-sync/config';
+import { resolveConfigSource } from '@ai-sync/config';
 import {
   bootstrap,
   resolveBoardPath,
@@ -32,7 +32,8 @@ async function runStatus(argv, deps = {}) {
 
 async function runBootstrapMain(argv, deps = {}) {
   const {
-    loadConfig = defaultLoadConfig,
+    loadConfig,
+    loadConfigFromRepo,
     runBootstrap = bootstrap,
     selectRepo,
     onExisting,
@@ -44,6 +45,8 @@ async function runBootstrapMain(argv, deps = {}) {
     args: argv,
     options: {
       config: { type: 'string' },
+      'config-repo': { type: 'string' },
+      'config-file': { type: 'string' },
       workspace: { type: 'string' },
       editor: { type: 'string', default: 'claude' },
       repo: { type: 'string' },
@@ -54,10 +57,11 @@ async function runBootstrapMain(argv, deps = {}) {
     },
   });
 
-  if (!values.config) throw new Error('Missing required --config <path>');
+  const config = await resolveConfigSource(
+    { config: values.config, configRepo: values['config-repo'], configFile: values['config-file'] },
+    { loadConfig, loadConfigFromRepo },
+  );
   if (!values.workspace) throw new Error('Missing required --workspace <dir>');
-
-  const config = await loadConfig(values.config);
 
   // Without an explicit --repo, prompt for a single project to load when
   // running interactively; non-interactive runs keep bootstrapping every repo.
