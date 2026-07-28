@@ -2,7 +2,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { parseSkill } from './skill.js';
 
-export async function resolveSkills(skillsDir, technologies, { warn = console.warn } = {}) {
+export async function resolveSkills(skillsDir, technologies, { warn = console.warn, strict = false } = {}) {
   const byName = new Map();
   for (const techno of technologies) {
     const technoDir = path.join(skillsDir, techno);
@@ -11,7 +11,9 @@ export async function resolveSkills(skillsDir, technologies, { warn = console.wa
       entries = await readdir(technoDir, { withFileTypes: true });
     } catch (err) {
       if (err.code === 'ENOENT') {
-        warn(`No skills directory for technology "${techno}" (${technoDir})`);
+        const message = `No skills directory for technology "${techno}" (${technoDir})`;
+        if (strict) throw new Error(message);
+        warn(message);
         continue;
       }
       throw err;

@@ -5,6 +5,20 @@ Tools to sync AI agent skills, practices, and workflows across repositories.
 Skills are authored once under `skills/<techno>/<name>/SKILL.md` and translated
 into each target platform's format (Claude Code, GitHub Copilot, Cursor, Windsurf).
 
+## Skills library
+
+The `skills/` directory ships a starter set of guidance, grouped by technology
+and matched against each repo's `technologies` list:
+
+- `skills/nestjs/` — module structure, dependency injection
+- `skills/postgres/` — safe migrations, query performance
+- `skills/nextjs/` — App Router server/client boundaries
+
+Add a new skill by creating `skills/<techno>/<name>/SKILL.md` with YAML
+frontmatter (`name`, `description`, optional `globs`) followed by the guidance
+body. Any repo whose `technologies` include `<techno>` picks it up on the next
+sync.
+
 ## Configuration
 
 Both commands read a JSON config (see `repos.json`) describing the target repos:
@@ -44,7 +58,14 @@ node apps/sync/bin/sync.js --config repos.json          # clone, generate, branc
 node apps/sync/bin/sync.js --config repos.json --pr      # also open a PR via gh
 node apps/sync/bin/sync.js --config repos.json --dry-run # preview generated files, no git
 node apps/sync/bin/sync.js --config repos.json --repo oc-be   # one repo only
+node apps/sync/bin/sync.js --config repos.json --strict  # fail if a technology has no skills
 ```
+
+By default a repo whose `technologies` list references a technology with no
+`skills/<techno>/` directory (or that otherwise resolves to zero skills) only
+logs a warning and is left untouched. Pass `--strict` to turn that mismatch into
+a hard error (non-zero exit, the repo recorded as `error`) — useful in CI to
+catch a typo'd technology or a skill folder that never got created.
 
 ## Workspace bootstrap
 

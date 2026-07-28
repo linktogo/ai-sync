@@ -30,6 +30,17 @@ test('main passes parsed flags to the pipeline and returns 0 on success', async 
   assert.equal(received.repoFilter, 'a');
   assert.equal(received.workDir, '/tmp/x');
   assert.equal(received.dryRun, false);
+  assert.equal(received.strict, false);
+});
+
+test('main forwards --strict to the pipeline', async () => {
+  let received;
+  await main(['--config', 'repos.json', '--strict'], {
+    loadConfig: async () => fakeConfig,
+    runPipeline: async (config, opts) => { received = opts; return []; },
+    logger: silentLogger(),
+  });
+  assert.equal(received.strict, true);
 });
 
 test('main defaults pr/dryRun to false and derives a workDir', async () => {

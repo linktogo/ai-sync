@@ -17,6 +17,7 @@ export async function main(argv, deps = {}) {
       config: { type: 'string' },
       pr: { type: 'boolean', default: false },
       'dry-run': { type: 'boolean', default: false },
+      strict: { type: 'boolean', default: false },
       'work-dir': { type: 'string' },
       repo: { type: 'string' },
     },
@@ -30,6 +31,7 @@ export async function main(argv, deps = {}) {
     workDir: values['work-dir'] ?? path.join(os.tmpdir(), 'ai-sync'),
     pr: values.pr,
     dryRun: values['dry-run'],
+    strict: values.strict,
     repoFilter: values.repo,
     logger,
   });

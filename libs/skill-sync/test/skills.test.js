@@ -32,3 +32,10 @@ test('resolveSkills rethrows non-ENOENT errors (e.g. ENOTDIR when techno resolve
     (err) => err.code !== 'ENOENT',
   );
 });
+
+test('resolveSkills throws instead of warning on a missing technology in strict mode', async () => {
+  await assert.rejects(
+    () => resolveSkills(fixtures, ['nestjs', 'missing'], { strict: true }),
+    /No skills directory for technology "missing"/,
+  );
+});

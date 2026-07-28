@@ -127,6 +127,41 @@ test('warn callback from resolveSkills is forwarded to logger.warn', async () =>
   assert.ok(warnings.some((w) => w.includes('missing technology xyz')));
 });
 
+test('warns when a repo resolves zero skills (non-strict)', async () => {
+  const warnings = [];
+  const workDir = await mkdtemp(path.join(tmpdir(), 'pipe-'));
+  const results = await run(config, {
+    skillsDir: 'x', workDir, resolveSkills: async () => [],
+    clone: fakeCloneFactory({ cloned: [], hasChanges: false }),
+    logger: { log() {}, warn: (m) => warnings.push(m), error() {} },
+  });
+  assert.equal(results[0].status, 'skipped');
+  assert.ok(warnings.some((w) => /a: no skills resolved for technologies \[nestjs\]/.test(w)));
+});
+
+test('strict mode turns a zero-skill repo into a recorded error, without cloning', async () => {
+  const results = await run(config, {
+    skillsDir: 'x', workDir: 'irrelevant', strict: true,
+    resolveSkills: async () => [],
+    clone: () => { throw new Error('should not clone'); },
+    logger: silentLogger(),
+  });
+  assert.equal(results[0].status, 'error');
+  assert.match(results[0].error, /no skills resolved/);
+});
+
+test('strict flag is forwarded to resolveSkills', async () => {
+  let seenStrict;
+  const workDir = await mkdtemp(path.join(tmpdir(), 'pipe-'));
+  await run(config, {
+    skillsDir: 'x', workDir, strict: true,
+    resolveSkills: async (_dir, _tech, opts) => { seenStrict = opts.strict; return [skill]; },
+    clone: fakeCloneFactory({ cloned: [], hasChanges: false }),
+    logger: silentLogger(),
+  });
+  assert.equal(seenStrict, true);
+});
+
 test('repoFilter restricts processing to one repo', async () => {
   const twoRepos = {
     defaultTargets: ['claude'],
