@@ -5,6 +5,10 @@ Tools to sync AI agent skills, practices, and workflows across repositories.
 Skills are authored once under `skills/<techno>/<name>/SKILL.md` and translated
 into each target platform's format (Claude Code, GitHub Copilot, Cursor, Windsurf).
 
+It ships two CLIs — `ai-sync` (push skills to repos) and `ai-workspace`
+(bootstrap a local workspace + status board) — as an [Nx](https://nx.dev)
+monorepo (npm workspaces). See [Project layout](#project-layout).
+
 ## Skills library
 
 The `skills/` directory ships a starter set of guidance, grouped by technology
@@ -81,6 +85,10 @@ Both CLIs resolve their config from **exactly one** of two flags:
 Passing both `--config` and `--config-repo` (or neither) is an error.
 
 ## Usage
+
+Examples call the CLI through its source entry (`node apps/sync/bin/sync.js`).
+Once the package is installed the same commands are available as the `ai-sync`
+binary (and `ai-workspace` for the workspace tool).
 
 ```bash
 # Local file
@@ -209,9 +217,33 @@ chips, and its event timeline. When started with `--config repos.example.json` (
 server also exposes `GET /api/config` to power the links and technology filter; without it the
 board still runs in a degraded mode (no links/filter).
 
+## Project layout
+
+An Nx monorepo (npm workspaces). Applications live in `apps/`, shared code in
+`libs/`:
+
+| Project | Kind | Role |
+|---|---|---|
+| `apps/sync` | app | `ai-sync` CLI — render skills into each repo and push |
+| `apps/workspace` | app | `ai-workspace` CLI — bootstrap a workspace + status board |
+| `apps/board` | app | Vue 3 kanban dashboard + zero-dep server |
+| `libs/config` | lib | load/validate config from a local file or a git repo |
+| `libs/git` | lib | thin git/`gh` wrapper (clone, branch, commit, push, PR) |
+| `libs/renderers` | lib | per-target renderers (claude, copilot, cursor, windsurf) |
+| `libs/skill-sync` | lib | resolve skills for a repo and drive the sync pipeline |
+| `libs/workspace-bootstrap` | lib | clone/install, hooks, and the board state model |
+
+Nx enforces module boundaries by `scope:*` tags (see `eslint.config.js`); each
+library exposes its public surface through its package entry. This repo builds
+and installs with **npm** (`npm ci`) — do not add a `pnpm-lock.yaml`, it breaks
+the Nx project graph.
+
 ## Tests
 
 ```bash
 npm test          # nx run-many -t test: every lib/app, 100% coverage gate each (except board)
 npm run test:board # apps/board suite only: server (node:test) + front-end (vitest)
 ```
+
+CI runs `nx run-many -t lint test build`. Because Nx detects the package
+manager from the lockfile, keep `package-lock.json` as the only lockfile.
