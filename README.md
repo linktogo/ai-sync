@@ -13,6 +13,9 @@ and matched against each repo's `technologies` list:
 - `skills/nestjs/` — module structure, dependency injection
 - `skills/postgres/` — safe migrations, query performance
 - `skills/nextjs/` — App Router server/client boundaries
+- `skills/reactjs/` — component design, hooks
+- `skills/angular/` — component architecture, RxJS
+- `skills/vuejs/` — Composition API, state management
 
 Add a new skill by creating `skills/<techno>/<name>/SKILL.md` with YAML
 frontmatter (`name`, `description`, optional `globs`) followed by the guidance
