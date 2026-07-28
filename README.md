@@ -16,6 +16,7 @@ and matched against each repo's `technologies` list:
 - `skills/reactjs/` — component design, hooks
 - `skills/angular/` — component architecture, RxJS
 - `skills/vuejs/` — Composition API, state management
+- `skills/nx/` — monorepo structure, task running (affected + caching)
 
 Add a new skill by creating `skills/<techno>/<name>/SKILL.md` with YAML
 frontmatter (`name`, `description`, optional `globs`) followed by the guidance
