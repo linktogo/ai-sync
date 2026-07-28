@@ -42,8 +42,8 @@ fetched with `--config-repo` (see [Config source](#config-source) below). A loca
   "defaultTargets": ["claude", "copilot"],
   "repos": [
     {
-      "name": "oc-be",
-      "url": "https://github.com/oclair-org/oc-be.git",
+      "name": "example-api",
+      "url": "https://github.com/example-org/example-api.git",
       "technologies": ["nestjs", "postgres"],
       "targets": ["claude", "cursor"]
     }
@@ -98,7 +98,7 @@ node apps/sync/bin/sync.js --config repos.example.json          # clone, generat
 node apps/sync/bin/sync.js --config-repo https://github.com/linktogo-org/lk-config.git
 node apps/sync/bin/sync.js --config-repo <url> --config-file repos.json --pr   # also open a PR via gh
 node apps/sync/bin/sync.js --config-repo <url> --dry-run        # preview generated files, no git
-node apps/sync/bin/sync.js --config-repo <url> --repo oc-be     # one repo only
+node apps/sync/bin/sync.js --config-repo <url> --repo example-api     # one repo only
 node apps/sync/bin/sync.js --config-repo <url> --strict         # fail if a technology has no skills
 ```
 
@@ -125,12 +125,12 @@ The examples below use the shared `lk-config` repo via `--config-repo`; swap in
 
 ```bash
 CFG="--config-repo https://github.com/linktogo-org/lk-config.git"
-node apps/workspace/bin/workspace.js $CFG --workspace ~/work/oclair                 # clone + install, prints `cd … && claude`
-node apps/workspace/bin/workspace.js $CFG --workspace ~/work/oclair --editor vscode  # prints `code …`
-node apps/workspace/bin/workspace.js $CFG --workspace ~/work/oclair --repo oc-be     # one repo only
-node apps/workspace/bin/workspace.js $CFG --workspace ~/work/oclair --no-install     # skip dependency install
-node apps/workspace/bin/workspace.js $CFG --workspace ~/work/oclair --dry-run         # preview clone/install actions, no side effects
-node apps/workspace/bin/workspace.js $CFG --workspace ~/work/oclair --offline        # strict offline: fail if a dep is not already cached
+node apps/workspace/bin/workspace.js $CFG --workspace ~/work/myorg                 # clone + install, prints `cd … && claude`
+node apps/workspace/bin/workspace.js $CFG --workspace ~/work/myorg --editor vscode  # prints `code …`
+node apps/workspace/bin/workspace.js $CFG --workspace ~/work/myorg --repo example-api     # one repo only
+node apps/workspace/bin/workspace.js $CFG --workspace ~/work/myorg --no-install     # skip dependency install
+node apps/workspace/bin/workspace.js $CFG --workspace ~/work/myorg --dry-run         # preview clone/install actions, no side effects
+node apps/workspace/bin/workspace.js $CFG --workspace ~/work/myorg --offline        # strict offline: fail if a dep is not already cached
 ```
 
 ### Worktrees (Claude Code)
@@ -142,8 +142,8 @@ worktree, and points the launch command at it. Re-running reuses an existing
 worktree. Without the flag the tool prints a tip suggesting it.
 
 ```bash
-node apps/workspace/bin/workspace.js --config-repo https://github.com/linktogo-org/lk-config.git --workspace ~/work/oclair --worktree feat/login
-# → adds oc-be.feat-login/, then: cd "~/work/oclair/oc-be.feat-login" && claude
+node apps/workspace/bin/workspace.js --config-repo https://github.com/linktogo-org/lk-config.git --workspace ~/work/myorg --worktree feat/login
+# → adds example-api.feat-login/, then: cd "~/work/myorg/example-api.feat-login" && claude
 ```
 
 ### Status tracking
@@ -162,8 +162,8 @@ The hooks shell out to this CLI's `status` subcommand, which you can also run by
 hand — e.g. to mark a repo done:
 
 ```bash
-node apps/workspace/bin/workspace.js status oc-be done --board ~/work/oclair/.ai-sync/board.json
-# or, if installed on PATH: ai-workspace status oc-be done --board <board.json>
+node apps/workspace/bin/workspace.js status example-api done --board ~/work/myorg/.ai-sync/board.json
+# or, if installed on PATH: ai-workspace status example-api done --board <board.json>
 ```
 
 The board is seeded (`todo` for every repo) at bootstrap and updated atomically.

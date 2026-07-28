@@ -2,31 +2,22 @@
   "defaultTargets": ["claude", "copilot"],
   "repos": [
     {
-      "name": "lk-mind",
-      "url": "https://github.com/linktogo-org/lk-mind.git",
-      "path": "/Users/fabien/workspace/linktogo-org/lk-mind",
-      "technologies": ["nestjs", "postgres"],
-      "targets": ["claude"]
-    },
-    {
-      "name": "ai-sync",
-      "url": "https://github.com/linktogo/ai-sync.git",
-      "path": "/Users/fabien/workspace/linktogo-org/ai-sync",
-      "technologies": ["nestjs", "postgres"],
-      "targets": ["claude"]
-    },
-    {
-      "name": "oc-be",
-      "url": "https://github.com/oclair-org/oc-be.git",
-      "path": "/Users/fabien/workspace/oclair-org/oc-be",
+      "name": "example-api",
+      "url": "https://github.com/example-org/example-api.git",
       "technologies": ["nestjs", "postgres"],
       "targets": ["claude", "cursor"]
     },
     {
-      "name": "lk-myasso",
-      "url": "https://github.com/linktogo-org/lk-myasso.git",
-      "path": "/Users/fabien/workspace/linktogo-org/lk-myasso",
-      "technologies": ["nx", "nextjs", "nestjs", "reactjs", "firebase"]
+      "name": "example-web",
+      "url": "https://github.com/example-org/example-web.git",
+      "technologies": ["nx", "nextjs", "reactjs"]
+    },
+    {
+      "name": "example-local-checkout",
+      "url": "https://github.com/example-org/example-local-checkout.git",
+      "path": "/absolute/path/to/example-local-checkout",
+      "technologies": ["vuejs"],
+      "targets": ["claude", "windsurf"]
     }
   ]
 }
