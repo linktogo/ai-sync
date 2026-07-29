@@ -18,7 +18,7 @@ function fakeCloneFactory(state) {
       async checkoutBranch(branch) { state.branch = branch; },
       async hasChanges() { return state.hasChanges; },
       async commitAll(message) { state.commit = message; },
-      async push(branch) { state.pushed = branch; },
+      async push(branch, opts) { state.pushed = branch; state.pushOpts = opts; },
       async createPR(title, body) { state.pr = { title, body }; },
     };
   };
@@ -60,6 +60,7 @@ test('full run writes files, commits, pushes, and skips PR when --pr absent', as
   assert.equal(results[0].status, 'pushed');
   assert.equal(state.branch, 'ai-sync/update-skills');
   assert.equal(state.pushed, 'ai-sync/update-skills');
+  assert.deepEqual(state.pushOpts, { force: true });
   assert.equal(state.pr, undefined);
   const written = await readFile(path.join(workDir, 'a', '.claude/skills/s/SKILL.md'), 'utf8');
   assert.match(written, /name: "s"/);

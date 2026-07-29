@@ -73,3 +73,14 @@ test('createPR invokes gh with title and body', async () => {
     args: ['pr', 'create', '--title', 'My title', '--body', 'My body'],
   });
 });
+
+test('push omits -f by default and includes it when force is set', async () => {
+  const calls = [];
+  const repo = createRepo('/somewhere', {
+    exec: async (file, args) => { calls.push(args); return ''; },
+  });
+  await repo.push('ci-status');
+  await repo.push('ai-sync/update-skills', { force: true });
+  assert.deepEqual(calls[0], ['push', '-u', 'origin', 'ci-status']);
+  assert.deepEqual(calls[1], ['push', '-f', '-u', 'origin', 'ai-sync/update-skills']);
+});

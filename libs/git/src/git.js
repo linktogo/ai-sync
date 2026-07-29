@@ -23,8 +23,11 @@ export function createRepo(dir, { exec = defaultExec } = {}) {
       await git('add', '-A');
       await git('commit', '-m', message);
     },
-    async push(branch) {
-      await git('push', '-f', '-u', 'origin', branch);
+    async push(branch, { force = false } = {}) {
+      const args = ['push'];
+      if (force) args.push('-f');
+      args.push('-u', 'origin', branch);
+      await git(...args);
     },
     async createPR(title, body) {
       await exec('gh', ['pr', 'create', '--title', title, '--body', body], { cwd: dir });
