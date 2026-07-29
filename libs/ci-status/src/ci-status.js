@@ -17,3 +17,35 @@ export function normalizeState(status, conclusion) {
 export function rankState(state) {
   return RANK[state] ?? RANK.none;
 }
+
+const REQUIRED_STRINGS = ['repo', 'actor', 'status'];
+
+// Never throws: a bad file on the branch must degrade to a skipped entry, not
+// take the whole read down. `at` is where the file was found, so a payload that
+// disagrees with its own path is rejected rather than silently reattributed.
+export function parseUpdate(raw, at) {
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    return { ok: false, reason: `invalid JSON: ${err.message}` };
+  }
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return { ok: false, reason: 'not an object' };
+  }
+  for (const field of REQUIRED_STRINGS) {
+    if (typeof parsed[field] !== 'string' || parsed[field] === '') {
+      return { ok: false, reason: `missing or invalid "${field}"` };
+    }
+  }
+  if (!Number.isInteger(parsed.runId)) {
+    return { ok: false, reason: 'missing or invalid "runId"' };
+  }
+  if (parsed.actor !== at.login) {
+    return { ok: false, reason: `actor "${parsed.actor}" does not match folder "${at.login}"` };
+  }
+  if (parsed.repo !== at.repo) {
+    return { ok: false, reason: `repo "${parsed.repo}" does not match file "${at.repo}"` };
+  }
+  return { ok: true, update: parsed };
+}
