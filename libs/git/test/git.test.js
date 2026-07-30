@@ -84,3 +84,30 @@ test('push omits -f by default and includes it when force is set', async () => {
   assert.deepEqual(calls[0], ['push', '-u', 'origin', 'ci-status']);
   assert.deepEqual(calls[1], ['push', '-f', '-u', 'origin', 'ai-sync/update-skills']);
 });
+
+test('clone passes --branch --single-branch when a branch is given', async () => {
+  const calls = [];
+  const exec = async (file, args) => { calls.push(args); return ''; };
+  await clone('url', '/dest', { exec, depth: 1, branch: 'ci-status' });
+  assert.deepEqual(calls[0], ['clone', '--depth', '1', '--branch', 'ci-status', '--single-branch', 'url', '/dest']);
+});
+
+test('fetchReset re-points the checkout at the remote branch', async () => {
+  const calls = [];
+  const repo = createRepo('/somewhere', { exec: async (file, args) => { calls.push(args); return ''; } });
+  await repo.fetchReset('ci-status');
+  assert.deepEqual(calls, [
+    ['fetch', 'origin', 'ci-status'],
+    ['reset', '--hard', 'origin/ci-status'],
+  ]);
+});
+
+test('configureIdentity sets the local committer', async () => {
+  const calls = [];
+  const repo = createRepo('/somewhere', { exec: async (file, args) => { calls.push(args); return ''; } });
+  await repo.configureIdentity('ai-sync[bot]', 'bot@example.com');
+  assert.deepEqual(calls, [
+    ['config', 'user.name', 'ai-sync[bot]'],
+    ['config', 'user.email', 'bot@example.com'],
+  ]);
+});
