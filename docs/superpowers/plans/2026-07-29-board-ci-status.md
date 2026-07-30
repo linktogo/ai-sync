@@ -994,9 +994,17 @@ test('a second tick is ignored while the first is still running', async () => {
   });
   const first = r.tick();
   await r.tick();
+  // The truly concurrent second call must not have started any git command
+  // while the first tick is still in flight. This is the assertion that
+  // actually proves the lock.
+  assert.equal(started, 1);
   release();
   await first;
-  assert.equal(started, 1);
+  // A single completed tick legitimately issues two sequential git calls
+  // (fetch then reset), so `started` lands on 2 — not because a second tick
+  // ran, but because one real tick does two commands. This guards that it
+  // stops at 2, not 3+.
+  assert.equal(started, 2);
   await rm(root, { recursive: true, force: true });
 });
 
