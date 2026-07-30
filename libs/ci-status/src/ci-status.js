@@ -49,3 +49,50 @@ export function parseUpdate(raw, at) {
   }
   return { ok: true, update: parsed };
 }
+
+function repoName(env) {
+  return env.GITHUB_REPOSITORY.split('/')[1];
+}
+
+// The workflow_run event carries the conclusion of the *whole* workflow, which
+// is the only place `cancelled` is observable.
+function fromWorkflowRun(env, run, now) {
+  return {
+    repo: repoName(env),
+    actor: run.actor.login,
+    runId: run.id,
+    status: run.status,
+    conclusion: run.conclusion,
+    workflow: run.name,
+    branch: run.head_branch,
+    event: run.event,
+    url: run.html_url,
+    startedAt: run.run_started_at,
+    sentAt: now,
+  };
+}
+
+// As a final `if: always()` step we only ever see our own job, and by
+// definition it is finished, so status is pinned to completed and the
+// conclusion comes from `job.status`.
+function fromJob(env, now) {
+  return {
+    repo: repoName(env),
+    actor: env.GITHUB_ACTOR,
+    runId: Number(env.GITHUB_RUN_ID),
+    status: 'completed',
+    conclusion: env.JOB_STATUS,
+    workflow: env.GITHUB_WORKFLOW,
+    branch: env.GITHUB_REF_NAME,
+    event: env.GITHUB_EVENT_NAME,
+    url: `${env.GITHUB_SERVER_URL}/${env.GITHUB_REPOSITORY}/actions/runs/${env.GITHUB_RUN_ID}`,
+    startedAt: now,
+    sentAt: now,
+  };
+}
+
+export function buildUpdate(env, event, now) {
+  return env.GITHUB_EVENT_NAME === 'workflow_run'
+    ? fromWorkflowRun(env, event.workflow_run, now)
+    : fromJob(env, now);
+}
