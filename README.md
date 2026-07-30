@@ -268,6 +268,85 @@ chips, and its event timeline. When started with `--config repos.example.json` (
 server also exposes `GET /api/config` to power the links and technology filter; without it the
 board still runs in a degraded mode (no links/filter).
 
+## CI status on the board
+
+Each board card shows one badge per contributor, coloured by that person's latest
+CI outcome for the repo — red failure, blue in-progress, grey cancelled/skipped,
+green success — sorted worst-first and capped at four with a `+N` overflow. The
+detail panel breaks the same information down per contributor with a link to the
+run, and the filter bar gains a `CI` selector.
+
+Managed repos **push** their status; the board only reads. That keeps the
+dashboard off the GitHub API (no rate limit, no token with read access to every
+managed repo) and means each repo holds a credential scoped to writing one
+branch here.
+
+The drop zone is the orphan branch `ci-status` of this repository, holding
+`updates/<login>/<repo>.json` — exactly one file per contributor per repo,
+overwritten on each run, so it never grows unbounded.
+
+### 1. Seed the drop branch (once, in this repository)
+
+```sh
+git checkout --orphan ci-status
+git rm -rf .
+mkdir updates && touch updates/.gitkeep
+git add -A && git commit -m "chore: seed ci-status drop branch"
+git push -u origin ci-status
+git checkout main
+```
+
+Until this branch exists the board logs a single warning and shows no statuses —
+it does not fail.
+
+### 2. Report from each managed repo
+
+Create an `AI_SYNC_STATUS_TOKEN` secret in the repo — a fine-grained token with
+**Contents: write** on `linktogo/ai-sync` — then add
+`.github/workflows/ai-sync-status.yml`:
+
+```yaml
+name: ai-sync status
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: linktogo/ai-sync/.github/actions/ci-status-report@main
+        with:
+          token: ${{ secrets.AI_SYNC_STATUS_TOKEN }}
+```
+
+Alternatively, drop the same `uses:` block as a final `if: always()` step inside
+an existing CI job. The `workflow_run` form is preferred: it sees the conclusion
+of the whole workflow, including `cancelled`, and leaves the existing CI file
+untouched.
+
+### 3. Point the board at the branch
+
+```sh
+AI_SYNC_STATUS_REPO=https://github.com/linktogo/ai-sync.git npm start
+```
+
+| Flag | Env | Default |
+|---|---|---|
+| `--status-repo` | `AI_SYNC_STATUS_REPO` | none — CI status disabled |
+| — | `AI_SYNC_STATUS_TOKEN` | none — uses ambient git credentials |
+| `--ci-interval` | — | `60` (seconds) |
+| `--ci-state` | — | `<board dir>/ci.json` |
+| `--ci-cache` | — | `<board dir>/ci-status` |
+
+Without `--status-repo` no git command runs at all and every repo reports as
+unavailable, so a misconfiguration is visible rather than silent. `GET /api/ci`
+serves the local `ci.json` cache and never touches the network; a failed sync
+records `lastSyncError` and leaves the previously cached statuses intact.
+
+Statuses never expire. A contributor who leaves the team keeps a badge until
+their file is removed from `updates/<login>/` by hand.
+
 ## Project layout
 
 An Nx monorepo (npm workspaces). Applications live in `apps/`, shared code in
