@@ -23,3 +23,27 @@ test('emits "open" with the repo name on click', async () => {
   await w.trigger('click');
   expect(w.emitted('open')[0]).toEqual(['oc-be']);
 });
+
+const repoTodo = { status: 'todo', lastEvent: 'init', updatedAt: '2026-06-21T09:59:00.000Z' };
+
+test('renders one badge per contributor, worst first', () => {
+  const ci = { users: { zoe: { state: 'success' }, alice: { state: 'failure' } } };
+  const w = mount(Card, { props: { name: 'oc-be', repo: repoTodo, now, ci } });
+  const badges = w.findAll('[data-test=ci-badge]');
+  expect(badges.map((b) => b.text())).toEqual(['AL', 'ZO']);
+  expect(badges[0].classes().join(' ')).toContain('red');
+});
+
+test('collapses beyond four contributors into a +N badge', () => {
+  const users = {};
+  for (const login of ['a1', 'b2', 'c3', 'd4', 'e5']) users[login] = { state: 'success' };
+  const w = mount(Card, { props: { name: 'oc-be', repo: repoTodo, now, ci: { users } } });
+  expect(w.findAll('[data-test=ci-badge]')).toHaveLength(4);
+  expect(w.get('[data-test=ci-overflow]').text()).toBe('+1');
+});
+
+test('renders no badges when the repo has no CI status', () => {
+  const w = mount(Card, { props: { name: 'oc-be', repo: repoTodo, now } });
+  expect(w.findAll('[data-test=ci-badge]')).toHaveLength(0);
+  expect(w.find('[data-test=ci-overflow]').exists()).toBe(false);
+});
