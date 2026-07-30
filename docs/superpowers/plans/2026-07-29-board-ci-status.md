@@ -645,8 +645,7 @@ There is no test target here — this is the plan's one accepted blind spot, whi
 // Deposits this run's CI status into the ai-sync `ci-status` branch as
 // updates/<login>/<repo>.json. Imported by relative path so the runner needs no
 // npm install: both libs are dependency-free.
-import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
-import { mkdtemp } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, rm, mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { buildUpdate, parseUpdate } from '../../../libs/ci-status/src/ci-status.js';
@@ -667,9 +666,9 @@ async function readEvent(file) {
 // of whatever the remote currently holds, so there is never a conflict to
 // resolve. The runId comparison stops two runs landing out of order from
 // flip-flopping the file.
-async function deposit(repo, dir, update, branch) {
+async function deposit(repo, update, branch) {
   const rel = path.join('updates', update.actor, `${update.repo}.json`);
-  const file = path.join(dir, rel);
+  const file = path.join(repo.dir, rel);
   for (let attempt = 1; attempt <= ATTEMPTS; attempt += 1) {
     const existing = await readFile(file, 'utf8').catch(() => null);
     if (existing) {
@@ -701,21 +700,28 @@ async function deposit(repo, dir, update, branch) {
 
 const { INPUT_TOKEN, INPUT_STATUS_REPO, INPUT_BRANCH, GITHUB_EVENT_PATH } = process.env;
 const url = `https://x-access-token:${INPUT_TOKEN}@github.com/${INPUT_STATUS_REPO}.git`;
-const update = buildUpdate(process.env, await readEvent(GITHUB_EVENT_PATH), new Date().toISOString());
 const dir = path.join(await mkdtemp(path.join(tmpdir(), 'ai-sync-status-')), 'repo');
 
 try {
+  const update = buildUpdate(process.env, await readEvent(GITHUB_EVENT_PATH), new Date().toISOString());
   const repo = await clone(url, dir, { depth: 1, branch: INPUT_BRANCH });
   await repo.configureIdentity('ai-sync[bot]', 'ai-sync@users.noreply.github.com');
-  await deposit(repo, dir, update, INPUT_BRANCH);
+  await deposit(repo, update, INPUT_BRANCH);
 } catch (err) {
-  // Never let the token reach the log, even through a git error message.
-  console.error(`ai-sync: ${String(err.message).split(INPUT_TOKEN).join('***')}`);
-  process.exit(1);
+  // Never let the token reach the log, even through a git error message. Guard
+  // against an empty token: splitting on '' would interleave '***' between
+  // every character of the message instead of leaving it untouched.
+  const message = INPUT_TOKEN ? String(err.message).split(INPUT_TOKEN).join('***') : String(err.message);
+  console.error(`ai-sync: ${message}`);
+  // exitCode (not exit()) so this `finally` still runs and the temp clone
+  // — whose .git/config holds the token in the remote URL — gets removed.
+  process.exitCode = 1;
 } finally {
   await rm(path.dirname(dir), { recursive: true, force: true });
 }
 ```
+
+Notes on the fixes above versus the first draft: `buildUpdate`/`readEvent` moved inside the `try` so a malformed `workflow_run` event payload fails through the redacted `catch` instead of throwing an unhandled `TypeError`; `dir` is computed before the `try` so `finally` can always find it; `deposit` takes `repo` alone and reads `repo.dir` instead of a redundant `dir` parameter; and the process exits via `process.exitCode = 1` rather than `process.exit(1)`, because `exit()` would skip the `finally` cleanup entirely and leave the temp clone's `.git/config` — which embeds the token in the remote URL — on disk.
 
 - [ ] **Step 2: Add the three `libs/git` helpers the script needs**
 

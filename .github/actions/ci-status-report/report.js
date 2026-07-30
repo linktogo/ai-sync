@@ -23,9 +23,9 @@ async function readEvent(file) {
 // of whatever the remote currently holds, so there is never a conflict to
 // resolve. The runId comparison stops two runs landing out of order from
 // flip-flopping the file.
-async function deposit(repo, dir, update, branch) {
+async function deposit(repo, update, branch) {
   const rel = path.join('updates', update.actor, `${update.repo}.json`);
-  const file = path.join(dir, rel);
+  const file = path.join(repo.dir, rel);
   for (let attempt = 1; attempt <= ATTEMPTS; attempt += 1) {
     const existing = await readFile(file, 'utf8').catch(() => null);
     if (existing) {
@@ -57,17 +57,22 @@ async function deposit(repo, dir, update, branch) {
 
 const { INPUT_TOKEN, INPUT_STATUS_REPO, INPUT_BRANCH, GITHUB_EVENT_PATH } = process.env;
 const url = `https://x-access-token:${INPUT_TOKEN}@github.com/${INPUT_STATUS_REPO}.git`;
-const update = buildUpdate(process.env, await readEvent(GITHUB_EVENT_PATH), new Date().toISOString());
 const dir = path.join(await mkdtemp(path.join(tmpdir(), 'ai-sync-status-')), 'repo');
 
 try {
+  const update = buildUpdate(process.env, await readEvent(GITHUB_EVENT_PATH), new Date().toISOString());
   const repo = await clone(url, dir, { depth: 1, branch: INPUT_BRANCH });
   await repo.configureIdentity('ai-sync[bot]', 'ai-sync@users.noreply.github.com');
-  await deposit(repo, dir, update, INPUT_BRANCH);
+  await deposit(repo, update, INPUT_BRANCH);
 } catch (err) {
-  // Never let the token reach the log, even through a git error message.
-  console.error(`ai-sync: ${String(err.message).split(INPUT_TOKEN).join('***')}`);
-  process.exit(1);
+  // Never let the token reach the log, even through a git error message. Guard
+  // against an empty token: splitting on '' would interleave '***' between
+  // every character of the message instead of leaving it untouched.
+  const message = INPUT_TOKEN ? String(err.message).split(INPUT_TOKEN).join('***') : String(err.message);
+  console.error(`ai-sync: ${message}`);
+  // exitCode (not exit()) so this `finally` still runs and the temp clone
+  // — whose .git/config holds the token in the remote URL — gets removed.
+  process.exitCode = 1;
 } finally {
   await rm(path.dirname(dir), { recursive: true, force: true });
 }

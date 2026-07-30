@@ -102,6 +102,40 @@ test('fetchReset re-points the checkout at the remote branch', async () => {
   ]);
 });
 
+test('fetchReset discards a local-only commit and matches what a concurrent pusher landed', async () => {
+  const { root, bare } = await makeBareRemote();
+
+  // Our clone: makes a local commit that never gets pushed. The bare remote's
+  // HEAD is unborn (makeBareRemote pushes to "main" without setting HEAD), so
+  // each clone must check out "main" explicitly to land on the seeded history
+  // rather than an empty, unrelated branch.
+  const dest = path.join(root, 'work');
+  const repo = await clone(bare, dest);
+  configure(dest);
+  execFileSync('git', ['-C', dest, 'checkout', 'main']);
+  await writeFile(path.join(dest, 'mine.txt'), 'mine\n');
+  await repo.commitAll('chore: local only');
+  const localLog = execFileSync('git', ['-C', dest, 'log', '--oneline']).toString();
+  assert.match(localLog, /local only/);
+
+  // A concurrent pusher lands different content on the same branch first.
+  const other = path.join(root, 'other');
+  const otherRepo = await clone(bare, other);
+  configure(other);
+  execFileSync('git', ['-C', other, 'checkout', 'main']);
+  await writeFile(path.join(other, 'theirs.txt'), 'theirs\n');
+  await otherRepo.commitAll('chore: pushed by someone else');
+  await otherRepo.push('main');
+
+  await repo.fetchReset('main');
+
+  const logAfterReset = execFileSync('git', ['-C', dest, 'log', '--oneline']).toString();
+  assert.doesNotMatch(logAfterReset, /local only/);
+  assert.match(logAfterReset, /pushed by someone else/);
+  await assert.rejects(readFile(path.join(dest, 'mine.txt'), 'utf8'));
+  assert.equal(await readFile(path.join(dest, 'theirs.txt'), 'utf8'), 'theirs\n');
+});
+
 test('configureIdentity sets the local committer', async () => {
   const calls = [];
   const repo = createRepo('/somewhere', { exec: async (file, args) => { calls.push(args); return ''; } });
