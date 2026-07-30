@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@linktogo/ai-ci-status": "^0.1.0",
     "@linktogo/ai-config": "^0.1.0",
     "@linktogo/ai-workspace-bootstrap": "^0.1.0",
     "vue": "^3.5.0"
@@ -40,9 +41,14 @@
           "command": "node --test apps/board/server.test.js"
         }
       },
+      "test-reader": {
+        "executor": "nx:run-commands",
+        "options": { "command": "node --test apps/board/ciReader.test.js" }
+      },
       "test": {
         "dependsOn": [
-          "test-server"
+          "test-server",
+          "test-reader"
         ]
       }
     }
