@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeState, rankState, parseUpdate, buildUpdate } from '../src/ci-status.js';
+import { normalizeState, rankState, parseUpdate, buildUpdate, buildState } from '../src/ci-status.js';
 
 test('normalizeState maps every GitHub status/conclusion pair', () => {
   const cases = [
@@ -111,4 +111,35 @@ test('buildUpdate reads the job context when used as an in-job step', () => {
     url: 'https://github.com/linktogo/lk-mind/actions/runs/77',
     startedAt: NOW, sentAt: NOW,
   });
+});
+
+test('buildState groups by repo then by contributor and stamps receivedAt', () => {
+  const entries = [
+    { login: 'fabien', repo: 'lk-myasso', update: { ...VALID, runId: 42 } },
+    { login: 'alice', repo: 'lk-myasso', update: { ...VALID, actor: 'alice', runId: 41, conclusion: 'success' } },
+    { login: 'fabien', repo: 'lk-mind', update: { ...VALID, repo: 'lk-mind', runId: 9 } },
+  ];
+  const state = buildState(entries, NOW);
+  assert.deepEqual(Object.keys(state.repos).sort(), ['lk-mind', 'lk-myasso']);
+  assert.deepEqual(Object.keys(state.repos['lk-myasso'].users).sort(), ['alice', 'fabien']);
+  assert.equal(state.repos['lk-myasso'].users.fabien.runId, 42);
+  assert.equal(state.repos['lk-myasso'].users.fabien.receivedAt, NOW);
+});
+
+test('buildState keeps the highest runId when a pair appears twice', () => {
+  const entries = [
+    { login: 'fabien', repo: 'lk-myasso', update: { ...VALID, runId: 42 } },
+    { login: 'fabien', repo: 'lk-myasso', update: { ...VALID, runId: 7 } },
+  ];
+  assert.equal(buildState(entries, NOW).repos['lk-myasso'].users.fabien.runId, 42);
+});
+
+test('buildState does not mutate the updates it is given', () => {
+  const update = { ...VALID };
+  buildState([{ login: 'fabien', repo: 'lk-myasso', update }], NOW);
+  assert.equal(update.receivedAt, undefined);
+});
+
+test('buildState returns an empty map for no entries', () => {
+  assert.deepEqual(buildState([], NOW), { repos: {} });
 });

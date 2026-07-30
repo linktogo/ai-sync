@@ -96,3 +96,17 @@ export function buildUpdate(env, event, now) {
     ? fromWorkflowRun(env, event.workflow_run, now)
     : fromJob(env, now);
 }
+
+// The branch holds one file per (user, repo), so a duplicate pair can only come
+// from a hand-edited branch. Preferring the higher runId makes the fold
+// deterministic whatever order readdir returns.
+export function buildState(entries, now) {
+  const repos = {};
+  for (const { login, repo, update } of entries) {
+    const bucket = (repos[repo] ??= { users: {} });
+    const existing = bucket.users[login];
+    if (existing && existing.runId >= update.runId) continue;
+    bucket.users[login] = { ...update, receivedAt: now };
+  }
+  return { repos };
+}
