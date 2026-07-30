@@ -6,6 +6,7 @@ import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { loadConfig } from '@linktogo/ai-config';
 import { reconcileHooks } from '@linktogo/ai-workspace-bootstrap';
+import { createCiReader } from './ciReader.js';
 
 // Resolve the board file the server should read. Explicit --board and the
 // AI_SYNC_BOARD env var always win; otherwise auto-detect the workspace board
@@ -57,6 +58,27 @@ async function serveConfig(configPath, res) {
   res.end(JSON.stringify({ repos }));
 }
 
+// The repo list comes from the config, which is where repo identity lives; the
+// reader only knows about names that have reported.
+async function readRepoNames(configPath) {
+  if (!configPath) return null;
+  try {
+    const parsed = JSON.parse(await readFile(configPath, 'utf8'));
+    return (parsed.repos ?? []).map((r) => r?.name).filter(Boolean);
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
+    return null;
+  }
+}
+
+async function serveCi(ciReader, configPath, res) {
+  const body = ciReader
+    ? await ciReader.read(await readRepoNames(configPath))
+    : { generatedAt: new Date().toISOString(), lastSyncError: 'status repo not configured', repos: {} };
+  res.writeHead(200, { 'content-type': 'application/json' });
+  res.end(JSON.stringify(body));
+}
+
 async function serveStatic(distDir, pathname, res) {
   const rel = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
   const file = path.join(distDir, rel);
@@ -76,12 +98,13 @@ async function serveStatic(distDir, pathname, res) {
   }
 }
 
-export function createBoardServer({ boardPath, distDir, configPath = null }) {
+export function createBoardServer({ boardPath, distDir, configPath = null, ciReader = null }) {
   return createServer(async (req, res) => {
     try {
       const url = new URL(req.url, 'http://localhost');
       if (url.pathname === '/api/board') return await serveBoard(boardPath, res);
       if (url.pathname === '/api/config') return await serveConfig(configPath, res);
+      if (url.pathname === '/api/ci') return await serveCi(ciReader, configPath, res);
       return await serveStatic(distDir, url.pathname, res);
     } catch (err) {
       res.writeHead(500, { 'content-type': 'text/plain' });
@@ -96,6 +119,8 @@ export async function startFromArgv(argv, { log = console.log } = {}) {
     options: {
       board: { type: 'string' }, port: { type: 'string', default: '4180' },
       dist: { type: 'string' }, config: { type: 'string' },
+      'status-repo': { type: 'string' }, 'ci-interval': { type: 'string', default: '60' },
+      'ci-state': { type: 'string' }, 'ci-cache': { type: 'string' },
     },
   });
   const boardPath = resolveServerBoardPath({ board: values.board });
@@ -118,13 +143,28 @@ export async function startFromArgv(argv, { log = console.log } = {}) {
       log(`  ⚠ hook reconciliation skipped: ${err.message}`);
     }
   }
+  const boardDir = path.dirname(boardPath);
+  const statusRepo = values['status-repo'] ?? process.env.AI_SYNC_STATUS_REPO ?? null;
+  const ciReader = createCiReader({
+    statusRepo,
+    token: process.env.AI_SYNC_STATUS_TOKEN ?? null,
+    stateFile: values['ci-state'] ? path.resolve(values['ci-state']) : path.join(boardDir, 'ci.json'),
+    cacheDir: values['ci-cache'] ? path.resolve(values['ci-cache']) : path.join(boardDir, 'ci-status'),
+    logger: { log, warn: log },
+  });
+  if (statusRepo) {
+    log(`  ci status from ${statusRepo} (${values['ci-interval']}s)`);
+    void ciReader.tick();
+  }
   const distDir = values.dist ?? path.join(path.dirname(fileURLToPath(import.meta.url)), 'dist');
-  const server = createBoardServer({ boardPath, distDir, configPath });
+  const server = createBoardServer({ boardPath, distDir, configPath, ciReader });
 
   // Like the Angular CLI: if the port is taken, fall back to the next one.
   const maxAttempts = 10;
   let port = Number(values.port);
   let attempts = 1;
+  const ciTimer = statusRepo ? setInterval(() => void ciReader.tick(), Number(values['ci-interval']) * 1000) : null;
+  server.on('close', () => { if (ciTimer) clearInterval(ciTimer); });
   server.on('listening', () => log(`board on http://localhost:${port} (data: ${boardPath})`));
   server.on('error', (err) => {
     if (err.code === 'EADDRINUSE' && attempts++ < maxAttempts) {
