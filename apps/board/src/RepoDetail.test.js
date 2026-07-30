@@ -46,6 +46,8 @@ test('lists each contributor CI run with a link to it', () => {
   expect(line.text()).toContain('fabien');
   expect(line.text()).toContain('CI');
   expect(line.text()).toContain('feat/x');
+  // The relative time is the guard against a stale green reading as current.
+  expect(line.text()).toContain('il y a 1 min');
   expect(w.get('[data-test=ci-link]').attributes('href')).toBe('https://github.com/linktogo/lk-myasso/actions/runs/42');
 });
 

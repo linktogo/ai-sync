@@ -96,3 +96,17 @@ test('shows a desync banner when the server reports a sync error', async () => {
   await settle();
   expect(w.get('[data-test=ci-desync]').text()).toContain('désynchronisé');
 });
+
+test('shows a board-wide banner when CI is unavailable, distinct from the desync banner', async () => {
+  const fetchImpl = ciRoutedFetch({
+    board: { version: 1, repos: { 'oc-be': CARD } },
+    ci: {
+      repos: { 'oc-be': { users: {}, unavailable: 'status repo not configured' } },
+      lastSyncError: null,
+    },
+  });
+  const w = mount(App, { props: { fetchImpl, intervalMs: 100000 } });
+  await settle();
+  expect(w.get('[data-test=ci-unavailable-banner]').text()).toContain('status repo not configured');
+  expect(w.find('[data-test=ci-desync]').exists()).toBe(false);
+});

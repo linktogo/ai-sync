@@ -61,6 +61,16 @@ function entriesFor(status) {
 }
 const grouped = computed(() => COLUMNS.map((c) => ({ ...c, entries: entriesFor(c.status) })));
 
+// A board-wide condition (reader not configured), never per-repo — see the
+// design's "State resolution". Every repo entry carries the same reason, so
+// the first one found is enough.
+const ciUnavailable = computed(() => {
+  for (const repo of Object.values(ci.value)) {
+    if (repo?.unavailable) return repo.unavailable;
+  }
+  return null;
+});
+
 const selectedRepo = computed(() => (selected.value ? repos.value[selected.value] : null));
 const selectedMeta = computed(() => (selected.value ? config.value[selected.value] ?? null : null));
 const selectedCi = computed(() => (selected.value ? ci.value[selected.value] ?? null : null));
@@ -90,6 +100,7 @@ const selectedCi = computed(() => (selected.value ? ci.value[selected.value] ?? 
 
     <p v-if="!connected" class="mb-3 text-xs text-amber-700">⚠ déconnecté — nouvelle tentative au prochain poll…</p>
     <p v-if="ciError" data-test="ci-desync" class="mb-3 text-xs text-amber-700">⚠ CI désynchronisé — {{ ciError }}</p>
+    <p v-if="ciUnavailable" data-test="ci-unavailable-banner" class="mb-3 text-xs text-amber-700">⚠ Statut CI indisponible — {{ ciUnavailable }}</p>
     <p v-if="permission === 'denied'" class="mb-3 text-xs text-slate-500">Notifications bloquées par le navigateur.</p>
 
     <SummaryHeader :repos="repos" />

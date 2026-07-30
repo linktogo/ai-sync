@@ -45,6 +45,13 @@ test('ciAggregate reduces contributors to one verdict', () => {
   expect(ciAggregate({ a: { state: 'success' }, b: { state: 'neutral' } })).toBe('ok');
 });
 
+// Deliberate per the design: "OK = at least one contributor and none failing
+// or running". A repo where every latest run was cancelled/skipped (neutral)
+// still counts as ok — unintuitive, so pin it explicitly.
+test('ciAggregate treats an all-neutral repo as ok', () => {
+  expect(ciAggregate({ a: { state: 'neutral' }, b: { state: 'neutral' } })).toBe('ok');
+});
+
 test('matchesCiFilter implements the three filter options', () => {
   const failing = { a: { state: 'failure' } };
   const green = { a: { state: 'success' } };

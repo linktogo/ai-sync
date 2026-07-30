@@ -28,12 +28,17 @@ export function visibleBadges(users, max = MAX_BADGES) {
   return { shown: all.slice(0, max), overflow: all.slice(max) };
 }
 
+// Derived from the same RANK total order that sorts badges, so the aggregate
+// and the card ordering can never disagree: the minimum rank wins. Only
+// failure and running have their own filter verdict; anything else that has
+// at least one contributor (neutral or success) is ok.
+const AGGREGATE_BY_MIN_RANK = { [rankState('failure')]: 'failure', [rankState('running')]: 'running' };
+
 export function ciAggregate(users) {
   const states = Object.values(users ?? {}).map((u) => u.state);
   if (states.length === 0) return 'unknown';
-  if (states.includes('failure')) return 'failure';
-  if (states.includes('running')) return 'running';
-  return 'ok';
+  const minRank = Math.min(...states.map(rankState));
+  return AGGREGATE_BY_MIN_RANK[minRank] ?? 'ok';
 }
 
 export function matchesCiFilter(users, filter) {

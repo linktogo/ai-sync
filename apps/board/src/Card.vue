@@ -30,13 +30,17 @@ const overflowTitle = computed(() => badges.value.overflow.map((b) => `${b.login
         <span
           v-for="b in badges.shown" :key="b.login"
           data-test="ci-badge"
+          role="img"
           :title="`${b.login} — ${b.state}`"
+          :aria-label="`${b.login} — ${b.state}`"
           :class="['text-[10px] leading-none font-semibold border rounded px-1 py-0.5', pillClass(b.state)]"
         >{{ b.initials }}</span>
         <span
           v-if="badges.overflow.length"
           data-test="ci-overflow"
+          role="img"
           :title="overflowTitle"
+          :aria-label="overflowTitle"
           class="text-[10px] leading-none font-semibold border border-slate-300 bg-slate-100 text-slate-500 rounded px-1 py-0.5"
         >+{{ badges.overflow.length }}</span>
       </div>

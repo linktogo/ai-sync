@@ -47,3 +47,15 @@ test('renders no badges when the repo has no CI status', () => {
   expect(w.findAll('[data-test=ci-badge]')).toHaveLength(0);
   expect(w.find('[data-test=ci-overflow]').exists()).toBe(false);
 });
+
+test('badges expose state through aria-label, not colour alone', () => {
+  const users = {};
+  for (const login of ['a1', 'b2', 'c3', 'd4', 'e5']) users[login] = { state: 'success' };
+  users.alice = { state: 'failure' };
+  const w = mount(Card, { props: { name: 'oc-be', repo: repoTodo, now, ci: { users } } });
+  const badge = w.get('[data-test=ci-badge]');
+  expect(badge.attributes('aria-label')).toContain('alice');
+  expect(badge.attributes('aria-label')).toContain('failure');
+  const overflow = w.get('[data-test=ci-overflow]');
+  expect(overflow.attributes('aria-label')).toBeTruthy();
+});
