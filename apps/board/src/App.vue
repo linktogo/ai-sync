@@ -6,8 +6,10 @@ import FilterBar from './FilterBar.vue';
 import RepoDetail from './RepoDetail.vue';
 import { useBoard } from './useBoard.js';
 import { useConfig } from './useConfig.js';
+import { useCi } from './useCi.js';
 import { useNotifications } from './useNotifications.js';
 import { useNow } from './useRelativeTime.js';
+import { matchesCiFilter } from './ciBadge.js';
 
 const props = defineProps({
   fetchImpl: { type: Function, default: undefined },
@@ -17,10 +19,12 @@ const fetchImpl = props.fetchImpl ?? fetch;
 
 const { repos, transitions, connected } = useBoard({ intervalMs: props.intervalMs, fetchImpl });
 const { repos: config } = useConfig({ fetchImpl });
+const { repos: ci, syncError: ciError } = useCi({ fetchImpl });
 const now = useNow();
 
 const nameFilter = ref('');
 const techFilter = ref('');
+const ciFilter = ref('');
 const selected = ref(null);
 
 const questionCount = computed(() => Object.values(repos.value).filter((r) => r.status === 'question').length);
@@ -44,6 +48,7 @@ const filtered = computed(() => {
   for (const [name, repo] of Object.entries(repos.value)) {
     if (nameFilter.value && !name.toLowerCase().includes(nameFilter.value.toLowerCase())) continue;
     if (techFilter.value && !(config.value[name]?.technologies ?? []).includes(techFilter.value)) continue;
+    if (!matchesCiFilter(ci.value[name]?.users, ciFilter.value)) continue;
     out[name] = repo;
   }
   return out;
@@ -58,6 +63,7 @@ const grouped = computed(() => COLUMNS.map((c) => ({ ...c, entries: entriesFor(c
 
 const selectedRepo = computed(() => (selected.value ? repos.value[selected.value] : null));
 const selectedMeta = computed(() => (selected.value ? config.value[selected.value] ?? null : null));
+const selectedCi = computed(() => (selected.value ? ci.value[selected.value] ?? null : null));
 </script>
 
 <template>
@@ -66,8 +72,8 @@ const selectedMeta = computed(() => (selected.value ? config.value[selected.valu
       <h1 class="text-lg font-bold text-slate-800">ai-sync · workspace board</h1>
       <div class="flex items-center gap-2 flex-wrap">
         <FilterBar
-          :name="nameFilter" :tech="techFilter" :technologies="technologies"
-          @update:name="nameFilter = $event" @update:tech="techFilter = $event"
+          :name="nameFilter" :tech="techFilter" :ci="ciFilter" :technologies="technologies"
+          @update:name="nameFilter = $event" @update:tech="techFilter = $event" @update:ci="ciFilter = $event"
         />
         <button
           v-if="permission !== 'granted'"
@@ -83,6 +89,7 @@ const selectedMeta = computed(() => (selected.value ? config.value[selected.valu
     </div>
 
     <p v-if="!connected" class="mb-3 text-xs text-amber-700">⚠ déconnecté — nouvelle tentative au prochain poll…</p>
+    <p v-if="ciError" data-test="ci-desync" class="mb-3 text-xs text-amber-700">⚠ CI désynchronisé — {{ ciError }}</p>
     <p v-if="permission === 'denied'" class="mb-3 text-xs text-slate-500">Notifications bloquées par le navigateur.</p>
 
     <SummaryHeader :repos="repos" />
@@ -90,13 +97,13 @@ const selectedMeta = computed(() => (selected.value ? config.value[selected.valu
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
       <Column
         v-for="c in grouped" :key="c.status"
-        :title="c.title" :accent="c.accent" :entries="c.entries" :now="now"
+        :title="c.title" :accent="c.accent" :entries="c.entries" :now="now" :ci="ci"
         @open="selected = $event"
       />
     </div>
 
     <RepoDetail
-      :name="selected" :repo="selectedRepo" :meta="selectedMeta" :now="now"
+      :name="selected" :repo="selectedRepo" :meta="selectedMeta" :ci="selectedCi" :now="now"
       @close="selected = null"
     />
   </main>
