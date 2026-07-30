@@ -18,6 +18,7 @@ export function createCiReader({
   exec = defaultExec,
   now = () => new Date().toISOString(),
   logger = console,
+  readdirImpl = readdir,
 } = {}) {
   let running = false;
 
@@ -41,13 +42,29 @@ export function createCiReader({
     await exec('git', ['reset', '--hard', `origin/${branch}`], { cwd: cacheDir });
   }
 
+  // Only the two expected shapes of "nothing to read here" are swallowed:
+  // the `updates/` root not existing yet (ENOENT), and a non-directory entry
+  // under it — the `.gitkeep` file — which readdir rejects with ENOTDIR (or
+  // ENOENT on some platforms). Anything else (e.g. EACCES/EPERM) propagates,
+  // so tick()'s catch records it as a real failure instead of silently
+  // treating a permissions error as an empty branch.
+  function isMissingEntry(err) {
+    return err?.code === 'ENOENT' || err?.code === 'ENOTDIR';
+  }
+
   async function readEntries() {
     const root = path.join(cacheDir, 'updates');
-    const logins = await readdir(root).catch(() => []);
+    const logins = await readdirImpl(root).catch((err) => {
+      if (isMissingEntry(err)) return [];
+      throw err;
+    });
     const entries = [];
     for (const login of logins) {
       // A non-directory here (`.gitkeep`) makes readdir throw ENOTDIR: skip it.
-      const files = await readdir(path.join(root, login)).catch(() => []);
+      const files = await readdirImpl(path.join(root, login)).catch((err) => {
+        if (isMissingEntry(err)) return [];
+        throw err;
+      });
       for (const file of files) {
         if (!file.endsWith('.json')) continue;
         const repo = file.slice(0, -'.json'.length);
@@ -86,9 +103,17 @@ export function createCiReader({
       const { repos } = buildState(await readEntries(), now());
       await writeState({ version: 1, lastSyncAt: now(), lastSyncError: null, repos });
     } catch (err) {
-      const previous = await readState();
-      await writeState({ ...previous, lastSyncError: redact(err.message) });
       logger.warn(`  ⚠ ci: sync failed: ${redact(err.message)}`);
+      try {
+        const previous = await readState();
+        await writeState({ ...previous, lastSyncError: redact(err.message) });
+      } catch (writeErr) {
+        // A secondary failure recording the sync error (disk full, ci.json
+        // unwritable, ...) must never escape tick(): server.js calls tick()
+        // fire-and-forget, and an unhandled rejection here would crash the
+        // whole board process over what is otherwise a transient hiccup.
+        logger.warn(`  ⚠ ci: failed to record sync error: ${redact(writeErr.message)}`);
+      }
     } finally {
       running = false;
     }

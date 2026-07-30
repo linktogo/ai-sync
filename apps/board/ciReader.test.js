@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, rm, chmod } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createCiReader } from './ciReader.js';
@@ -87,6 +87,77 @@ test('a git failure records the error and preserves the previous state', async (
   const state = JSON.parse(await readFile(stateFile, 'utf8'));
   assert.equal(state.repos['lk-myasso'].users.fabien.runId, 42);
   assert.match(state.lastSyncError, /could not read from remote/);
+  await rm(root, { recursive: true, force: true });
+});
+
+test('an unreadable updates/ directory is treated as a failure, not an empty branch', async (t) => {
+  if (process.getuid?.() === 0) {
+    t.skip('running as root: chmod does not restrict root, so this would be vacuous');
+    return;
+  }
+  const { root, cacheDir, stateFile } = await fixture();
+  const r = reader({ cacheDir, stateFile });
+  await r.tick();
+  const before = JSON.parse(await readFile(stateFile, 'utf8'));
+  assert.equal(before.repos['lk-myasso'].users.fabien.runId, 42);
+  assert.equal(before.lastSyncError, null);
+
+  const updatesRoot = path.join(cacheDir, 'updates');
+  await chmod(updatesRoot, 0o000);
+  try {
+    await r.tick();
+  } finally {
+    // Restore permissions before rm cleans up, or the cleanup itself fails.
+    await chmod(updatesRoot, 0o755);
+  }
+
+  const after = JSON.parse(await readFile(stateFile, 'utf8'));
+  assert.equal(after.repos['lk-myasso'].users.fabien.runId, 42, 'previous cache must survive an EACCES on updates/');
+  assert.match(after.lastSyncError, /EACCES|EPERM/);
+  await rm(root, { recursive: true, force: true });
+});
+
+test('a failing readdir on the updates root is recorded as a sync error, not an empty state (deterministic companion to the chmod test)', async () => {
+  const { root, cacheDir, stateFile } = await fixture();
+  const r = reader({ cacheDir, stateFile });
+  await r.tick();
+  const before = JSON.parse(await readFile(stateFile, 'utf8'));
+  assert.equal(before.repos['lk-myasso'].users.fabien.runId, 42);
+
+  const denied = reader({
+    cacheDir, stateFile,
+    readdirImpl: async () => {
+      const err = new Error('EACCES: permission denied, scandir');
+      err.code = 'EACCES';
+      throw err;
+    },
+  });
+  await denied.tick();
+  const after = JSON.parse(await readFile(stateFile, 'utf8'));
+  assert.equal(after.repos['lk-myasso'].users.fabien.runId, 42, 'previous cache must survive a readdir failure');
+  assert.match(after.lastSyncError, /EACCES/);
+  await rm(root, { recursive: true, force: true });
+});
+
+test('a secondary failure writing the sync error does not reject tick(), and the lock is still released', async () => {
+  const { root, cacheDir } = await fixture();
+  // Point stateFile at a path whose directory cannot be created (a file sits
+  // where a directory needs to go), so both the initial sync (git failure)
+  // and the catch block's own recovery I/O (readState/writeState) fail.
+  const brokenStateFile = path.join(cacheDir, 'not-a-dir-file', 'nested', 'ci.json');
+  await writeFile(path.join(cacheDir, 'not-a-dir-file'), 'i am a file, not a directory');
+  const execCalls = [];
+  const brittle = reader({
+    cacheDir, stateFile: brokenStateFile,
+    exec: async (file, args) => { execCalls.push(args); throw new Error('fatal: could not read from remote'); },
+  });
+  await assert.doesNotReject(() => brittle.tick());
+  assert.equal(execCalls.length, 1, 'the first (double-fault) tick must have run once');
+  // Fire the *same* reader again: if `finally` had not reset `running`, this
+  // would be swallowed by the in-flight guard and exec would never be
+  // called a second time.
+  await assert.doesNotReject(() => brittle.tick());
+  assert.equal(execCalls.length, 2, 'a following tick on the same reader must still run, proving `running` was reset');
   await rm(root, { recursive: true, force: true });
 });
 
