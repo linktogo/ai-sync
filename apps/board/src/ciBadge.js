@@ -20,7 +20,6 @@ export function pillClass(state) {
   return PILL[state] ?? PILL.neutral;
 }
 
-// Worst first, so a failure is always among the badges that survive the cap.
 export function visibleBadges(users, max = MAX_BADGES) {
   const all = Object.entries(users ?? {})
     .map(([login, u]) => ({ login, state: u.state, initials: initials(login) }))
@@ -28,10 +27,7 @@ export function visibleBadges(users, max = MAX_BADGES) {
   return { shown: all.slice(0, max), overflow: all.slice(max) };
 }
 
-// Derived from the same RANK total order that sorts badges, so the aggregate
-// and the card ordering can never disagree: the minimum rank wins. Only
-// failure and running have their own filter verdict; anything else that has
-// at least one contributor (neutral or success) is ok.
+// Derived from RANK so the aggregate can never disagree with the badge ordering.
 const AGGREGATE_BY_MIN_RANK = { [rankState('failure')]: 'failure', [rankState('running')]: 'running' };
 
 export function ciAggregate(users) {

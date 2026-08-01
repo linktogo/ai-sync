@@ -61,9 +61,7 @@ function entriesFor(status) {
 }
 const grouped = computed(() => COLUMNS.map((c) => ({ ...c, entries: entriesFor(c.status) })));
 
-// A board-wide condition (reader not configured), never per-repo — see the
-// design's "State resolution". Every repo entry carries the same reason, so
-// the first one found is enough.
+// Board-wide, never per-repo: every entry carries the same reason.
 const ciUnavailable = computed(() => {
   for (const repo of Object.values(ci.value)) {
     if (repo?.unavailable) return repo.unavailable;

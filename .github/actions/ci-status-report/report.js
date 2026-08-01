@@ -1,7 +1,6 @@
 #!/usr/bin/env node
-// Deposits this run's CI status into the ai-sync `ci-status` branch as
-// updates/<login>/<repo>.json. Imported by relative path so the runner needs no
-// npm install: both libs are dependency-free.
+// The libs are imported by relative path, not by package name: both are
+// dependency-free, so the runner needs no npm install.
 import { readFile, writeFile, mkdir, rm, mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -19,10 +18,8 @@ async function readEvent(file) {
   }
 }
 
-// Reset-and-rewrite rather than rebase: each attempt lays our single file on top
-// of whatever the remote currently holds, so there is never a conflict to
-// resolve. The runId comparison stops two runs landing out of order from
-// flip-flopping the file.
+// Reset-and-rewrite rather than rebase: each attempt lays our file on top of
+// whatever the remote holds, so there is never a conflict to resolve.
 async function deposit(repo, update, branch) {
   const rel = path.join('updates', update.actor, `${update.repo}.json`);
   const file = path.join(repo.dir, rel);
@@ -65,13 +62,12 @@ try {
   await repo.configureIdentity('ai-sync[bot]', 'ai-sync@users.noreply.github.com');
   await deposit(repo, update, INPUT_BRANCH);
 } catch (err) {
-  // Never let the token reach the log, even through a git error message. Guard
-  // against an empty token: splitting on '' would interleave '***' between
-  // every character of the message instead of leaving it untouched.
+  // Git error messages embed the URL we passed, token and all. The guard keeps
+  // an empty token from splitting on '' and interleaving '***' everywhere.
   const message = INPUT_TOKEN ? String(err.message).split(INPUT_TOKEN).join('***') : String(err.message);
   console.error(`ai-sync: ${message}`);
-  // exitCode (not exit()) so this `finally` still runs and the temp clone
-  // — whose .git/config holds the token in the remote URL — gets removed.
+  // exitCode, never exit(): exit() skips the `finally`, leaving the temp clone
+  // on disk with the token in its .git/config.
   process.exitCode = 1;
 } finally {
   await rm(path.dirname(dir), { recursive: true, force: true });

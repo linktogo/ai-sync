@@ -1,10 +1,5 @@
-// Conclusions that mean "someone has to look at this". Everything else that is
-// completed and not a success is informational (cancelled, skipped, stale…).
 const FAILURE_CONCLUSIONS = new Set(['failure', 'timed_out', 'startup_failure', 'action_required']);
 
-// One total order, used both to sort badges worst-first and to aggregate a
-// repo's contributors into a single verdict for the filter. Keeping a single
-// definition is what stops the card ordering and the filter from disagreeing.
 const RANK = { failure: 0, running: 1, neutral: 2, success: 3, none: 4 };
 
 export function normalizeState(status, conclusion) {
@@ -20,9 +15,6 @@ export function rankState(state) {
 
 const REQUIRED_STRINGS = ['repo', 'actor', 'status'];
 
-// Never throws: a bad file on the branch must degrade to a skipped entry, not
-// take the whole read down. `at` is where the file was found, so a payload that
-// disagrees with its own path is rejected rather than silently reattributed.
 export function parseUpdate(raw, at) {
   let parsed;
   try {
@@ -54,8 +46,6 @@ function repoName(env) {
   return env.GITHUB_REPOSITORY.split('/')[1];
 }
 
-// The workflow_run event carries the conclusion of the *whole* workflow, which
-// is the only place `cancelled` is observable.
 function fromWorkflowRun(env, run, now) {
   return {
     repo: repoName(env),
@@ -72,9 +62,6 @@ function fromWorkflowRun(env, run, now) {
   };
 }
 
-// As a final `if: always()` step we only ever see our own job, and by
-// definition it is finished, so status is pinned to completed and the
-// conclusion comes from `job.status`.
 function fromJob(env, now) {
   return {
     repo: repoName(env),
@@ -97,9 +84,6 @@ export function buildUpdate(env, event, now) {
     : fromJob(env, now);
 }
 
-// The branch holds one file per (user, repo), so a duplicate pair can only come
-// from a hand-edited branch. Preferring the higher runId makes the fold
-// deterministic whatever order readdir returns.
 export function buildState(entries, now) {
   const repos = {};
   for (const { login, repo, update } of entries) {

@@ -58,8 +58,6 @@ async function serveConfig(configPath, res) {
   res.end(JSON.stringify({ repos }));
 }
 
-// The repo list comes from the config, which is where repo identity lives; the
-// reader only knows about names that have reported.
 async function readRepoNames(configPath) {
   if (!configPath) return null;
   try {
