@@ -84,6 +84,18 @@ export function buildUpdate(env, event, now) {
     : fromJob(env, now);
 }
 
+export function redactToken(message, token) {
+  if (!token) return message;
+  return message.split(token).join('***');
+}
+
+export function statusRepoUrl(statusRepo, token) {
+  if (statusRepo.includes('://') || statusRepo.startsWith('/')) return statusRepo;
+  return token
+    ? `https://x-access-token:${token}@github.com/${statusRepo}.git`
+    : `https://github.com/${statusRepo}.git`;
+}
+
 export function buildState(entries, now) {
   const repos = {};
   for (const { login, repo, update } of entries) {

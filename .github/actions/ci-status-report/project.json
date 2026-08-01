@@ -1,0 +1,14 @@
+{
+  "name": "ci-status-report",
+  "sourceRoot": ".github/actions/ci-status-report",
+  "projectType": "application",
+  "tags": ["scope:workspace", "type:app"],
+  "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node --test .github/actions/ci-status-report/report.test.js"
+      }
+    }
+  }
+}

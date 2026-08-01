@@ -1,6 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeState, rankState, parseUpdate, buildUpdate, buildState } from '../src/ci-status.js';
+import {
+  normalizeState,
+  rankState,
+  parseUpdate,
+  buildUpdate,
+  buildState,
+  redactToken,
+  statusRepoUrl,
+} from '../src/ci-status.js';
 
 test('normalizeState maps every GitHub status/conclusion pair', () => {
   const cases = [
@@ -142,4 +150,38 @@ test('buildState does not mutate the updates it is given', () => {
 
 test('buildState returns an empty map for no entries', () => {
   assert.deepEqual(buildState([], NOW), { repos: {} });
+});
+
+test('redactToken replaces every occurrence of the token with ***', () => {
+  const message = 'failed to fetch https://x-access-token:secret123@github.com/o/r.git: secret123 rejected';
+  assert.equal(
+    redactToken(message, 'secret123'),
+    'failed to fetch https://x-access-token:***@github.com/o/r.git: *** rejected',
+  );
+});
+
+test('redactToken returns the message unchanged when the token is empty or absent', () => {
+  const message = 'plain error message';
+  assert.equal(redactToken(message, ''), message);
+  assert.equal(redactToken(message, undefined), message);
+});
+
+test('statusRepoUrl builds an authenticated github.com URL from owner/name and a token', () => {
+  assert.equal(
+    statusRepoUrl('linktogo/ai-sync', 'secret123'),
+    'https://x-access-token:secret123@github.com/linktogo/ai-sync.git',
+  );
+});
+
+test('statusRepoUrl builds an unauthenticated github.com URL from owner/name with no token', () => {
+  assert.equal(statusRepoUrl('linktogo/ai-sync', ''), 'https://github.com/linktogo/ai-sync.git');
+  assert.equal(statusRepoUrl('linktogo/ai-sync', undefined), 'https://github.com/linktogo/ai-sync.git');
+});
+
+test('statusRepoUrl passes through a value that already contains ://', () => {
+  assert.equal(statusRepoUrl('https://ghe.example.com/o/r.git', 'secret123'), 'https://ghe.example.com/o/r.git');
+});
+
+test('statusRepoUrl passes through an absolute path unchanged', () => {
+  assert.equal(statusRepoUrl('/tmp/git-test/origin.git', 'secret123'), '/tmp/git-test/origin.git');
 });
