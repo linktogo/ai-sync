@@ -25,12 +25,12 @@ test('main requires --config or --config-repo', async () => {
 test('main can load config from a repo via --config-repo', async () => {
   let repoArgs;
   let received;
-  await main(['--config-repo', 'git@github.com:o/lk-config.git', '--config-file', 'repos.json', '--workspace', '/tmp/ws'], {
+  await main(['--config-repo', 'git@github.com:o/ai-config.git', '--config-file', 'repos.json', '--workspace', '/tmp/ws'], {
     loadConfigFromRepo: async (url, opts) => { repoArgs = { url, opts }; return config; },
     runBootstrap: async (_c, opts) => { received = opts; return {}; },
     logger: silentLogger(),
   });
-  assert.equal(repoArgs.url, 'git@github.com:o/lk-config.git');
+  assert.equal(repoArgs.url, 'git@github.com:o/ai-config.git');
   assert.equal(repoArgs.opts.configFile, 'repos.json');
   assert.equal(received.workspaceDir, path.resolve('/tmp/ws'));
 });

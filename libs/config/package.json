@@ -6,8 +6,5 @@
   "dependencies": {
     "@ai-sync/git": "*",
     "@ai-sync/renderers": "*"
-  },
-  "publishConfig": {
-    "registry": "http://localhost:4873"
   }
 }

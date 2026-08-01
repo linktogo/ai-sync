@@ -1382,17 +1382,17 @@ test('main does not prompt when --repo is provided even interactively', async ()
 
 test('main routes the status subcommand to setStatus', async () => {
   const calls = [];
-  const code = await main(['status', 'oc-be', 'question', '--board', '/b.json', '--event', 'Stop'], {
+  const code = await main(['status', 'example-api', 'question', '--board', '/b.json', '--event', 'Stop'], {
     setStatus: async (boardPath, repo, state, o) => { calls.push({ boardPath, repo, state, o }); },
     logger: silentLogger(),
   });
   assert.equal(code, 0);
-  assert.deepEqual(calls, [{ boardPath: path.resolve('/b.json'), repo: 'oc-be', state: 'question', o: { lastEvent: 'Stop' } }]);
+  assert.deepEqual(calls, [{ boardPath: path.resolve('/b.json'), repo: 'example-api', state: 'question', o: { lastEvent: 'Stop' } }]);
 });
 
 test('status subcommand requires repo and state', async () => {
   await assert.rejects(
-    () => main(['status', 'oc-be', '--board', '/b.json'], { setStatus: async () => {}, logger: silentLogger() }),
+    () => main(['status', 'example-api', '--board', '/b.json'], { setStatus: async () => {}, logger: silentLogger() }),
     /Usage: .*status <repo> <state>/,
   );
 });

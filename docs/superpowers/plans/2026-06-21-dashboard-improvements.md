@@ -32,14 +32,14 @@ In `test/board.test.js`, replace the body of `setStatus reads, applies the trans
 ```js
 test('setStatus reads, applies the transition with timestamp + event, and writes', async () => {
   let written;
-  const board = await setStatus('/x', 'oc-be', 'question', {
+  const board = await setStatus('/x', 'example-api', 'question', {
     lastEvent: 'Notification',
     now: () => '2026-06-16T10:00:00Z',
-    read: async () => JSON.stringify({ version: 1, repos: { 'oc-be': { status: 'inprogress' } } }),
+    read: async () => JSON.stringify({ version: 1, repos: { 'example-api': { status: 'inprogress' } } }),
     write: async (_f, data) => { written = data; },
     move: async () => {}, ensureDir: async () => {}, tmpSuffix: '.tmp',
   });
-  assert.deepEqual(board.repos['oc-be'], {
+  assert.deepEqual(board.repos['example-api'], {
     status: 'question',
     updatedAt: '2026-06-16T10:00:00Z',
     lastEvent: 'Notification',
@@ -220,13 +220,13 @@ test('GET /api/config maps repos.json to name -> metadata', async () => {
   const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
   const configPath = path.join(dir, 'repos.json');
   await writeFile(configPath, JSON.stringify({
-    repos: [{ name: 'oc-be', url: 'https://h/oc-be.git', technologies: ['nestjs'], targets: ['claude'] }],
+    repos: [{ name: 'example-api', url: 'https://h/example-api.git', technologies: ['nestjs'], targets: ['claude'] }],
   }));
   const server = createBoardServer({ boardPath: path.join(dir, 'board.json'), distDir: dir, configPath });
   const port = await listen(server);
   const res = await fetch(`http://127.0.0.1:${port}/api/config`);
   assert.deepEqual(await res.json(), {
-    repos: { 'oc-be': { url: 'https://h/oc-be.git', technologies: ['nestjs'], targets: ['claude'] } },
+    repos: { 'example-api': { url: 'https://h/example-api.git', technologies: ['nestjs'], targets: ['claude'] } },
   });
   server.close();
   await rm(dir, { recursive: true, force: true });
@@ -437,8 +437,8 @@ const now = Date.parse('2026-06-21T10:00:00.000Z');
 
 test('renders the repo name and a relative time', () => {
   const repo = { status: 'todo', lastEvent: 'init', updatedAt: '2026-06-21T09:59:00.000Z' };
-  const w = mount(Card, { props: { name: 'oc-be', repo, now } });
-  expect(w.text()).toContain('oc-be');
+  const w = mount(Card, { props: { name: 'example-api', repo, now } });
+  expect(w.text()).toContain('example-api');
   expect(w.text()).toContain('il y a 1 min');
 });
 
@@ -450,9 +450,9 @@ test('highlights a question card', () => {
 
 test('emits "open" with the repo name on click', async () => {
   const repo = { status: 'todo', lastEvent: 'init', updatedAt: '2026-06-21T10:00:00.000Z' };
-  const w = mount(Card, { props: { name: 'oc-be', repo, now } });
+  const w = mount(Card, { props: { name: 'example-api', repo, now } });
   await w.trigger('click');
-  expect(w.emitted('open')[0]).toEqual(['oc-be']);
+  expect(w.emitted('open')[0]).toEqual(['example-api']);
 });
 ```
 
@@ -647,8 +647,8 @@ import FilterBar from './FilterBar.vue';
 
 test('emits name updates as the user types', async () => {
   const w = mount(FilterBar, { props: { name: '', tech: '', technologies: ['nestjs', 'postgres'] } });
-  await w.get('[data-test=search]').setValue('oc-be');
-  expect(w.emitted('update:name')[0]).toEqual(['oc-be']);
+  await w.get('[data-test=search]').setValue('example-api');
+  expect(w.emitted('update:name')[0]).toEqual(['example-api']);
 });
 
 test('lists technologies and emits tech selection', async () => {

@@ -7,8 +7,5 @@
     "@ai-sync/git": "*",
     "@ai-sync/renderers": "*",
     "gray-matter": "^4.0.3"
-  },
-  "publishConfig": {
-    "registry": "http://localhost:4873"
   }
 }

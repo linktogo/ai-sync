@@ -26,13 +26,13 @@ test('main rejects passing both --config and --config-repo', async () => {
 
 test('main loads config from a repo via --config-repo (with --config-file)', async () => {
   let repoArgs;
-  const code = await main(['--config-repo', 'git@github.com:o/lk-config.git', '--config-file', 'sub/repos.json'], {
+  const code = await main(['--config-repo', 'git@github.com:o/ai-config.git', '--config-file', 'sub/repos.json'], {
     loadConfigFromRepo: async (url, opts) => { repoArgs = { url, opts }; return fakeConfig; },
     runPipeline: async () => [{ status: 'pushed' }],
     logger: silentLogger(),
   });
   assert.equal(code, 0);
-  assert.equal(repoArgs.url, 'git@github.com:o/lk-config.git');
+  assert.equal(repoArgs.url, 'git@github.com:o/ai-config.git');
   assert.equal(repoArgs.opts.configFile, 'sub/repos.json');
 });
 

@@ -1480,8 +1480,8 @@ main(process.argv.slice(2)).then(
   "defaultTargets": ["claude", "copilot"],
   "repos": [
     {
-      "name": "oc-be",
-      "url": "git@github.com:oclair-org/oc-be.git",
+      "name": "example-api",
+      "url": "git@github.com:example-org/example-api.git",
       "technologies": ["nestjs", "postgres"],
       "targets": ["claude", "cursor"]
     }
@@ -1507,7 +1507,7 @@ into each target platform's format (Claude Code, GitHub Copilot, Cursor, Windsur
 node bin/sync.js --config repos.json          # clone, generate, branch, commit, push
 node bin/sync.js --config repos.json --pr      # also open a PR via gh
 node bin/sync.js --config repos.json --dry-run # preview generated files, no git
-node bin/sync.js --config repos.json --repo oc-be   # one repo only
+node bin/sync.js --config repos.json --repo example-api   # one repo only
 ```
 
 ## Tests
@@ -1520,7 +1520,7 @@ npm test   # runs all tests with a strict 100% coverage gate on src/
 - [ ] **Step 5: Verify the CLI runs against the fixtures in dry-run**
 
 Run: `node bin/sync.js --config repos.json --dry-run`
-Expected: prints `[dry-run] oc-be: ...` lines for the rendered files (or a warning that `skills/nestjs` is missing, since `skills/` is empty in this repo). No git operations, exit 0.
+Expected: prints `[dry-run] example-api: ...` lines for the rendered files (or a warning that `skills/nestjs` is missing, since `skills/` is empty in this repo). No git operations, exit 0.
 
 - [ ] **Step 6: Commit**
 

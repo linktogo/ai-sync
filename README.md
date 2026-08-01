@@ -1,5 +1,10 @@
 # ai-sync
 
+[![CI](https://github.com/linktogo/ai-sync/actions/workflows/ci.yml/badge.svg)](https://github.com/linktogo/ai-sync/actions/workflows/ci.yml)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Node >= 22](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg)](https://nodejs.org)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
 Tools to sync AI agent skills, practices, and workflows across repositories.
 
 Skills are authored once under `skills/<techno>/<name>/SKILL.md` and translated
@@ -8,6 +13,31 @@ into each target platform's format (Claude Code, GitHub Copilot, Cursor, Windsur
 It ships two CLIs — `ai-sync` (push skills to repos) and `ai-workspace`
 (bootstrap a local workspace + status board) — as an [Nx](https://nx.dev)
 monorepo (npm workspaces). See [Project layout](#project-layout).
+
+## Why
+
+Every repository in an organization ends up with its own drifting copy of the
+same agent instructions — one for Claude Code, another for Copilot, a third for
+Cursor. `ai-sync` keeps one reviewed source of truth: write the guidance once,
+declare which technologies each repo uses, and let the tool render and open the
+pull requests.
+
+## Quick start
+
+Requires **Node.js >= 22** and `git` on your PATH.
+
+```bash
+git clone https://github.com/linktogo/ai-sync.git
+cd ai-sync
+npm ci
+
+# See what would be pushed to the repos in the sample config — no side effects
+node apps/sync/bin/sync.js --config repos.example.json --dry-run
+```
+
+Then copy `repos.example.json`, point it at your own repositories, and drop the
+`--dry-run` when the preview looks right. New to the project? Read
+[Configuration](#configuration) next, then [Adding a skill](CONTRIBUTING.md#adding-a-skill).
 
 ## Skills library
 
@@ -31,11 +61,11 @@ sync.
 
 ## Configuration
 
-Both commands read a JSON config describing the target repos. The canonical
-config lives in a **separate repository**,
-[`linktogo-org/lk-config`](https://github.com/linktogo-org/lk-config), and is
-fetched with `--config-repo` (see [Config source](#config-source) below). A local
-`repos.example.json` in this repo documents the shape:
+Both commands read a JSON config describing the target repos. It can be a local
+file (`--config`) or live in a **separate repository** fetched with
+`--config-repo` (see [Config source](#config-source) below) — the latter is how
+an organization shares one config across everyone's machine without committing
+its repo list here. The bundled `repos.example.json` documents the shape:
 
 ```json
 {
@@ -71,10 +101,11 @@ Both CLIs resolve their config from **exactly one** of two flags:
 
 - `--config <path>` — read a local JSON file (e.g. `--config repos.example.json`).
 - `--config-repo <url>` — shallow-clone a git repository into a temp dir and read
-  the config from it. This is how the shared `lk-config` repo is consumed:
+  the config from it. This is how a shared, organization-owned config repo is
+  consumed:
 
   ```bash
-  --config-repo https://github.com/linktogo-org/lk-config.git
+  --config-repo https://github.com/example-org/ai-config.git
   ```
 
   The file read defaults to `repos.json` at the repo root; override it with
@@ -94,8 +125,8 @@ binary (and `ai-workspace` for the workspace tool).
 # Local file
 node apps/sync/bin/sync.js --config repos.example.json          # clone, generate, branch, commit, push
 
-# Shared config repo (lk-config)
-node apps/sync/bin/sync.js --config-repo https://github.com/linktogo-org/lk-config.git
+# Shared config repo
+node apps/sync/bin/sync.js --config-repo https://github.com/example-org/ai-config.git
 node apps/sync/bin/sync.js --config-repo <url> --config-file repos.json --pr   # also open a PR via gh
 node apps/sync/bin/sync.js --config-repo <url> --dry-run        # preview generated files, no git
 node apps/sync/bin/sync.js --config-repo <url> --repo example-api     # one repo only
@@ -120,11 +151,12 @@ Re-running against an existing folder reuses the checkouts already present (and
 refreshes their dependencies), so the same command both creates a new workspace
 and resumes an existing one.
 
-The examples below use the shared `lk-config` repo via `--config-repo`; swap in
-`--config repos.example.json` to point at a local file instead.
+The examples below use a shared config repo via `--config-repo`; swap in
+`--config repos.example.json` to point at a local file instead (that is what
+`npm run wk` does).
 
 ```bash
-CFG="--config-repo https://github.com/linktogo-org/lk-config.git"
+CFG="--config-repo https://github.com/example-org/ai-config.git"
 node apps/workspace/bin/workspace.js $CFG --workspace ~/work/myorg                 # clone + install, prints `cd … && claude`
 node apps/workspace/bin/workspace.js $CFG --workspace ~/work/myorg --editor vscode  # prints `code …`
 node apps/workspace/bin/workspace.js $CFG --workspace ~/work/myorg --repo example-api     # one repo only
@@ -142,7 +174,7 @@ worktree, and points the launch command at it. Re-running reuses an existing
 worktree. Without the flag the tool prints a tip suggesting it.
 
 ```bash
-node apps/workspace/bin/workspace.js --config-repo https://github.com/linktogo-org/lk-config.git --workspace ~/work/myorg --worktree feat/login
+node apps/workspace/bin/workspace.js --config-repo https://github.com/example-org/ai-config.git --workspace ~/work/myorg --worktree feat/login
 # → adds example-api.feat-login/, then: cd "~/work/myorg/example-api.feat-login" && claude
 ```
 
@@ -247,3 +279,32 @@ npm run test:board # apps/board suite only: server (node:test) + front-end (vite
 
 CI runs `nx run-many -t lint test build`. Because Nx detects the package
 manager from the lockfile, keep `package-lock.json` as the only lockfile.
+
+## Contributing
+
+Contributions are welcome — especially new skills, which are the easiest way in.
+Start with [CONTRIBUTING.md](CONTRIBUTING.md) for the dev setup, the coverage
+bar, the commit format, and how to add a skill. Participation is governed by our
+[Code of Conduct](CODE_OF_CONDUCT.md).
+
+- 🐛 [Report a bug](https://github.com/linktogo/ai-sync/issues/new/choose)
+- 💡 [Propose a feature or a skill](https://github.com/linktogo/ai-sync/issues/new/choose)
+- 🔒 Security issues: see [SECURITY.md](SECURITY.md) — never a public issue
+
+Release notes live in [CHANGELOG.md](CHANGELOG.md).
+
+## Security model
+
+The CLIs run git and package-manager commands on your machine: they clone the
+repositories named in the config, install their dependencies, and shell out to
+`gh` when `--pr` is passed. Treat the config file — and any repository you pass
+to `--config-repo` — as trusted input. The board server is a local development
+tool with no authentication and should not be exposed to a network. See
+[SECURITY.md](SECURITY.md) for the full scope and reporting process.
+
+## License
+
+[Apache License 2.0](LICENSE) © Linktogo.
+
+Third-party material redistributed in this repository is listed in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
