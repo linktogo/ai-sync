@@ -11,7 +11,6 @@ export function useCi({ intervalMs = 30000, fetchImpl = fetch } = {}) {
       repos.value = data.repos ?? {};
       syncError.value = data.lastSyncError ?? null;
     } catch {
-      // Keep the last known statuses: a dead poll is not evidence CI changed.
       syncError.value = 'injoignable';
     }
   }

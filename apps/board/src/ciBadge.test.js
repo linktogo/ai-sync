@@ -48,6 +48,20 @@ test('ciAggregate reduces contributors to one verdict', () => {
 // Deliberate per the design: "OK = at least one contributor and none failing
 // or running". A repo where every latest run was cancelled/skipped (neutral)
 // still counts as ok — unintuitive, so pin it explicitly.
+test('ciAggregate always agrees with the worst badge visibleBadges shows first', () => {
+  const cases = [
+    { alice: { state: 'failure' }, bob: { state: 'success' } },
+    { alice: { state: 'running' }, bob: { state: 'neutral' } },
+    { alice: { state: 'neutral' }, bob: { state: 'success' } },
+    { alice: { state: 'success' } },
+  ];
+  for (const users of cases) {
+    const worst = visibleBadges(users).shown[0].state;
+    const expected = worst === 'failure' || worst === 'running' ? worst : 'ok';
+    expect(ciAggregate(users)).toBe(expected);
+  }
+});
+
 test('ciAggregate treats an all-neutral repo as ok', () => {
   expect(ciAggregate({ a: { state: 'neutral' }, b: { state: 'neutral' } })).toBe('ok');
 });

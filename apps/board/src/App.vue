@@ -61,7 +61,6 @@ function entriesFor(status) {
 }
 const grouped = computed(() => COLUMNS.map((c) => ({ ...c, entries: entriesFor(c.status) })));
 
-// Board-wide, never per-repo: every entry carries the same reason.
 const ciUnavailable = computed(() => {
   for (const repo of Object.values(ci.value)) {
     if (repo?.unavailable) return repo.unavailable;

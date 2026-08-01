@@ -27,7 +27,6 @@ export function visibleBadges(users, max = MAX_BADGES) {
   return { shown: all.slice(0, max), overflow: all.slice(max) };
 }
 
-// Derived from RANK so the aggregate can never disagree with the badge ordering.
 const AGGREGATE_BY_MIN_RANK = { [rankState('failure')]: 'failure', [rankState('running')]: 'running' };
 
 export function ciAggregate(users) {

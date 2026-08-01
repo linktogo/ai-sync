@@ -51,6 +51,22 @@ test('tick fetches, resets and writes the state cache', async () => {
   await rm(root, { recursive: true, force: true });
 });
 
+test('the reader never runs a git command that writes to the branch', async () => {
+  const { root, cacheDir, stateFile } = await fixture();
+  const calls = [];
+  await reader({ cacheDir, stateFile }, calls).tick();
+  assert.deepEqual(calls.map((c) => c.args[0]), ['fetch', 'reset']);
+  await rm(root, { recursive: true, force: true });
+});
+
+test('a first-run clone is read-only too', async () => {
+  const { root, stateFile } = await fixture();
+  const calls = [];
+  await reader({ cacheDir: path.join(root, 'absent'), stateFile }, calls).tick();
+  assert.deepEqual(calls.map((c) => c.args[0]), ['clone']);
+  await rm(root, { recursive: true, force: true });
+});
+
 test('tick clones when there is no checkout yet', async () => {
   const { root, stateFile } = await fixture();
   const cacheDir = path.join(root, 'absent');
@@ -117,7 +133,7 @@ test('an unreadable updates/ directory is treated as a failure, not an empty bra
   await rm(root, { recursive: true, force: true });
 });
 
-test('a failing readdir on the updates root is recorded as a sync error, not an empty state (deterministic companion to the chmod test)', async () => {
+test('any readdir failure other than a missing entry is recorded as a sync error, not an empty state', async () => {
   const { root, cacheDir, stateFile } = await fixture();
   const r = reader({ cacheDir, stateFile });
   await r.tick();

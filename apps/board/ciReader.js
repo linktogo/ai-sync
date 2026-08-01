@@ -6,8 +6,6 @@ import { parseUpdate, buildState, normalizeState } from '@ai-sync/ci-status';
 
 const EMPTY = { version: 1, lastSyncAt: null, lastSyncError: null, repos: {} };
 
-// Never writes to the branch: every board reads every contributor's folder, so
-// a board that also deleted would erase updates another board has not read yet.
 export function createCiReader({
   statusRepo = null,
   token = null,
@@ -21,7 +19,6 @@ export function createCiReader({
 } = {}) {
   let running = false;
 
-  // A git error message embeds the URL we passed it, token and all.
   function redact(message) {
     return token ? String(message).split(token).join('***') : String(message);
   }
@@ -41,9 +38,6 @@ export function createCiReader({
     await exec('git', ['reset', '--hard', `origin/${branch}`], { cwd: cacheDir });
   }
 
-  // Only "nothing to read here" is swallowed (absent `updates/`, the `.gitkeep`
-  // file). Anything else — EACCES above all — must propagate, or tick() writes
-  // an empty board over good state and reports success.
   function isMissingEntry(err) {
     return err?.code === 'ENOENT' || err?.code === 'ENOTDIR';
   }
@@ -103,8 +97,6 @@ export function createCiReader({
         const previous = await readState();
         await writeState({ ...previous, lastSyncError: redact(err.message) });
       } catch (writeErr) {
-        // Must never escape: server.js calls tick() fire-and-forget, so an
-        // unhandled rejection here would crash the board process.
         logger.warn(`  ⚠ ci: failed to record sync error: ${redact(writeErr.message)}`);
       }
     } finally {
