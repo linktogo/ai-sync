@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { main } from '../src/main.js';
+import path from 'node:path';
+import { main, resolveSkillsDir } from '../src/main.js';
 
 function silentLogger() {
   return { log() {}, warn() {}, error() {} };
@@ -75,6 +76,40 @@ test('main defaults pr/dryRun to false and derives a workDir', async () => {
   assert.equal(received.dryRun, false);
   assert.match(received.workDir, /ai-sync$/);
   assert.match(received.skillsDir, /skills$/);
+});
+
+test('resolveSkillsDir resolves an explicit value against the cwd', () => {
+  assert.equal(
+    resolveSkillsDir('custom/skills', { cwd: '/ws', exists: () => false }),
+    path.resolve('/ws', 'custom/skills'),
+  );
+});
+
+test('resolveSkillsDir prefers a skills/ folder in the cwd', () => {
+  const checked = [];
+  const dir = resolveSkillsDir(undefined, {
+    cwd: '/ws',
+    exists: (p) => { checked.push(p); return true; },
+  });
+  assert.equal(dir, path.join('/ws', 'skills'));
+  assert.deepEqual(checked, [path.join('/ws', 'skills')]);
+});
+
+test('resolveSkillsDir falls back to the packaged skills library', () => {
+  const dir = resolveSkillsDir(undefined, { cwd: '/ws', exists: () => false });
+  assert.notEqual(dir, path.join('/ws', 'skills'));
+  assert.equal(path.basename(dir), 'skills');
+  assert.ok(path.isAbsolute(dir));
+});
+
+test('main forwards --skills to the pipeline', async () => {
+  let received;
+  await main(['--config', 'repos.json', '--skills', '/elsewhere/skills'], {
+    loadConfig: async () => fakeConfig,
+    runPipeline: async (config, opts) => { received = opts; return []; },
+    logger: silentLogger(),
+  });
+  assert.equal(received.skillsDir, path.resolve('/elsewhere/skills'));
 });
 
 test('main returns 1 when any repo errored', async () => {

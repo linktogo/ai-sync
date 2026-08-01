@@ -13,26 +13,49 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # No `scope:` here on purpose: this workflow publishes both the
+      # @linktogo CLI package and the @ai-sync libraries, so the auth token
+      # must apply to the whole registry rather than a single scope.
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
-          scope: '@linktogo'
 
       - run: npm ci
 
-      # Guard: the published version must match the release tag (e.g. v0.1.0).
-      - name: Check tag matches package version
+      # Guard: the root package and every publishable library must carry the
+      # release tag's version (e.g. v0.1.0). They ship in lockstep, so a
+      # forgotten bump in one library would publish a broken dependency range.
+      - name: Check versions match the release tag
         run: |
-          pkg_version="$(node -p "require('./package.json').version")"
           tag="${GITHUB_REF_NAME#v}"
-          if [ "$pkg_version" != "$tag" ]; then
-            echo "package.json version ($pkg_version) does not match release tag ($tag)" >&2
-            exit 1
-          fi
+          node -e '
+            const fs = require("fs");
+            const tag = process.argv[1];
+            const root = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            const bad = [];
+            if (root.version !== tag) bad.push(root.name + "@" + root.version);
+            for (const dir of fs.readdirSync("libs")) {
+              const pkg = JSON.parse(fs.readFileSync("libs/" + dir + "/package.json", "utf8"));
+              if (pkg.private) continue;
+              if (pkg.version !== tag) bad.push(pkg.name + "@" + pkg.version);
+            }
+            if (bad.length) {
+              console.error("release tag is " + tag + " but these do not match: " + bad.join(", "));
+              process.exit(1);
+            }
+            console.log("all publishable packages are at " + tag);
+          ' "$tag"
 
       - run: npm test
 
-      - run: npm publish
+      # Libraries first: the root CLI package depends on them by version range.
+      - name: Publish libraries
+        run: npm publish --workspaces
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish CLI package
+        run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

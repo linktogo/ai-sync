@@ -1,6 +1,8 @@
 {
   "name": "@linktogo/ai-sync",
   "version": "0.1.0",
+  "description": "Sync AI agent skills, practices, and workflows across repositories — author once, render for Claude Code, GitHub Copilot, Cursor, and Windsurf.",
+  "license": "Apache-2.0",
   "type": "module",
   "engines": {
     "node": ">=22"
@@ -13,19 +15,44 @@
     "type": "git",
     "url": "git+https://github.com/linktogo/ai-sync.git"
   },
+  "homepage": "https://github.com/linktogo/ai-sync#readme",
+  "bugs": {
+    "url": "https://github.com/linktogo/ai-sync/issues"
+  },
+  "keywords": [
+    "ai-sync",
+    "ai-agents",
+    "claude-code",
+    "github-copilot",
+    "cursor",
+    "windsurf",
+    "monorepo",
+    "developer-tools"
+  ],
   "publishConfig": {
     "access": "public",
     "provenance": true
   },
   "files": [
-    "bin",
-    "src",
+    "apps/sync/bin",
+    "apps/sync/src",
+    "apps/workspace/bin",
+    "apps/workspace/src",
+    "skills",
     "README.md",
-    "LICENSE"
+    "CHANGELOG.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
   ],
   "bin": {
     "ai-sync": "apps/sync/bin/sync.js",
     "ai-workspace": "apps/workspace/bin/workspace.js"
+  },
+  "dependencies": {
+    "@ai-sync/config": "^0.1.0",
+    "@ai-sync/skill-sync": "^0.1.0",
+    "@ai-sync/workspace-bootstrap": "^0.1.0",
+    "@inquirer/prompts": "^7.2.0"
   },
   "scripts": {
     "lint": "nx run-many -t lint",
@@ -36,7 +63,8 @@
     "wk": "node apps/workspace/bin/workspace.js --config repos.example.json --workspace wk",
     "board:build": "nx run board:build",
     "test:board": "nx run board:test",
-    "publish:verdaccio": "npm publish --workspace @ai-sync/git --workspace @ai-sync/renderers --workspace @ai-sync/config --workspace @ai-sync/skill-sync --workspace @ai-sync/workspace-bootstrap --registry http://localhost:4873"
+    "publish:libs": "npm publish --workspaces",
+    "publish:verdaccio": "npm publish --workspaces --registry http://localhost:4873"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

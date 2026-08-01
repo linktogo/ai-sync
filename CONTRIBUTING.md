@@ -111,6 +111,40 @@ Scopes usually map to a project (`sync`, `workspace`, `board`, `config`, `git`,
 For anything larger than a bug fix, open an issue first so the design can be
 discussed before you invest in the implementation.
 
+## Releasing
+
+Six packages ship from this repository and are versioned **in lockstep**: the
+CLI package `@linktogo/ai-sync` (the repo root) and the five `@ai-sync/*`
+libraries under `libs/`. The libraries depend on each other by caret range
+(`^0.1.0`), so a version that moves in one place must move everywhere.
+
+1. Bump `version` in the root `package.json` and in all five `libs/*/package.json`
+   to the same value.
+2. Update the internal `@ai-sync/*` dependency ranges to match the new version
+   (root `dependencies`, plus the `libs/*` and `apps/*` manifests).
+3. Update `CHANGELOG.md`: move `Unreleased` entries under the new version, and
+   add the comparison links at the bottom.
+4. Run `npm install` so `package-lock.json` picks up the new versions, then
+   `npm run lint && npm test && npm run build`.
+5. Merge, then publish a GitHub Release tagged `vX.Y.Z`.
+
+The release triggers `.github/workflows/publish.yml`, which refuses to publish
+unless every publishable package already carries the tag's version, then pushes
+the libraries first and the CLI package second (it depends on them).
+
+To rehearse a release against a local registry:
+
+```bash
+npm run publish:verdaccio   # publishes the five libraries to http://localhost:4873
+```
+
+Check what a tarball would actually contain before releasing:
+
+```bash
+npm pack --dry-run                                # the CLI package
+npm pack --dry-run --workspace @ai-sync/renderers # one library
+```
+
 ## Reporting bugs and requesting features
 
 Use the [issue templates](https://github.com/linktogo/ai-sync/issues/new/choose).

@@ -1,9 +1,38 @@
 {
   "name": "@ai-sync/workspace-bootstrap",
-  "version": "0.0.1",
+  "version": "0.1.0",
+  "description": "Clone and install a multi-repo workspace, install Claude Code status hooks, and maintain the shared kanban board state.",
+  "license": "Apache-2.0",
   "type": "module",
   "main": "./src/index.js",
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/linktogo/ai-sync.git",
+    "directory": "libs/workspace-bootstrap"
+  },
+  "homepage": "https://github.com/linktogo/ai-sync/tree/main/libs/workspace-bootstrap#readme",
+  "bugs": {
+    "url": "https://github.com/linktogo/ai-sync/issues"
+  },
+  "keywords": [
+    "ai-sync",
+    "ai-agents",
+    "claude-code",
+    "developer-tools"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "dependencies": {
-    "@ai-sync/git": "*"
+    "@ai-sync/git": "^0.1.0"
   }
 }

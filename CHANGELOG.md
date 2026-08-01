@@ -14,6 +14,20 @@ While the version is below `1.0.0`, minor releases may contain breaking changes.
   `SECURITY.md`, `THIRD_PARTY_NOTICES.md`, and this changelog.
 - GitHub issue forms (bug, feature, skill proposal), a pull request template,
   and a Dependabot configuration for npm and GitHub Actions.
+- `ai-sync --skills <dir>` to point the CLI at a specific skills library.
+- The five `@ai-sync/*` libraries are now published to npm alongside the
+  `@linktogo/ai-sync` CLI package, each with its own README, license, and
+  metadata. All six release in lockstep on the same version.
+
+### Fixed
+
+- The published CLI package was unusable: `files` referenced paths that do not
+  exist at the repository root, and no runtime dependencies were declared. It
+  now ships `apps/sync`, `apps/workspace`, the bundled skills library, and real
+  dependency ranges.
+- `ai-sync` resolved its skills directory as `./skills` relative to the current
+  directory, so a globally installed CLI found no skills at all. It now prefers
+  a local `skills/` folder and falls back to the library bundled in the package.
 
 ### Changed
 

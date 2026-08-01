@@ -27,11 +27,23 @@ pull requests.
 Requires **Node.js >= 22** and `git` on your PATH.
 
 ```bash
+npm install -g @linktogo/ai-sync
+
+# See what would be pushed to the repos in the sample config — no side effects
+ai-sync --config repos.json --dry-run
+```
+
+The installed package bundles the [skills library](#skills-library), so the CLI
+works from any directory. A `skills/` folder in the current directory takes
+precedence, which is what you want when working from a clone; `--skills <dir>`
+overrides both.
+
+To hack on the project itself, work from a checkout instead:
+
+```bash
 git clone https://github.com/linktogo/ai-sync.git
 cd ai-sync
 npm ci
-
-# See what would be pushed to the repos in the sample config — no side effects
 node apps/sync/bin/sync.js --config repos.example.json --dry-run
 ```
 
@@ -131,7 +143,14 @@ node apps/sync/bin/sync.js --config-repo <url> --config-file repos.json --pr   #
 node apps/sync/bin/sync.js --config-repo <url> --dry-run        # preview generated files, no git
 node apps/sync/bin/sync.js --config-repo <url> --repo example-api     # one repo only
 node apps/sync/bin/sync.js --config-repo <url> --strict         # fail if a technology has no skills
+node apps/sync/bin/sync.js --config <path> --skills ../my-skills  # use a different skills library
 ```
+
+**Skills directory resolution** (first match wins): `--skills <dir>` → a
+`skills/` folder in the current directory → the library bundled with the
+installed package. Running from a clone therefore always uses that clone's
+`skills/`, while a global install falls back to the skills shipped in the
+tarball.
 
 By default a repo whose `technologies` list references a technology with no
 `skills/<techno>/` directory (or that otherwise resolves to zero skills) only
@@ -269,6 +288,24 @@ Nx enforces module boundaries by `scope:*` tags (see `eslint.config.js`); each
 library exposes its public surface through its package entry. This repo builds
 and installs with **npm** (`npm ci`) — do not add a `pnpm-lock.yaml`, it breaks
 the Nx project graph.
+
+### Published packages
+
+The CLIs ship as **`@linktogo/ai-sync`** (the package you install). The five
+libraries are published independently under the `@ai-sync` scope, so they can be
+reused on their own:
+
+| Package | What it gives you |
+|---|---|
+| [`@ai-sync/config`](libs/config) | load/validate the repo config from a file or a git repo |
+| [`@ai-sync/git`](libs/git) | thin git/`gh` wrapper |
+| [`@ai-sync/renderers`](libs/renderers) | render a skill for claude/copilot/cursor/windsurf |
+| [`@ai-sync/skill-sync`](libs/skill-sync) | skill resolution + the sync pipeline |
+| [`@ai-sync/workspace-bootstrap`](libs/workspace-bootstrap) | clone/install, hooks, board state |
+
+All six are released in lockstep on the same version — see
+[Releasing](CONTRIBUTING.md#releasing). The `apps/*` projects stay private and
+are never published on their own.
 
 ## Tests
 
