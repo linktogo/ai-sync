@@ -1,4 +1,4 @@
-# @ai-sync/skill-sync
+# @linktogo/ai-skill-sync
 
 Resolves which skills apply to a repository — by matching its `technologies`
 against `skills/<techno>/` — and drives the
@@ -6,7 +6,7 @@ against `skills/<techno>/` — and drives the
 commit, push, and optionally open a pull request.
 
 ```js
-import { run } from '@ai-sync/skill-sync';
+import { run } from '@linktogo/ai-skill-sync';
 
 const results = await run(config, { skillsDir: 'skills', dryRun: true, logger: console });
 ```

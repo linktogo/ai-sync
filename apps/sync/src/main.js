@@ -3,8 +3,8 @@ import path from 'node:path';
 import os from 'node:os';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { resolveConfigSource } from '@ai-sync/config';
-import { run as defaultRun } from '@ai-sync/skill-sync';
+import { resolveConfigSource } from '@linktogo/ai-config';
+import { run as defaultRun } from '@linktogo/ai-skill-sync';
 
 // The skills library shipped inside the installed package, used when the
 // current directory has none of its own (i.e. the CLI is not run from a clone).

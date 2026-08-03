@@ -1,12 +1,12 @@
 import { parseArgs } from 'node:util';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { resolveConfigSource } from '@ai-sync/config';
+import { resolveConfigSource } from '@linktogo/ai-config';
 import {
   bootstrap,
   resolveBoardPath,
   setStatus as defaultSetStatus,
-} from '@ai-sync/workspace-bootstrap';
+} from '@linktogo/ai-workspace-bootstrap';
 
 export async function main(argv, deps = {}) {
   const [sub, ...rest] = argv;

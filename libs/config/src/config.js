@@ -1,8 +1,8 @@
 import { readFile, mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { knownTargets } from '@ai-sync/renderers';
-import { clone as defaultClone } from '@ai-sync/git';
+import { knownTargets } from '@linktogo/ai-renderers';
+import { clone as defaultClone } from '@linktogo/ai-git';
 
 export async function loadConfig(filePath) {
   return parseConfig(await readFile(filePath, 'utf8'));

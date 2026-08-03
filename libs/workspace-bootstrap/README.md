@@ -1,4 +1,4 @@
-# @ai-sync/workspace-bootstrap
+# @linktogo/ai-workspace-bootstrap
 
 Backs the `ai-workspace` CLI from
 [ai-sync](https://github.com/linktogo/ai-sync): clones the configured
@@ -7,7 +7,7 @@ Claude Code status hooks into each checkout, and maintains the shared
 `board.json` kanban state.
 
 ```js
-import { setStatus } from '@ai-sync/workspace-bootstrap';
+import { setStatus } from '@linktogo/ai-workspace-bootstrap';
 
 await setStatus('/ws/.ai-sync/board.json', 'example-api', 'done');
 ```

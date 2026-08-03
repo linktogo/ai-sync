@@ -4,8 +4,8 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
-import { loadConfig } from '@ai-sync/config';
-import { reconcileHooks } from '@ai-sync/workspace-bootstrap';
+import { loadConfig } from '@linktogo/ai-config';
+import { reconcileHooks } from '@linktogo/ai-workspace-bootstrap';
 
 // Resolve the board file the server should read. Explicit --board and the
 // AI_SYNC_BOARD env var always win; otherwise auto-detect the workspace board

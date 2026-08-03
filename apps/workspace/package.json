@@ -7,8 +7,8 @@
     "ai-workspace": "./bin/workspace.js"
   },
   "dependencies": {
-    "@ai-sync/config": "^0.1.0",
-    "@ai-sync/workspace-bootstrap": "^0.1.0",
+    "@linktogo/ai-config": "^0.1.0",
+    "@linktogo/ai-workspace-bootstrap": "^0.1.0",
     "@inquirer/prompts": "^7.2.0"
   }
 }

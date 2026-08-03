@@ -82,8 +82,14 @@ Copilot, Cursor, Windsurf); you do not need to write per-platform variants.
 ## Architecture boundaries
 
 Nx enforces module boundaries by `scope:*` tags (see `eslint.config.js`). Import
-another project only through its package entry (`@ai-sync/<name>`), never by a
-deep relative path across project roots. `npm run lint` catches violations.
+another project only through its package entry (`@linktogo/ai-<name>`), never by
+a deep relative path across project roots. `npm run lint` catches violations.
+
+Package naming follows what is published: the five libraries under `libs/` carry
+their public `@linktogo/ai-*` names, while the applications under `apps/` stay
+`private` and keep internal `@ai-sync/*` names, since they are never published on
+their own. Nx project names (`config`, `sync`, …) come from each `project.json`
+and are independent of both.
 
 ## Commit messages
 
@@ -114,13 +120,13 @@ discussed before you invest in the implementation.
 ## Releasing
 
 Six packages ship from this repository and are versioned **in lockstep**: the
-CLI package `@linktogo/ai-sync` (the repo root) and the five `@ai-sync/*`
+CLI package `@linktogo/ai-sync` (the repo root) and the five `@linktogo/ai-*`
 libraries under `libs/`. The libraries depend on each other by caret range
 (`^0.1.0`), so a version that moves in one place must move everywhere.
 
 1. Bump `version` in the root `package.json` and in all five `libs/*/package.json`
    to the same value.
-2. Update the internal `@ai-sync/*` dependency ranges to match the new version
+2. Update the internal `@linktogo/ai-*` dependency ranges to match the new version
    (root `dependencies`, plus the `libs/*` and `apps/*` manifests).
 3. Update `CHANGELOG.md`: move `Unreleased` entries under the new version, and
    add the comparison links at the bottom.
@@ -142,7 +148,7 @@ Check what a tarball would actually contain before releasing:
 
 ```bash
 npm pack --dry-run                                # the CLI package
-npm pack --dry-run --workspace @ai-sync/renderers # one library
+npm pack --dry-run --workspace @linktogo/ai-renderers # one library
 ```
 
 ## Reporting bugs and requesting features

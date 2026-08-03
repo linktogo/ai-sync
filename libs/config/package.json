@@ -1,5 +1,5 @@
 {
-  "name": "@ai-sync/config",
+  "name": "@linktogo/ai-config",
   "version": "0.1.0",
   "description": "Load and validate the ai-sync repository config from a local file or a shared git repository.",
   "license": "Apache-2.0",
@@ -33,7 +33,7 @@
     "provenance": true
   },
   "dependencies": {
-    "@ai-sync/git": "^0.1.0",
-    "@ai-sync/renderers": "^0.1.0"
+    "@linktogo/ai-git": "^0.1.0",
+    "@linktogo/ai-renderers": "^0.1.0"
   }
 }

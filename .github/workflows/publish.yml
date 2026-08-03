@@ -13,9 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # No `scope:` here on purpose: this workflow publishes both the
-      # @linktogo CLI package and the @ai-sync libraries, so the auth token
-      # must apply to the whole registry rather than a single scope.
+      # No `scope:` here on purpose: setup-node writes a registry-wide auth
+      # token, which keeps working if a package is ever published under a
+      # different scope than the others.
       - uses: actions/setup-node@v4
         with:
           node-version: 22

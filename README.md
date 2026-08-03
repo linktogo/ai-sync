@@ -291,21 +291,21 @@ the Nx project graph.
 
 ### Published packages
 
-The CLIs ship as **`@linktogo/ai-sync`** (the package you install). The five
-libraries are published independently under the `@ai-sync` scope, so they can be
-reused on their own:
+Everything publishes under the single **`@linktogo`** scope. The CLIs ship as
+`@linktogo/ai-sync` (the package you install); the five libraries are published
+independently so they can be reused on their own:
 
 | Package | What it gives you |
 |---|---|
-| [`@ai-sync/config`](libs/config) | load/validate the repo config from a file or a git repo |
-| [`@ai-sync/git`](libs/git) | thin git/`gh` wrapper |
-| [`@ai-sync/renderers`](libs/renderers) | render a skill for claude/copilot/cursor/windsurf |
-| [`@ai-sync/skill-sync`](libs/skill-sync) | skill resolution + the sync pipeline |
-| [`@ai-sync/workspace-bootstrap`](libs/workspace-bootstrap) | clone/install, hooks, board state |
+| [`@linktogo/ai-config`](libs/config) | load/validate the repo config from a file or a git repo |
+| [`@linktogo/ai-git`](libs/git) | thin git/`gh` wrapper |
+| [`@linktogo/ai-renderers`](libs/renderers) | render a skill for claude/copilot/cursor/windsurf |
+| [`@linktogo/ai-skill-sync`](libs/skill-sync) | skill resolution + the sync pipeline |
+| [`@linktogo/ai-workspace-bootstrap`](libs/workspace-bootstrap) | clone/install, hooks, board state |
 
 All six are released in lockstep on the same version — see
-[Releasing](CONTRIBUTING.md#releasing). The `apps/*` projects stay private and
-are never published on their own.
+[Releasing](CONTRIBUTING.md#releasing). The `apps/*` projects stay private, keep
+internal `@ai-sync/*` names, and are never published on their own.
 
 ## Tests
 

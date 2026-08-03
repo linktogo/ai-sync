@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@ai-sync/config": "^0.1.0",
-    "@ai-sync/workspace-bootstrap": "^0.1.0",
+    "@linktogo/ai-config": "^0.1.0",
+    "@linktogo/ai-workspace-bootstrap": "^0.1.0",
     "vue": "^3.5.0"
   },
   "devDependencies": {
