@@ -1,9 +1,36 @@
 {
-  "name": "@ai-sync/ci-status",
-  "version": "0.0.1",
+  "name": "@linktogo/ai-ci-status",
+  "version": "0.1.0",
+  "description": "CI status payloads for ai-sync: build them from a GitHub Actions run, validate them, and fold them into per-repo, per-contributor state.",
+  "license": "Apache-2.0",
   "type": "module",
   "main": "./src/ci-status.js",
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/linktogo/ai-sync.git",
+    "directory": "libs/ci-status"
+  },
+  "homepage": "https://github.com/linktogo/ai-sync/tree/main/libs/ci-status#readme",
+  "bugs": {
+    "url": "https://github.com/linktogo/ai-sync/issues"
+  },
+  "keywords": [
+    "ai-sync",
+    "ai-agents",
+    "github-actions",
+    "ci",
+    "developer-tools"
+  ],
   "publishConfig": {
-    "registry": "http://localhost:4873"
+    "access": "public",
+    "provenance": true
   }
 }

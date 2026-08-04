@@ -1,9 +1,10 @@
 # Configuration
 
 Both CLIs (`ai-sync` and `ai-workspace`) read the same JSON config describing
-the target repositories. The canonical config lives in a **separate
-repository**, [`linktogo-org/lk-config`](https://github.com/linktogo-org/lk-config);
-`repos.example.json` in this repo documents the shape.
+the target repositories. It can be a local file (`--config`) or live in a **separate repository** fetched
+with `--config-repo` — the latter is how an organization shares one config
+across everyone's machine without committing its repo list into this project.
+`repos.example.json` documents the shape.
 
 ## Schema
 
@@ -67,10 +68,10 @@ ai-sync --config repos.example.json
 ### `--config-repo <url>`
 
 Shallow-clone a git repository into a temp dir and read the config from it.
-This is how the shared `lk-config` repo is consumed.
+This is how a shared, organization-owned config repo is consumed.
 
 ```bash
-ai-sync --config-repo https://github.com/linktogo-org/lk-config.git
+ai-sync --config-repo https://github.com/example-org/ai-config.git
 ```
 
 The file read defaults to `repos.json` at the repo root. Override it with

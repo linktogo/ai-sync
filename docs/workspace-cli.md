@@ -10,7 +10,7 @@ Examples call the CLI through its source entry
 ## Bootstrap
 
 ```bash
-CFG="--config-repo https://github.com/linktogo-org/lk-config.git"
+CFG="--config-repo https://github.com/example-org/ai-config.git"
 
 node apps/workspace/bin/workspace.js $CFG --workspace ~/work/myorg
 ```

@@ -146,5 +146,5 @@ test('a run older than the one already reported is skipped', async () => {
 
 test('report.js imports the libs by relative path so the runner needs no npm install', async () => {
   const source = await readFile(reportPath, 'utf8');
-  assert.doesNotMatch(source, /from ['"]@ai-sync\//);
+  assert.doesNotMatch(source, /from ['"]@linktogo\//);
 });

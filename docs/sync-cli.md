@@ -26,6 +26,7 @@ place to commit by hand.
 | `--config <path>` | Read the config from a local file. |
 | `--config-repo <url>` | Read it from a git repository instead. |
 | `--config-file <path>` | Path inside the config repo. Default `repos.json`. |
+| `--skills <dir>` | Skills library to render from. See resolution below. |
 | `--repo <name>` | Restrict the run to one repo. |
 | `--dry-run` | Print the files that would be written; no clone, no git. |
 | `--strict` | Fail (non-zero exit) when a technology resolves to zero skills. |
@@ -35,6 +36,18 @@ place to commit by hand.
 `--config` and `--config-repo` are mutually exclusive and one is required — see
 [Configuration](configuration.md).
 
+## Skills directory resolution
+
+First match wins:
+
+1. `--skills <dir>`
+2. a `skills/` folder in the current directory
+3. the library bundled with the installed package
+
+Running from a clone therefore always uses that clone's `skills/`, while a
+global install falls back to the skills shipped in the tarball. Point `--skills`
+at your own library to render guidance this project does not ship.
+
 ## Examples
 
 ```bash
@@ -42,7 +55,7 @@ place to commit by hand.
 node apps/sync/bin/sync.js --config repos.example.json
 
 # Shared config repo
-node apps/sync/bin/sync.js --config-repo https://github.com/linktogo-org/lk-config.git
+node apps/sync/bin/sync.js --config-repo https://github.com/example-org/ai-config.git
 
 # Preview only — no clone, no git
 node apps/sync/bin/sync.js --config-repo <url> --dry-run
@@ -52,6 +65,9 @@ node apps/sync/bin/sync.js --config-repo <url> --repo example-api --pr
 
 # CI guard: fail if a technology has no skills
 node apps/sync/bin/sync.js --config-repo <url> --strict
+
+# Render from a different skills library
+node apps/sync/bin/sync.js --config <path> --skills ../my-skills
 ```
 
 ## Exit behaviour

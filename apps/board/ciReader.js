@@ -1,8 +1,8 @@
 import { readFile, writeFile, readdir, mkdir, rename } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { defaultExec } from '@ai-sync/git';
-import { parseUpdate, buildState, normalizeState } from '@ai-sync/ci-status';
+import { defaultExec } from '@linktogo/ai-git';
+import { parseUpdate, buildState, normalizeState } from '@linktogo/ai-ci-status';
 
 const EMPTY = { version: 1, lastSyncAt: null, lastSyncError: null, repos: {} };
 

@@ -5,18 +5,24 @@ An [Nx](https://nx.dev) monorepo on npm workspaces. Applications live in
 
 ## Projects
 
-| Project | Kind | Role |
+| Project | Published as | Role |
 |---|---|---|
-| `apps/sync` | app | `ai-sync` CLI — render skills into each repo and push |
-| `apps/workspace` | app | `ai-workspace` CLI — bootstrap a workspace + status board |
-| `apps/board` | app | Vue 3 kanban dashboard + zero-dependency server |
-| `libs/config` | lib | load and validate the config, from a file or a git repo |
-| `libs/git` | lib | thin git/`gh` wrapper (clone, branch, commit, push, PR) |
-| `libs/renderers` | lib | per-target renderers (claude, copilot, cursor, windsurf) |
-| `libs/skill-sync` | lib | resolve skills for a repo and drive the sync pipeline |
-| `libs/workspace-bootstrap` | lib | clone/install, Claude Code hooks, board state model |
-| `libs/ci-status` | lib | CI status payloads, validation, state mapping and folding |
-| `.github/actions/ci-status-report` | app | composite action depositing CI status on the `ci-status` branch |
+| `apps/sync` | — (`@linktogo/ai-sync` bin) | `ai-sync` CLI — render skills into each repo and push |
+| `apps/workspace` | — (`@linktogo/ai-sync` bin) | `ai-workspace` CLI — bootstrap a workspace + status board |
+| `apps/board` | private | Vue 3 kanban dashboard + zero-dependency server |
+| `libs/config` | `@linktogo/ai-config` | load and validate the config, from a file or a git repo |
+| `libs/git` | `@linktogo/ai-git` | thin git/`gh` wrapper (clone, branch, commit, push, PR) |
+| `libs/renderers` | `@linktogo/ai-renderers` | per-target renderers (claude, copilot, cursor, windsurf) |
+| `libs/skill-sync` | `@linktogo/ai-skill-sync` | resolve skills for a repo and drive the sync pipeline |
+| `libs/workspace-bootstrap` | `@linktogo/ai-workspace-bootstrap` | clone/install, Claude Code hooks, board state model |
+| `libs/ci-status` | `@linktogo/ai-ci-status` | CI status payloads, validation, state mapping and folding |
+| `.github/actions/ci-status-report` | private | composite action depositing CI status on the `ci-status` branch |
+
+Everything published lives under the single `@linktogo` scope and is released in
+lockstep on one version — see [Releasing](../CONTRIBUTING.md#releasing). The
+`apps/*` projects keep internal `@ai-sync/*` names and are never published on
+their own; the CLIs reach users through the root `@linktogo/ai-sync` package's
+`bin` entries.
 
 Each library exposes its public surface through its package entry
 (`main` in its `package.json`). Nx enforces module boundaries by `scope:*` tags,
@@ -33,8 +39,8 @@ manager from the lockfile, so `package-lock.json` must remain the only lockfile
 `.github/actions/ci-status-report/report.js` imports `libs/ci-status` and
 `libs/git` by **relative path**, not by package specifier. The GitHub Actions
 runner checks out this repository and runs the script with no install step, so a
-bare `@ai-sync/…` import would resolve locally through the workspace symlink and
-fail on the runner.
+bare `@linktogo/…` import would resolve locally through the workspace symlink
+and fail on the runner.
 
 That constraint is asserted by a test
 (`report.js imports the libs by relative path so the runner needs no npm install`)
@@ -83,6 +89,9 @@ Rationale belongs in `docs/superpowers/specs/`, not in comments. Invariants
 belong in test names: a test called
 `the reader never runs a git command that writes to the branch` fails when
 someone breaks the rule, which a comment saying the same thing does not.
+
+Commit format, the review bar and the release process are in
+[CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## CI
 
