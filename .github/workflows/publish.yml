@@ -16,7 +16,7 @@ jobs:
       # No `scope:` here on purpose: setup-node writes a registry-wide auth
       # token, which keeps working if a package is ever published under a
       # different scope than the others.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
