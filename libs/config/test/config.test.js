@@ -117,10 +117,10 @@ test('loadConfigFromRepo shallow-clones the repo, reads repos.json by default, a
     await writeFile(path.join(dir, 'repos.json'), REPO_CONFIG);
     return {};
   };
-  const cfg = await loadConfigFromRepo('git@github.com:linktogo-org/lk-config.git', { clone });
+  const cfg = await loadConfigFromRepo('git@github.com:example-org/ai-config.git', { clone });
   assert.equal(cfg.repos[0].name, 'z');
   // SSH url rewritten to https, shallow depth requested
-  assert.equal(cloneCall.url, 'https://github.com/linktogo-org/lk-config.git');
+  assert.equal(cloneCall.url, 'https://github.com/example-org/ai-config.git');
   assert.equal(cloneCall.opts.depth, 1);
   // temp checkout removed afterwards
   await assert.rejects(() => stat(clonedDir), /ENOENT/);

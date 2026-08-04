@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { mkdir, access, rm } from 'node:fs/promises';
-import { clone as defaultClone, defaultExec } from '@ai-sync/git';
+import { clone as defaultClone, defaultExec } from '@linktogo/ai-git';
 import { EDITORS, launchCommand } from './platform.js';
 import { planInstall } from './installers.js';
 import { initRepos } from './board.js';

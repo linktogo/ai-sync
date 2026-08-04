@@ -90,8 +90,8 @@ et `globs` (optionnel). Le corps est repris tel quel par toutes les cibles.
   "defaultTargets": ["claude", "copilot"],
   "repos": [
     {
-      "name": "oc-be",
-      "url": "git@github.com:oclair-org/oc-be.git",
+      "name": "example-api",
+      "url": "git@github.com:example-org/example-api.git",
       "technologies": ["nestjs", "postgres"],
       "targets": ["claude", "cursor"]
     }

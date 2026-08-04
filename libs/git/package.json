@@ -1,9 +1,35 @@
 {
-  "name": "@ai-sync/git",
-  "version": "0.0.1",
+  "name": "@linktogo/ai-git",
+  "version": "0.1.0",
+  "description": "Thin git and GitHub CLI wrapper used by ai-sync: clone, branch, commit, push, and open pull requests.",
+  "license": "Apache-2.0",
   "type": "module",
   "main": "./src/git.js",
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/linktogo/ai-sync.git",
+    "directory": "libs/git"
+  },
+  "homepage": "https://github.com/linktogo/ai-sync/tree/main/libs/git#readme",
+  "bugs": {
+    "url": "https://github.com/linktogo/ai-sync/issues"
+  },
+  "keywords": [
+    "ai-sync",
+    "ai-agents",
+    "claude-code",
+    "developer-tools"
+  ],
   "publishConfig": {
-    "registry": "http://localhost:4873"
+    "access": "public",
+    "provenance": true
   }
 }

@@ -1,9 +1,35 @@
 {
-  "name": "@ai-sync/renderers",
-  "version": "0.0.1",
+  "name": "@linktogo/ai-renderers",
+  "version": "0.1.0",
+  "description": "Render agent skills into each target platform format: Claude Code, GitHub Copilot, Cursor, and Windsurf.",
+  "license": "Apache-2.0",
   "type": "module",
   "main": "./src/renderers/index.js",
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/linktogo/ai-sync.git",
+    "directory": "libs/renderers"
+  },
+  "homepage": "https://github.com/linktogo/ai-sync/tree/main/libs/renderers#readme",
+  "bugs": {
+    "url": "https://github.com/linktogo/ai-sync/issues"
+  },
+  "keywords": [
+    "ai-sync",
+    "ai-agents",
+    "claude-code",
+    "developer-tools"
+  ],
   "publishConfig": {
-    "registry": "http://localhost:4873"
+    "access": "public",
+    "provenance": true
   }
 }

@@ -516,7 +516,7 @@ Maven resolves `~/.m2` first) so a slow network stays off the critical path.
 Add this line to the command list in the same section (after the `--no-install` line):
 
 ```markdown
-node bin/workspace.js --config repos.json --workspace ~/work/oclair --offline      # strict offline: fail if a dep is not already cached
+node bin/workspace.js --config repos.json --workspace ~/work/myorg --offline      # strict offline: fail if a dep is not already cached
 ```
 
 - [ ] **Step 2: Run the full suite with the coverage gate**

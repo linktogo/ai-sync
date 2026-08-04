@@ -51,8 +51,8 @@ Single JSON file at the workspace root: `<workspaceDir>/.ai-sync/board.json`.
 {
   "version": 1,
   "repos": {
-    "oc-be": { "status": "inprogress", "updatedAt": "2026-06-16T10:32:00Z", "lastEvent": "UserPromptSubmit" },
-    "oc-fe": { "status": "question",   "updatedAt": "2026-06-16T10:30:11Z", "lastEvent": "Notification" }
+    "example-api": { "status": "inprogress", "updatedAt": "2026-06-16T10:32:00Z", "lastEvent": "UserPromptSubmit" },
+    "example-web": { "status": "question",   "updatedAt": "2026-06-16T10:30:11Z", "lastEvent": "Notification" }
   }
 }
 ```

@@ -7,8 +7,8 @@
 
 Today, `ai-workspace bootstrap` only tracks a repo (status board + hooks + install)
 if it clones it into the managed `--workspace` folder (`wk/`). In practice, repos
-the user actively works on (e.g. `lk-mind`, `oc-be`) already exist as checkouts
-elsewhere on disk (e.g. `~/workspace/linktogo-org/lk-mind`), outside of `wk/`. Those
+the user actively works on (e.g. `example-app`, `example-api`) already exist as checkouts
+elsewhere on disk (e.g. `~/workspace/example-org/example-app`), outside of `wk/`. Those
 repos currently never appear on the board because they're never bootstrapped.
 
 This feature lets `repos.json` point a repo at its existing external checkout, so
@@ -34,20 +34,20 @@ clone under `wk/`.
 
 ```
 repos.json
-  { name: "lk-mind", url: …, path: "/Users/fabien/workspace/linktogo-org/lk-mind", … }
-  { name: "oc-fe",   url: …,  /* no path */ … }
+  { name: "example-app", url: …, path: "/Users/dev/workspace/example-org/example-app", … }
+  { name: "example-web",   url: …,  /* no path */ … }
         │
         ▼
 ai-workspace bootstrap --config repos.json --workspace wk
         │
-        ├─ lk-mind → checkout = repo.path (clone-if-missing, else reuse in place)
-        └─ oc-fe   → checkout = wk/oc-fe   (today's behavior, unchanged)
+        ├─ example-app → checkout = repo.path (clone-if-missing, else reuse in place)
+        └─ example-web   → checkout = wk/example-web   (today's behavior, unchanged)
         │
         ▼  (identical downstream handling for both)
    installHooks(checkout, name, boardPath) + dependency install
         │
         ▼
-   wk/.ai-sync/board.json  ← both lk-mind and oc-fe report here
+   wk/.ai-sync/board.json  ← both example-app and example-web report here
 ```
 
 ## Section 1 — Config schema (`libs/config/src/config.js`)
@@ -61,9 +61,9 @@ ai-workspace bootstrap --config repos.json --workspace wk
 
 ```json
 {
-  "name": "lk-mind",
-  "url": "https://github.com/linktogo-org/lk-mind.git",
-  "path": "/Users/fabien/workspace/linktogo-org/lk-mind",
+  "name": "example-app",
+  "url": "https://github.com/example-org/example-app.git",
+  "path": "/Users/dev/workspace/example-org/example-app",
   "technologies": ["nestjs", "postgres"],
   "targets": ["claude"]
 }

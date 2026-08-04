@@ -230,16 +230,16 @@ import { setStatus } from '../src/board.js';
 
 test('setStatus reads, applies the transition with timestamp + event, and writes', async () => {
   let written;
-  const board = await setStatus('/x', 'oc-be', 'question', {
+  const board = await setStatus('/x', 'example-api', 'question', {
     lastEvent: 'Notification',
     now: () => '2026-06-16T10:00:00Z',
-    read: async () => JSON.stringify({ version: 1, repos: { 'oc-be': { status: 'inprogress' } } }),
+    read: async () => JSON.stringify({ version: 1, repos: { 'example-api': { status: 'inprogress' } } }),
     write: async (_f, data) => { written = data; },
     move: async () => {},
     ensureDir: async () => {},
     tmpSuffix: '.tmp',
   });
-  assert.deepEqual(board.repos['oc-be'], {
+  assert.deepEqual(board.repos['example-api'], {
     status: 'question', updatedAt: '2026-06-16T10:00:00Z', lastEvent: 'Notification',
   });
   assert.match(written, /"status": "question"/);
@@ -369,16 +369,16 @@ import assert from 'node:assert/strict';
 import { hookSettings } from '../src/hooks.js';
 
 test('hookSettings maps the three events to status commands', () => {
-  const s = hookSettings('oc-be', '/ws/.ai-sync/board.json', { command: 'node /a/bin/workspace.js' });
+  const s = hookSettings('example-api', '/ws/.ai-sync/board.json', { command: 'node /a/bin/workspace.js' });
   const cmd = (e) => s.hooks[e][0].hooks[0].command;
   assert.equal(s.hooks.UserPromptSubmit[0].matcher, undefined);
   assert.equal(cmd('UserPromptSubmit'),
-    'node /a/bin/workspace.js status oc-be inprogress --board /ws/.ai-sync/board.json --event UserPromptSubmit');
+    'node /a/bin/workspace.js status example-api inprogress --board /ws/.ai-sync/board.json --event UserPromptSubmit');
   assert.equal(s.hooks.Notification[0].matcher, 'permission_prompt|idle_prompt');
   assert.equal(cmd('Notification'),
-    'node /a/bin/workspace.js status oc-be question --board /ws/.ai-sync/board.json --event Notification');
+    'node /a/bin/workspace.js status example-api question --board /ws/.ai-sync/board.json --event Notification');
   assert.equal(cmd('Stop'),
-    'node /a/bin/workspace.js status oc-be question --board /ws/.ai-sync/board.json --event Stop');
+    'node /a/bin/workspace.js status example-api question --board /ws/.ai-sync/board.json --event Stop');
   assert.equal(s.hooks.Stop[0].hooks[0].type, 'command');
 });
 
@@ -450,13 +450,13 @@ import { installHooks } from '../src/hooks.js';
 
 test('installHooks writes a fresh settings.local.json when none exists', async () => {
   const writes = [];
-  const res = await installHooks('/ws/oc-be', 'oc-be', '/b.json', {
+  const res = await installHooks('/ws/example-api', 'example-api', '/b.json', {
     command: 'ai-workspace',
     read: async () => { const e = new Error('x'); e.code = 'ENOENT'; throw e; },
     write: async (file, data) => writes.push({ file, data }),
     ensureDir: async () => {},
   });
-  assert.equal(res.file, '/ws/oc-be/.claude/settings.local.json');
+  assert.equal(res.file, '/ws/example-api/.claude/settings.local.json');
   assert.equal(writes.length, 1);
   assert.ok(JSON.parse(writes[0].data).hooks.Stop);
 });
@@ -534,17 +534,17 @@ rtk git commit -m "feat: install/merge hooks into settings.local.json"
 // add to test/workspace.test.js  (import setStatus name for spy injection)
 test('main routes the status subcommand to setStatus', async () => {
   const calls = [];
-  const code = await main(['status', 'oc-be', 'question', '--board', '/b.json', '--event', 'Stop'], {
+  const code = await main(['status', 'example-api', 'question', '--board', '/b.json', '--event', 'Stop'], {
     setStatus: async (boardPath, repo, state, o) => { calls.push({ boardPath, repo, state, o }); },
     logger: silentLogger(),
   });
   assert.equal(code, 0);
-  assert.deepEqual(calls, [{ boardPath: path.resolve('/b.json'), repo: 'oc-be', state: 'question', o: { lastEvent: 'Stop' } }]);
+  assert.deepEqual(calls, [{ boardPath: path.resolve('/b.json'), repo: 'example-api', state: 'question', o: { lastEvent: 'Stop' } }]);
 });
 
 test('status subcommand requires repo and state', async () => {
   await assert.rejects(
-    () => main(['status', 'oc-be', '--board', '/b.json'], { setStatus: async () => {}, logger: silentLogger() }),
+    () => main(['status', 'example-api', '--board', '/b.json'], { setStatus: async () => {}, logger: silentLogger() }),
     /Usage: .*status <repo> <state>/,
   );
 });
