@@ -13,7 +13,7 @@ While the version is below `1.0.0`, minor releases may contain breaking changes.
 - Community and governance files: `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`,
   `SECURITY.md`, `THIRD_PARTY_NOTICES.md`, and this changelog.
 - GitHub issue forms (bug, feature, skill proposal), a pull request template,
-  and a Dependabot configuration for npm and GitHub Actions.
+  a `CODEOWNERS` file, and a Dependabot configuration for npm and GitHub Actions.
 - `ai-sync --skills <dir>` to point the CLI at a specific skills library.
 - The five libraries are now published to npm as `@linktogo/ai-config`,
   `@linktogo/ai-git`, `@linktogo/ai-renderers`, `@linktogo/ai-skill-sync`, and
