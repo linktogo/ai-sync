@@ -223,3 +223,82 @@ test('startFromArgv logs a warning and still starts when the config file is inva
   server.close();
   await rm(dir, { recursive: true, force: true });
 });
+
+test('startFromArgv rejects passing both --config and --config-repo', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
+  const boardPath = path.join(dir, 'board.json');
+  await assert.rejects(
+    () => startFromArgv(
+      ['--board', boardPath, '--config', 'repos.json', '--config-repo', 'https://h/c.git', '--port', '0', '--dist', dir],
+      { log: () => {} },
+    ),
+    /Pass either --config or --config-repo, not both/,
+  );
+  await rm(dir, { recursive: true, force: true });
+});
+
+test('startFromArgv loads config from --config-repo, reconciles hooks, and serves it at /api/config', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
+  const checkout = path.join(dir, 'checkout');
+  await mkdir(checkout, { recursive: true });
+  const boardPath = path.join(dir, '.ai-sync', 'board.json');
+  const fakeConfig = {
+    repos: [{ name: 'demo', url: 'https://h/demo.git', path: checkout, technologies: ['nestjs'], targets: ['claude'] }],
+  };
+  let repoArgs;
+  const logs = [];
+  const server = await startFromArgv(
+    ['--board', boardPath, '--config-repo', 'https://h/lk-config.git', '--port', '0', '--dist', dir],
+    {
+      log: (m) => logs.push(m),
+      loadConfigFromRepo: async (url, opts) => { repoArgs = { url, opts }; return fakeConfig; },
+    },
+  );
+  await listening(server);
+  assert.equal(repoArgs.url, 'https://h/lk-config.git');
+  assert.ok(logs.some((m) => m.includes('✓ demo: hooks repointed')));
+  const port = server.address().port;
+  const res = await fetch(`http://127.0.0.1:${port}/api/config`);
+  assert.deepEqual(await res.json(), {
+    repos: { demo: { url: 'https://h/demo.git', technologies: ['nestjs'], targets: ['claude'] } },
+  });
+  server.close();
+  await rm(dir, { recursive: true, force: true });
+});
+
+test('startFromArgv passes --config-file through to loadConfigFromRepo', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
+  const boardPath = path.join(dir, 'board.json');
+  let repoArgs;
+  const server = await startFromArgv(
+    ['--board', boardPath, '--config-repo', 'https://h/lk-config.git', '--config-file', 'sub/repos.json', '--port', '0', '--dist', dir],
+    {
+      log: () => {},
+      loadConfigFromRepo: async (url, opts) => { repoArgs = { url, opts }; return { repos: [] }; },
+    },
+  );
+  await listening(server);
+  assert.equal(repoArgs.opts.configFile, 'sub/repos.json');
+  server.close();
+  await rm(dir, { recursive: true, force: true });
+});
+
+test('startFromArgv logs a warning and still starts when --config-repo fetch fails', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
+  const boardPath = path.join(dir, 'board.json');
+  const logs = [];
+  const server = await startFromArgv(
+    ['--board', boardPath, '--config-repo', 'https://h/lk-config.git', '--port', '0', '--dist', dir],
+    {
+      log: (m) => logs.push(m),
+      loadConfigFromRepo: async () => { throw new Error('clone failed'); },
+    },
+  );
+  await listening(server);
+  assert.ok(logs.some((m) => m.includes('⚠ hook reconciliation skipped: clone failed')));
+  const port = server.address().port;
+  const res = await fetch(`http://127.0.0.1:${port}/api/config`);
+  assert.deepEqual(await res.json(), { repos: {} });
+  server.close();
+  await rm(dir, { recursive: true, force: true });
+});

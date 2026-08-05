@@ -241,6 +241,7 @@ npm start -- --board /tmp/board.json          # use a specific board file
 AI_SYNC_BOARD=/tmp/board.json npm start       # board path via env instead of --flag
 npm start -- --board /tmp/board.json --port 8080   # custom port
 npm start -- --config repos.example.json      # also serve repo metadata at /api/config
+npm start -- --config-repo https://github.com/example-org/ai-config.git  # ...from a shared config repo instead
 npm run board:build                           # build only, without starting the server
 ```
 
@@ -264,9 +265,13 @@ off-by-default sound toggle persisted in `localStorage`) and a tab-title badge w
 transitions into `question` (an agent is blocked on you) or `done`. A **summary header** shows
 per-status counts and a done-progress bar, a **filter bar** narrows the board by repo name or
 technology, and clicking a card opens a **detail side panel** with the repo URL, technology/target
-chips, and its event timeline. When started with `--config repos.example.json` (or `AI_SYNC_CONFIG`), the
-server also exposes `GET /api/config` to power the links and technology filter; without it the
-board still runs in a degraded mode (no links/filter).
+chips, and its event timeline. When started with `--config repos.example.json` (or `AI_SYNC_CONFIG`) — or `--config-repo <url>`
+(or `AI_SYNC_CONFIG_REPO`, with `--config-file`/`AI_SYNC_CONFIG_FILE` to override the `repos.json`
+default, same as [Config source](#config-source) below) — the server also exposes `GET /api/config`
+to power the links and technology filter; without it the board still runs in a degraded mode
+(no links/filter). Passing both `--config` and `--config-repo` is an error. Unlike a local
+`--config` file, which is re-read on every request, a `--config-repo` is fetched once at startup
+(re-cloning per request would be wasteful) — restart the server to pick up upstream changes.
 
 ## Project layout
 

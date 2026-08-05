@@ -15,6 +15,10 @@ While the version is below `1.0.0`, minor releases may contain breaking changes.
 - GitHub issue forms (bug, feature, skill proposal), a pull request template,
   a `CODEOWNERS` file, and a Dependabot configuration for npm and GitHub Actions.
 - `ai-sync --skills <dir>` to point the CLI at a specific skills library.
+- The board server (`apps/board`) now accepts `--config-repo`/`--config-file`
+  (and `AI_SYNC_CONFIG_REPO`/`AI_SYNC_CONFIG_FILE`), matching `sync` and
+  `workspace`, so it can serve `/api/config` straight from a shared config
+  repo instead of a locally duplicated file.
 - The five libraries are now published to npm as `@linktogo/ai-config`,
   `@linktogo/ai-git`, `@linktogo/ai-renderers`, `@linktogo/ai-skill-sync`, and
   `@linktogo/ai-workspace-bootstrap`, alongside the `@linktogo/ai-sync` CLI

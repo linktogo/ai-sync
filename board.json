@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "repos": {
+    "lk-mind": {
+      "status": "question",
+      "updatedAt": "2026-08-05T09:16:48.147Z",
+      "lastEvent": "Stop",
+      "events": [
+        {
+          "event": "Stop",
+          "at": "2026-08-05T09:16:48.147Z"
+        },
+        {
+          "event": "Stop",
+          "at": "2026-08-05T09:15:01.848Z"
+        },
+        {
+          "event": "UserPromptSubmit",
+          "at": "2026-08-05T09:13:55.192Z"
+        },
+        {
+          "event": "init",
+          "at": "2026-08-05T09:13:30.880Z"
+        }
+      ]
+    },
+    "ai-sync": {
+      "status": "todo",
+      "updatedAt": "2026-08-05T09:13:30.882Z",
+      "lastEvent": "init",
+      "events": [
+        {
+          "event": "init",
+          "at": "2026-08-05T09:13:30.882Z"
+        }
+      ]
+    },
+    "oc-be": {
+      "status": "todo",
+      "updatedAt": "2026-08-05T09:13:30.882Z",
+      "lastEvent": "init",
+      "events": [
+        {
+          "event": "init",
+          "at": "2026-08-05T09:13:30.882Z"
+        }
+      ]
+    },
+    "lk-myasso": {
+      "status": "todo",
+      "updatedAt": "2026-08-05T09:13:30.882Z",
+      "lastEvent": "init",
+      "events": [
+        {
+          "event": "init",
+          "at": "2026-08-05T09:13:30.882Z"
+        }
+      ]
+    }
+  }
+}

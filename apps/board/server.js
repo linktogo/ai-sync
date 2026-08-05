@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
-import { loadConfig } from '@linktogo/ai-config';
+import { loadConfig, loadConfigFromRepo } from '@linktogo/ai-config';
 import { reconcileHooks } from '@linktogo/ai-workspace-bootstrap';
 
 // Resolve the board file the server should read. Explicit --board and the
@@ -41,11 +41,17 @@ async function serveBoard(boardPath, res) {
   res.end(body);
 }
 
-async function serveConfig(configPath, res) {
+// `configSource` is either a local file path (re-read on every request, so
+// edits are reflected without a restart) or an already-parsed config object
+// (from --config-repo, resolved once at startup since re-cloning per request
+// would be wasteful).
+async function serveConfig(configSource, res) {
   const repos = {};
-  if (configPath) {
+  if (configSource) {
     try {
-      const parsed = JSON.parse(await readFile(configPath, 'utf8'));
+      const parsed = typeof configSource === 'string'
+        ? JSON.parse(await readFile(configSource, 'utf8'))
+        : configSource;
       for (const r of parsed.repos ?? []) {
         if (r?.name) repos[r.name] = { url: r.url, technologies: r.technologies ?? [], targets: r.targets ?? [] };
       }
@@ -76,12 +82,12 @@ async function serveStatic(distDir, pathname, res) {
   }
 }
 
-export function createBoardServer({ boardPath, distDir, configPath = null }) {
+export function createBoardServer({ boardPath, distDir, configPath = null, configData = null }) {
   return createServer(async (req, res) => {
     try {
       const url = new URL(req.url, 'http://localhost');
       if (url.pathname === '/api/board') return await serveBoard(boardPath, res);
-      if (url.pathname === '/api/config') return await serveConfig(configPath, res);
+      if (url.pathname === '/api/config') return await serveConfig(configPath ?? configData, res);
       return await serveStatic(distDir, url.pathname, res);
     } catch (err) {
       res.writeHead(500, { 'content-type': 'text/plain' });
@@ -90,20 +96,38 @@ export function createBoardServer({ boardPath, distDir, configPath = null }) {
   });
 }
 
-export async function startFromArgv(argv, { log = console.log } = {}) {
+export async function startFromArgv(argv, {
+  log = console.log,
+  loadConfig: loadConfigDep = loadConfig,
+  loadConfigFromRepo: loadConfigFromRepoDep = loadConfigFromRepo,
+} = {}) {
   const { values } = parseArgs({
     args: argv,
     options: {
       board: { type: 'string' }, port: { type: 'string', default: '4180' },
       dist: { type: 'string' }, config: { type: 'string' },
+      'config-repo': { type: 'string' }, 'config-file': { type: 'string' },
     },
   });
   const boardPath = resolveServerBoardPath({ board: values.board });
-  const configSrc = values.config ?? process.env.AI_SYNC_CONFIG ?? null;
-  const configPath = configSrc ? path.resolve(configSrc) : null;
-  if (configPath) {
+
+  const configFileSrc = values.config ?? process.env.AI_SYNC_CONFIG ?? null;
+  const configRepoSrc = values['config-repo'] ?? process.env.AI_SYNC_CONFIG_REPO ?? null;
+  const configFileInRepo = values['config-file'] ?? process.env.AI_SYNC_CONFIG_FILE ?? undefined;
+  if (configFileSrc && configRepoSrc) {
+    throw new Error('Pass either --config or --config-repo, not both');
+  }
+  const configPath = configFileSrc ? path.resolve(configFileSrc) : null;
+  // Resolved once at startup for --config-repo (see serveConfig); a local
+  // --config path stays null here and is re-read per request instead.
+  let configData = null;
+
+  if (configPath || configRepoSrc) {
     try {
-      const config = await loadConfig(configPath);
+      const config = configRepoSrc
+        ? await loadConfigFromRepoDep(configRepoSrc, configFileInRepo ? { configFile: configFileInRepo } : {})
+        : await loadConfigDep(configPath);
+      if (configRepoSrc) configData = config;
       const hookCommand = fileURLToPath(new URL('../workspace/bin/workspace.js', import.meta.url));
       const results = await reconcileHooks(config, { boardPath, hookCommand });
       for (const r of results) {
@@ -119,7 +143,7 @@ export async function startFromArgv(argv, { log = console.log } = {}) {
     }
   }
   const distDir = values.dist ?? path.join(path.dirname(fileURLToPath(import.meta.url)), 'dist');
-  const server = createBoardServer({ boardPath, distDir, configPath });
+  const server = createBoardServer({ boardPath, distDir, configPath, configData });
 
   // Like the Angular CLI: if the port is taken, fall back to the next one.
   const maxAttempts = 10;
