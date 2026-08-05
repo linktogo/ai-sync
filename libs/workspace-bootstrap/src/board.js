@@ -11,18 +11,24 @@ export function resolveBoardPath({ board, env = process.env } = {}) {
   return path.resolve(p);
 }
 
+// board.json is disposable runtime state, regenerated continuously by hooks.
+// Anything not already in the v2 `{ sessions: {...} }` shape (a v1 flat
+// entry, or malformed data) is reset rather than migrated — hooks repopulate
+// it within moments.
+function normalizeRepoEntry(entry) {
+  return entry?.sessions && typeof entry.sessions === 'object' ? entry : { sessions: {} };
+}
+
 export async function readBoard(boardPath, { read = readFile } = {}) {
   try {
     const parsed = JSON.parse(await read(boardPath, 'utf8'));
-    const board = { version: 1, repos: {}, ...parsed };
-    for (const entry of Object.values(board.repos)) {
-      if (!Array.isArray(entry.events)) {
-        entry.events = entry.lastEvent ? [{ event: entry.lastEvent, at: entry.updatedAt ?? null }] : [];
-      }
+    const board = { ...parsed, version: 2, repos: { ...parsed.repos } };
+    for (const [name, entry] of Object.entries(board.repos)) {
+      board.repos[name] = normalizeRepoEntry(entry);
     }
     return board;
   } catch (err) {
-    if (err.code === 'ENOENT') return { version: 1, repos: {} };
+    if (err.code === 'ENOENT') return { version: 2, repos: {} };
     throw err;
   }
 }
@@ -40,29 +46,43 @@ export async function writeBoard(boardPath, board, opts = {}) {
   await move(tmp, boardPath);
 }
 
-export async function setStatus(boardPath, repo, state, opts = {}) {
-  const { lastEvent = 'manual', now = () => new Date().toISOString(), ...io } = opts;
+export async function setSessionStatus(boardPath, repo, sessionId, state, opts = {}) {
+  const { lastEvent = 'manual', title, lastPrompt, now = () => new Date().toISOString(), ...io } = opts;
   if (!STATES.includes(state)) {
     throw new Error(`Invalid state "${state}" (valid: ${STATES.join(', ')})`);
   }
   const board = await readBoard(boardPath, io);
   const at = now();
-  const prev = board.repos[repo];
-  const events = [{ event: lastEvent, at }, ...(prev?.events ?? [])].slice(0, MAX_EVENTS);
-  board.repos[repo] = { status: state, updatedAt: at, lastEvent, events };
+  const repoEntry = board.repos[repo] ?? { sessions: {} };
+  const prevSession = repoEntry.sessions[sessionId];
+  const events = [{ event: lastEvent, at }, ...(prevSession?.events ?? [])].slice(0, MAX_EVENTS);
+  repoEntry.sessions[sessionId] = {
+    status: state,
+    updatedAt: at,
+    lastEvent,
+    title: prevSession?.title ?? title ?? null,          // set once, never overwritten
+    lastPrompt: lastPrompt ?? prevSession?.lastPrompt ?? null, // overwritten every UserPromptSubmit
+    events,
+  };
+  board.repos[repo] = repoEntry;
   await writeBoard(boardPath, board, io);
   return board;
 }
 
-export async function initRepos(boardPath, repoNames, opts = {}) {
-  const { now = () => new Date().toISOString(), ...io } = opts;
-  const board = await readBoard(boardPath, io);
-  for (const name of repoNames) {
-    if (!board.repos[name]) {
-      const at = now();
-      board.repos[name] = { status: 'todo', updatedAt: at, lastEvent: 'init', events: [{ event: 'init', at }] };
-    }
+export async function removeSession(boardPath, repo, sessionId, opts = {}) {
+  const board = await readBoard(boardPath, opts);
+  if (board.repos[repo]) {
+    delete board.repos[repo].sessions[sessionId];
   }
-  await writeBoard(boardPath, board, io);
+  await writeBoard(boardPath, board, opts);
+  return board;
+}
+
+export async function initRepos(boardPath, repoNames, opts = {}) {
+  const board = await readBoard(boardPath, opts);
+  for (const name of repoNames) {
+    if (!board.repos[name]) board.repos[name] = { sessions: {} };
+  }
+  await writeBoard(boardPath, board, opts);
   return board;
 }
