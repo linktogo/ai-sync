@@ -21,9 +21,17 @@ const now = useNow();
 
 const nameFilter = ref('');
 const techFilter = ref('');
-const selected = ref(null);
+const selected = ref(null); // { name, sessionId } | null
 
-const questionCount = computed(() => Object.values(repos.value).filter((r) => r.status === 'question').length);
+const questionCount = computed(() => {
+  let n = 0;
+  for (const repoEntry of Object.values(repos.value)) {
+    for (const s of Object.values(repoEntry.sessions ?? {})) {
+      if (s.status === 'question') n += 1;
+    }
+  }
+  return n;
+});
 const { permission, soundOn, requestPermission, toggleSound } = useNotifications(transitions, questionCount, {});
 
 const technologies = computed(() => {
@@ -49,15 +57,29 @@ const filtered = computed(() => {
   return out;
 });
 
+// A repo's card shows up in every column that has at least one of its
+// sessions; each column's copy lists only that column's sessions. A repo
+// with no sessions at all still shows a placeholder card in "todo".
 function entriesFor(status) {
-  return Object.entries(filtered.value)
-    .filter(([, r]) => r.status === status)
-    .map(([name, repo]) => ({ name, repo }));
+  const out = [];
+  for (const [name, repoEntry] of Object.entries(filtered.value)) {
+    const allSessions = Object.entries(repoEntry.sessions ?? {});
+    if (allSessions.length === 0) {
+      if (status === 'todo') out.push({ name, sessions: [] });
+      continue;
+    }
+    const sessions = allSessions
+      .filter(([, s]) => s.status === status)
+      .map(([sessionId, s]) => ({ sessionId, ...s }));
+    if (sessions.length > 0) out.push({ name, sessions });
+  }
+  return out;
 }
 const grouped = computed(() => COLUMNS.map((c) => ({ ...c, entries: entriesFor(c.status) })));
 
-const selectedRepo = computed(() => (selected.value ? repos.value[selected.value] : null));
-const selectedMeta = computed(() => (selected.value ? config.value[selected.value] ?? null : null));
+const selectedRepo = computed(() => (selected.value ? repos.value[selected.value.name] : null));
+const selectedSession = computed(() => selectedRepo.value?.sessions?.[selected.value?.sessionId] ?? null);
+const selectedMeta = computed(() => (selected.value ? config.value[selected.value.name] ?? null : null));
 </script>
 
 <template>
@@ -90,13 +112,13 @@ const selectedMeta = computed(() => (selected.value ? config.value[selected.valu
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
       <Column
         v-for="c in grouped" :key="c.status"
-        :title="c.title" :accent="c.accent" :entries="c.entries" :now="now"
+        :title="c.title" :status="c.status" :accent="c.accent" :entries="c.entries" :now="now"
         @open="selected = $event"
       />
     </div>
 
     <RepoDetail
-      :name="selected" :repo="selectedRepo" :meta="selectedMeta" :now="now"
+      :name="selected?.name ?? null" :session="selectedSession" :meta="selectedMeta" :now="now"
       @close="selected = null"
     />
   </main>

@@ -3,12 +3,19 @@ import { computed } from 'vue';
 
 const props = defineProps({ repos: { type: Object, required: true } });
 
+// A repo with zero active sessions counts as one "todo" card (same
+// placeholder behavior the board itself shows); otherwise every session
+// counts individually, so a repo with two concurrent sessions counts twice.
 const counts = computed(() => {
   const c = { todo: 0, inprogress: 0, question: 0, done: 0 };
-  for (const r of Object.values(props.repos)) if (c[r.status] !== undefined) c[r.status] += 1;
+  for (const repoEntry of Object.values(props.repos)) {
+    const sessions = Object.values(repoEntry.sessions ?? {});
+    if (sessions.length === 0) { c.todo += 1; continue; }
+    for (const s of sessions) if (c[s.status] !== undefined) c[s.status] += 1;
+  }
   return c;
 });
-const total = computed(() => Object.keys(props.repos).length);
+const total = computed(() => Object.values(counts.value).reduce((a, b) => a + b, 0));
 const percentDone = computed(() => (total.value ? Math.round((counts.value.done / total.value) * 100) : 0));
 </script>
 

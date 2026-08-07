@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
-import { loadConfig } from '@linktogo/ai-config';
+import { loadConfig, loadConfigFromRepo, resolveConfigSource } from '@linktogo/ai-config';
 import { reconcileHooks } from '@linktogo/ai-workspace-bootstrap';
 
 // Resolve the board file the server should read. Explicit --board and the
@@ -35,23 +35,16 @@ async function serveBoard(boardPath, res) {
     body = await readFile(boardPath, 'utf8');
   } catch (err) {
     if (err.code !== 'ENOENT') throw err;
-    body = JSON.stringify({ version: 1, repos: {} });
+    body = JSON.stringify({ version: 2, repos: {} });
   }
   res.writeHead(200, { 'content-type': 'application/json' });
   res.end(body);
 }
 
-async function serveConfig(configPath, res) {
+function serveConfig(config, res) {
   const repos = {};
-  if (configPath) {
-    try {
-      const parsed = JSON.parse(await readFile(configPath, 'utf8'));
-      for (const r of parsed.repos ?? []) {
-        if (r?.name) repos[r.name] = { url: r.url, technologies: r.technologies ?? [], targets: r.targets ?? [] };
-      }
-    } catch (err) {
-      if (err.code !== 'ENOENT') throw err;
-    }
+  for (const r of config?.repos ?? []) {
+    repos[r.name] = { url: r.url, technologies: r.technologies, targets: r.targets };
   }
   res.writeHead(200, { 'content-type': 'application/json' });
   res.end(JSON.stringify({ repos }));
@@ -76,12 +69,12 @@ async function serveStatic(distDir, pathname, res) {
   }
 }
 
-export function createBoardServer({ boardPath, distDir, configPath = null }) {
+export function createBoardServer({ boardPath, distDir, config = null }) {
   return createServer(async (req, res) => {
     try {
       const url = new URL(req.url, 'http://localhost');
       if (url.pathname === '/api/board') return await serveBoard(boardPath, res);
-      if (url.pathname === '/api/config') return await serveConfig(configPath, res);
+      if (url.pathname === '/api/config') return serveConfig(config, res);
       return await serveStatic(distDir, url.pathname, res);
     } catch (err) {
       res.writeHead(500, { 'content-type': 'text/plain' });
@@ -90,20 +83,29 @@ export function createBoardServer({ boardPath, distDir, configPath = null }) {
   });
 }
 
-export async function startFromArgv(argv, { log = console.log } = {}) {
+export async function startFromArgv(argv, {
+  log = console.log,
+  loadConfig: loadConfigDep = loadConfig,
+  loadConfigFromRepo: loadConfigFromRepoDep = loadConfigFromRepo,
+} = {}) {
   const { values } = parseArgs({
     args: argv,
     options: {
       board: { type: 'string' }, port: { type: 'string', default: '4180' },
       dist: { type: 'string' }, config: { type: 'string' },
+      'config-repo': { type: 'string' }, 'config-file': { type: 'string' },
     },
   });
   const boardPath = resolveServerBoardPath({ board: values.board });
   const configSrc = values.config ?? process.env.AI_SYNC_CONFIG ?? null;
-  const configPath = configSrc ? path.resolve(configSrc) : null;
-  if (configPath) {
+  const configRepo = values['config-repo'] ?? null;
+  let config = null;
+  if (configSrc || configRepo) {
     try {
-      const config = await loadConfig(configPath);
+      config = await resolveConfigSource(
+        { config: configSrc ? path.resolve(configSrc) : null, configRepo, configFile: values['config-file'] },
+        { loadConfig: loadConfigDep, loadConfigFromRepo: loadConfigFromRepoDep },
+      );
       const hookCommand = fileURLToPath(new URL('../workspace/bin/workspace.js', import.meta.url));
       const results = await reconcileHooks(config, { boardPath, hookCommand });
       for (const r of results) {
@@ -119,7 +121,7 @@ export async function startFromArgv(argv, { log = console.log } = {}) {
     }
   }
   const distDir = values.dist ?? path.join(path.dirname(fileURLToPath(import.meta.url)), 'dist');
-  const server = createBoardServer({ boardPath, distDir, configPath });
+  const server = createBoardServer({ boardPath, distDir, config });
 
   // Like the Angular CLI: if the port is taken, fall back to the next one.
   const maxAttempts = 10;

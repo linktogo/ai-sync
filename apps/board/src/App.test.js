@@ -9,11 +9,15 @@ function routedFetch() {
       return Promise.resolve({ json: async () => ({ repos: { a: { url: 'u', technologies: ['nestjs'], targets: [] } } }) });
     }
     return Promise.resolve({ json: async () => ({
-      version: 1,
+      version: 2,
       repos: {
-        a: { status: 'todo', lastEvent: 'init', updatedAt: 'T', events: [] },
-        b: { status: 'question', lastEvent: 'Stop', updatedAt: 'T', events: [] },
-        c: { status: 'question', lastEvent: 'Notification', updatedAt: 'T', events: [] },
+        a: { sessions: {} }, // idle repo -> todo placeholder card
+        b: { sessions: { s1: { status: 'question', lastEvent: 'Stop', updatedAt: 'T', title: 'fix login', lastPrompt: 'fix login', events: [] } } },
+        c: { sessions: { s2: { status: 'question', lastEvent: 'Notification', updatedAt: 'T', title: 'review PR', lastPrompt: 'review PR', events: [] } } },
+        d: { sessions: { // one repo, two sessions in two different statuses -> two separate cards
+          s3: { status: 'todo', lastEvent: 'init', updatedAt: 'T', title: 'd todo item', lastPrompt: 'd todo item', events: [] },
+          s4: { status: 'question', lastEvent: 'Stop', updatedAt: 'T', title: 'd question item', lastPrompt: 'd question item', events: [] },
+        } },
       },
     }) });
   });
@@ -26,9 +30,27 @@ test('App groups repos into the four columns', async () => {
   await settle();
   const columns = wrapper.findAll('section');
   expect(columns).toHaveLength(4);
-  expect(columns[2].text()).toContain('(2)');
+  expect(columns[2].text()).toContain('(3)'); // repos b, c and d each have a session in "question"
   expect(wrapper.text()).toContain('a');
   expect(wrapper.text()).toContain('b');
+});
+
+test('a repo with sessions in two different statuses gets a separate card per matching column', async () => {
+  const wrapper = mount(App, { props: { fetchImpl: routedFetch(), intervalMs: 100000 } });
+  await settle();
+  const columns = wrapper.findAll('section');
+  const todoColumn = columns[0];
+  const questionColumn = columns[2];
+
+  // repo "d" shows up in both the "todo" and "question" columns...
+  expect(todoColumn.text()).toContain('d');
+  expect(questionColumn.text()).toContain('d');
+
+  // ...but each column's card for "d" lists only that column's matching session.
+  expect(todoColumn.text()).toContain('d todo item');
+  expect(todoColumn.text()).not.toContain('d question item');
+  expect(questionColumn.text()).toContain('d question item');
+  expect(questionColumn.text()).not.toContain('d todo item');
 });
 
 test('App renders the summary header and filter bar', async () => {
@@ -38,10 +60,10 @@ test('App renders the summary header and filter bar', async () => {
   expect(wrapper.find('[data-test=search]').exists()).toBe(true);
 });
 
-test('clicking a card opens the detail panel', async () => {
+test('clicking a session row opens the detail panel', async () => {
   const wrapper = mount(App, { props: { fetchImpl: routedFetch(), intervalMs: 100000 } });
   await settle();
-  await wrapper.get('section button').trigger('click'); // first card (cards are buttons inside a column section)
+  await wrapper.get('[data-test=session-row]').trigger('click');
   expect(wrapper.find('aside').exists()).toBe(true);
 });
 

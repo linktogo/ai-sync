@@ -1,26 +1,31 @@
 <script setup>
 import { computed } from 'vue';
-import { relativeTime } from './useRelativeTime.js';
+import SessionRow from './SessionRow.vue';
 
 const props = defineProps({
   name: { type: String, required: true },
-  repo: { type: Object, required: true },
+  sessions: { type: Array, required: true }, // [{ sessionId, title, lastPrompt, updatedAt, lastEvent, ... }]
+  status: { type: String, required: true },
   now: { type: Number, default: () => Date.now() },
 });
-defineEmits(['open']);
+const emit = defineEmits(['open']);
 
-const isQuestion = computed(() => props.repo.status === 'question');
-const when = computed(() => relativeTime(props.repo.updatedAt, props.now));
+const isQuestion = computed(() => props.status === 'question');
+
+function open(sessionId) {
+  emit('open', { name: props.name, sessionId });
+}
 </script>
 
 <template>
-  <button
-    type="button"
-    @click="$emit('open', name)"
-    :class="['w-full text-left rounded-md bg-white shadow-sm border p-3 transition',
-             isQuestion ? 'border-amber-400 ring-4 ring-amber-200' : 'border-slate-200 hover:border-slate-300']"
+  <div
+    :class="['rounded-md bg-white shadow-sm border p-3',
+             isQuestion ? 'border-amber-400 ring-4 ring-amber-200' : 'border-slate-200']"
   >
     <div class="font-medium text-slate-800">{{ name }}</div>
-    <div class="mt-1 text-xs text-slate-500">{{ repo.lastEvent }} · {{ when }}</div>
-  </button>
+    <p v-if="sessions.length === 0" class="mt-1 text-xs text-slate-400">Aucune session active</p>
+    <div v-else class="mt-2 flex flex-col divide-y divide-slate-100">
+      <SessionRow v-for="s in sessions" :key="s.sessionId" :session="s" :now="now" @open="open" />
+    </div>
+  </div>
 </template>

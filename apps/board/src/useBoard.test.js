@@ -3,18 +3,18 @@ import { nextTick } from 'vue';
 import { useBoard } from './useBoard.js';
 
 test('useBoard fetches immediately and exposes repos', async () => {
-  const fetchImpl = vi.fn().mockResolvedValue({ json: async () => ({ version: 1, repos: { a: { status: 'todo' } } }) });
+  const fetchImpl = vi.fn().mockResolvedValue({ json: async () => ({ version: 2, repos: { a: { sessions: {} } } }) });
   const { repos, stop } = useBoard({ intervalMs: 1000, fetchImpl });
   await nextTick();
   await Promise.resolve();
   expect(fetchImpl).toHaveBeenCalledWith('/api/board');
-  expect(repos.value).toEqual({ a: { status: 'todo' } });
+  expect(repos.value).toEqual({ a: { sessions: {} } });
   stop();
 });
 
 test('useBoard polls on the interval', async () => {
   vi.useFakeTimers();
-  const fetchImpl = vi.fn().mockResolvedValue({ json: async () => ({ version: 1, repos: {} }) });
+  const fetchImpl = vi.fn().mockResolvedValue({ json: async () => ({ version: 2, repos: {} }) });
   const { stop } = useBoard({ intervalMs: 500, fetchImpl });
   await vi.advanceTimersByTimeAsync(1100);
   expect(fetchImpl.mock.calls.length).toBeGreaterThanOrEqual(3); // immediate + 2 ticks
@@ -23,23 +23,39 @@ test('useBoard polls on the interval', async () => {
 });
 
 test('useBoard reports no transitions on the first fetch (baseline)', async () => {
-  const fetchImpl = vi.fn().mockResolvedValue({ json: async () => ({ repos: { a: { status: 'question' } } }) });
+  const fetchImpl = vi.fn().mockResolvedValue({ json: async () => ({ repos: { a: { sessions: { s1: { status: 'question' } } } } }) });
   const { transitions, stop } = useBoard({ intervalMs: 100000, fetchImpl });
   await nextTick(); await Promise.resolve(); await nextTick();
   expect(transitions.value).toEqual([]);
   stop();
 });
 
-test('useBoard detects transitions into question/done on later fetches', async () => {
+test('useBoard detects session transitions into question/done on later fetches', async () => {
   const responses = [
-    { repos: { a: { status: 'inprogress' }, b: { status: 'todo' } } },
-    { repos: { a: { status: 'question' }, b: { status: 'done' } } },
+    { repos: { a: { sessions: { s1: { status: 'inprogress', title: 'fix login' } } }, b: { sessions: { s2: { status: 'todo' } } } } },
+    { repos: { a: { sessions: { s1: { status: 'question', title: 'fix login' } } }, b: { sessions: { s2: { status: 'done' } } } } },
   ];
   const fetchImpl = vi.fn().mockImplementation(() => Promise.resolve({ json: async () => responses.shift() }));
   const { transitions, refresh, stop } = useBoard({ intervalMs: 100000, fetchImpl });
   await nextTick(); await Promise.resolve(); await nextTick();
   await refresh();
-  expect(transitions.value).toEqual([{ name: 'a', status: 'question' }, { name: 'b', status: 'done' }]);
+  expect(transitions.value).toEqual([
+    { name: 'a', sessionId: 's1', title: 'fix login', status: 'question' },
+    { name: 'b', sessionId: 's2', title: undefined, status: 'done' },
+  ]);
+  stop();
+});
+
+test('useBoard does not report a transition for a session whose status is unchanged', async () => {
+  const responses = [
+    { repos: { a: { sessions: { s1: { status: 'question', title: 't' } } } } },
+    { repos: { a: { sessions: { s1: { status: 'question', title: 't' } } } } },
+  ];
+  const fetchImpl = vi.fn().mockImplementation(() => Promise.resolve({ json: async () => responses.shift() }));
+  const { transitions, refresh, stop } = useBoard({ intervalMs: 100000, fetchImpl });
+  await nextTick(); await Promise.resolve(); await nextTick();
+  await refresh();
+  expect(transitions.value).toEqual([]);
   stop();
 });
 

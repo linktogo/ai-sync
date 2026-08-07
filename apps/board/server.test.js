@@ -32,7 +32,7 @@ test('GET /api/board returns an empty board when the file is missing', async () 
   const server = createBoardServer({ boardPath: path.join(dir, 'nope.json'), distDir: dir });
   const port = await listen(server);
   const res = await fetch(`http://127.0.0.1:${port}/api/board`);
-  assert.deepEqual(await res.json(), { version: 1, repos: {} });
+  assert.deepEqual(await res.json(), { version: 2, repos: {} });
   server.close();
   await rm(dir, { recursive: true, force: true });
 });
@@ -60,13 +60,12 @@ test('unknown path falls back to index.html (SPA)', async () => {
   await rm(dir, { recursive: true, force: true });
 });
 
-test('GET /api/config maps repos.json to name -> metadata', async () => {
+test('GET /api/config maps the resolved config repos to name -> metadata', async () => {
   const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
-  const configPath = path.join(dir, 'repos.json');
-  await writeFile(configPath, JSON.stringify({
+  const config = {
     repos: [{ name: 'oc-be', url: 'https://h/oc-be.git', technologies: ['nestjs'], targets: ['claude'] }],
-  }));
-  const server = createBoardServer({ boardPath: path.join(dir, 'board.json'), distDir: dir, configPath });
+  };
+  const server = createBoardServer({ boardPath: path.join(dir, 'board.json'), distDir: dir, config });
   const port = await listen(server);
   const res = await fetch(`http://127.0.0.1:${port}/api/config`);
   assert.deepEqual(await res.json(), {
@@ -79,16 +78,6 @@ test('GET /api/config maps repos.json to name -> metadata', async () => {
 test('GET /api/config returns empty repos when no config is configured', async () => {
   const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
   const server = createBoardServer({ boardPath: path.join(dir, 'board.json'), distDir: dir });
-  const port = await listen(server);
-  const res = await fetch(`http://127.0.0.1:${port}/api/config`);
-  assert.deepEqual(await res.json(), { repos: {} });
-  server.close();
-  await rm(dir, { recursive: true, force: true });
-});
-
-test('GET /api/config returns empty repos when the config file is missing', async () => {
-  const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
-  const server = createBoardServer({ boardPath: path.join(dir, 'board.json'), distDir: dir, configPath: path.join(dir, 'nope.json') });
   const port = await listen(server);
   const res = await fetch(`http://127.0.0.1:${port}/api/config`);
   assert.deepEqual(await res.json(), { repos: {} });
@@ -220,6 +209,51 @@ test('startFromArgv logs a warning and still starts when the config file is inva
   );
   await listening(server);
   assert.ok(logs.some((m) => m.includes('⚠ hook reconciliation skipped')));
+  server.close();
+  await rm(dir, { recursive: true, force: true });
+});
+
+test('startFromArgv loads config from --config-repo and serves it at /api/config', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
+  const checkout = path.join(dir, 'checkout');
+  await mkdir(checkout, { recursive: true });
+  const config = {
+    repos: [{ name: 'demo', url: 'https://h/demo.git', path: checkout, technologies: ['nestjs'], targets: ['claude'] }],
+  };
+  const boardPath = path.join(dir, '.ai-sync', 'board.json');
+  let repoArgs;
+  const logs = [];
+  const server = await startFromArgv(
+    ['--board', boardPath, '--config-repo', 'git@host:o/config.git', '--config-file', 'repos.json', '--port', '0', '--dist', dir],
+    {
+      log: (m) => logs.push(m),
+      loadConfigFromRepo: async (url, opts) => { repoArgs = { url, opts }; return config; },
+    },
+  );
+  await listening(server);
+  assert.equal(repoArgs.url, 'git@host:o/config.git');
+  assert.equal(repoArgs.opts.configFile, 'repos.json');
+  assert.ok(logs.some((m) => m.includes('✓ demo: hooks repointed')));
+  const res = await fetch(`http://127.0.0.1:${server.address().port}/api/config`);
+  assert.deepEqual(await res.json(), {
+    repos: { demo: { url: 'https://h/demo.git', technologies: ['nestjs'], targets: ['claude'] } },
+  });
+  server.close();
+  await rm(dir, { recursive: true, force: true });
+});
+
+test('startFromArgv logs a warning when both --config and --config-repo are given', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
+  const boardPath = path.join(dir, 'board.json');
+  const logs = [];
+  const server = await startFromArgv(
+    ['--board', boardPath, '--config', 'repos.json', '--config-repo', 'git@host:o/config.git', '--port', '0', '--dist', dir],
+    { log: (m) => logs.push(m) },
+  );
+  await listening(server);
+  assert.ok(logs.some((m) => m.includes('Pass either --config or --config-repo, not both')));
+  const res = await fetch(`http://127.0.0.1:${server.address().port}/api/config`);
+  assert.deepEqual(await res.json(), { repos: {} });
   server.close();
   await rm(dir, { recursive: true, force: true });
 });
