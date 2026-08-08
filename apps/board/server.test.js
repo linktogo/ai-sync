@@ -37,6 +37,53 @@ test('GET /api/board returns an empty board when the file is missing', async () 
   await rm(dir, { recursive: true, force: true });
 });
 
+test('GET /api/history returns the parsed entries from history.jsonl', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
+  const boardPath = path.join(dir, 'board.json');
+  const entry1 = {
+    repo: 'a', sessionId: 's1', title: 't1', startedAt: 'T0', endedAt: 'T1',
+    usage: { inputTokens: 1, outputTokens: 1, cacheCreationInputTokens: 1, cacheReadInputTokens: 1 },
+  };
+  const entry2 = {
+    repo: 'b', sessionId: 's2', title: 't2', startedAt: 'T0', endedAt: 'T1',
+    usage: { inputTokens: 2, outputTokens: 2, cacheCreationInputTokens: 2, cacheReadInputTokens: 2 },
+  };
+  await writeFile(path.join(dir, 'history.jsonl'), `${JSON.stringify(entry1)}\n${JSON.stringify(entry2)}\n`);
+  const server = createBoardServer({ boardPath, distDir: dir });
+  const port = await listen(server);
+  const res = await fetch(`http://127.0.0.1:${port}/api/history`);
+  assert.equal(res.status, 200);
+  assert.deepEqual(await res.json(), [entry1, entry2]);
+  server.close();
+  await rm(dir, { recursive: true, force: true });
+});
+
+test('GET /api/history returns an empty array when history.jsonl is missing', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
+  const server = createBoardServer({ boardPath: path.join(dir, 'board.json'), distDir: dir });
+  const port = await listen(server);
+  const res = await fetch(`http://127.0.0.1:${port}/api/history`);
+  assert.deepEqual(await res.json(), []);
+  server.close();
+  await rm(dir, { recursive: true, force: true });
+});
+
+test('GET /api/history skips a malformed line and returns the valid entries around it', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
+  const boardPath = path.join(dir, 'board.json');
+  const entry = {
+    repo: 'a', sessionId: 's1', title: 't1', startedAt: 'T0', endedAt: 'T1',
+    usage: { inputTokens: 1, outputTokens: 1, cacheCreationInputTokens: 1, cacheReadInputTokens: 1 },
+  };
+  await writeFile(path.join(dir, 'history.jsonl'), `${JSON.stringify(entry)}\n{not json\n`);
+  const server = createBoardServer({ boardPath, distDir: dir });
+  const port = await listen(server);
+  const res = await fetch(`http://127.0.0.1:${port}/api/history`);
+  assert.deepEqual(await res.json(), [entry]);
+  server.close();
+  await rm(dir, { recursive: true, force: true });
+});
+
 test('serves a static file from distDir', async () => {
   const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
   await writeFile(path.join(dir, 'index.html'), '<h1>board</h1>');

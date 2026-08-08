@@ -23,10 +23,20 @@ lifecycle driven by the `UserPromptSubmit` / `Notification` / `Stop` /
   four hooks carry token counts in their stdin JSON. Every hook payload does
   carry `transcript_path`, a local JSONL file where each assistant turn has a
   `message.usage` object (`input_tokens`, `output_tokens`,
-  `cache_creation_input_tokens`, `cache_read_input_tokens`). Total session
-  usage = the sum of those four fields across every `type: "assistant"` line
-  in the transcript, including sub-agent (`isSidechain`) turns — they're real
-  tokens spent by the session.
+  `cache_creation_input_tokens`, `cache_read_input_tokens`).
+  **Correction (found during final review, verified against real local
+  transcripts):** Claude Code writes one JSONL line per *content block*
+  (`thinking`, `text`, `tool_use`, ...) of a single API response, repeating
+  the identical `message.usage` on every one of those lines under the same
+  `message.id`. Summing across every `type: "assistant"` line therefore
+  overcounts by 65%–160% on real transcripts. Total session usage is the sum
+  of those four fields across each **unique `message.id`** (i.e. once per
+  API response), not once per line. `readTranscriptUsage` dedupes
+  accordingly. Sub-agent (`isSidechain`) turns, if present, are separate API
+  responses with their own `message.id` and are naturally included by the
+  same dedup logic — though in practice, across this project's local
+  transcripts, `isSidechain` is never `true`, so this is unverified in
+  practice and sub-agent spend may be recorded elsewhere or not at all.
 - **Recomputed on `Stop`, not on every hook.** `Stop` is the only event that
   reliably follows a completed assistant turn; recomputing on
   `UserPromptSubmit`/`Notification` would re-parse the transcript for no new

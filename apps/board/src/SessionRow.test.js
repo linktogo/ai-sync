@@ -50,3 +50,28 @@ test('toggling expands and collapses the full prompt without emitting open', asy
   await w.get('[data-test=toggle-prompt]').trigger('click');
   expect(w.text()).not.toContain(long);
 });
+
+test('shows a token badge with the formatted total when usage is present', () => {
+  const w = mount(SessionRow, {
+    props: {
+      session: session({ usage: { inputTokens: 100, outputTokens: 200, cacheCreationInputTokens: 300, cacheReadInputTokens: 36000 } }),
+      now,
+    },
+  });
+  expect(w.get('[data-test=token-badge]').text()).toContain('36.6K tokens');
+});
+
+test('does not show a token badge when usage is absent', () => {
+  const w = mount(SessionRow, { props: { session: session(), now } });
+  expect(w.find('[data-test=token-badge]').exists()).toBe(false);
+});
+
+test('the token badge tooltip breaks down usage by type', () => {
+  const w = mount(SessionRow, {
+    props: {
+      session: session({ usage: { inputTokens: 1, outputTokens: 2, cacheCreationInputTokens: 3, cacheReadInputTokens: 4 } }),
+      now,
+    },
+  });
+  expect(w.get('[data-test=token-badge]').attributes('title')).toBe('input 1 · output 2 · cache écrit 3 · cache lu 4');
+});

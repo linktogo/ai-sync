@@ -75,3 +75,25 @@ test('typing in the search filters the cards', async () => {
   expect(wrapper.text()).toContain('b');
   expect(wrapper.text()).not.toContain('Notification'); // card 'c' filtered out
 });
+
+test('toggling to the Historique tab shows history entries instead of the board', async () => {
+  const fetchImpl = vi.fn().mockImplementation((url) => {
+    if (url === '/api/config') return Promise.resolve({ json: async () => ({ repos: {} }) });
+    if (url === '/api/history') {
+      return Promise.resolve({
+        json: async () => ([{
+          repo: 'oc-be', sessionId: 's1', title: 'fix login',
+          startedAt: 'T0', endedAt: 'T1',
+          usage: { inputTokens: 1, outputTokens: 1, cacheCreationInputTokens: 1, cacheReadInputTokens: 1 },
+        }]),
+      });
+    }
+    return Promise.resolve({ json: async () => ({ version: 2, repos: {} }) });
+  });
+  const wrapper = mount(App, { props: { fetchImpl, intervalMs: 100000 } });
+  await settle();
+  await wrapper.get('[data-test=view-history]').trigger('click');
+  await settle();
+  expect(wrapper.find('section').exists()).toBe(false);
+  expect(wrapper.text()).toContain('fix login');
+});

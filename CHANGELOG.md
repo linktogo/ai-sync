@@ -19,6 +19,10 @@ While the version is below `1.0.0`, minor releases may contain breaking changes.
   optional `--config-file`) to pull `/api/config` and hook-reconciliation data
   from a shared config repo, the same as the `ai-sync`/`ai-workspace` CLIs,
   instead of only a local `--config <path>`.
+- The board now tracks each session's token usage (input/output/cache,
+  recomputed live on every `Stop`) and keeps a permanent `history.jsonl`
+  record of every session's final usage after it ends, browsable in a new
+  "Historique" tab (`GET /api/history`).
 - The five libraries are now published to npm as `@linktogo/ai-config`,
   `@linktogo/ai-git`, `@linktogo/ai-renderers`, `@linktogo/ai-skill-sync`, and
   `@linktogo/ai-workspace-bootstrap`, alongside the `@linktogo/ai-sync` CLI

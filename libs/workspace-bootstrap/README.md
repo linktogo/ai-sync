@@ -15,3 +15,9 @@ await setSessionStatus('/ws/.ai-sync/board.json', 'example-api', 'sess-1', 'done
 Board states are `todo`, `inprogress`, `question`, and `done`. Each repo tracks
 one entry per Claude Code session (keyed by `session_id`); writes are atomic
 and keep a bounded per-session event history.
+
+Each session also tracks `startedAt` (set once) and `usage` — an
+`{ inputTokens, outputTokens, cacheCreationInputTokens, cacheReadInputTokens }`
+object recomputed from the session's transcript on every `Stop` event, kept
+`null` until the first one. See `tokens.js` for the transcript-parsing and
+`history.jsonl` helpers.

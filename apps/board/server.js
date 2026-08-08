@@ -5,7 +5,7 @@ import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { loadConfig, loadConfigFromRepo, resolveConfigSource } from '@linktogo/ai-config';
-import { reconcileHooks } from '@linktogo/ai-workspace-bootstrap';
+import { reconcileHooks, resolveHistoryPath } from '@linktogo/ai-workspace-bootstrap';
 
 // Resolve the board file the server should read. Explicit --board and the
 // AI_SYNC_BOARD env var always win; otherwise auto-detect the workspace board
@@ -41,6 +41,22 @@ async function serveBoard(boardPath, res) {
   res.end(body);
 }
 
+async function serveHistory(historyPath, res) {
+  let raw;
+  try {
+    raw = await readFile(historyPath, 'utf8');
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
+    raw = '';
+  }
+  const entries = raw.split('\n')
+    .filter((line) => line.trim())
+    .map((line) => { try { return JSON.parse(line); } catch { return null; } })
+    .filter((entry) => entry !== null);
+  res.writeHead(200, { 'content-type': 'application/json' });
+  res.end(JSON.stringify(entries));
+}
+
 function serveConfig(config, res) {
   const repos = {};
   for (const r of config?.repos ?? []) {
@@ -70,10 +86,12 @@ async function serveStatic(distDir, pathname, res) {
 }
 
 export function createBoardServer({ boardPath, distDir, config = null }) {
+  const historyPath = resolveHistoryPath(boardPath);
   return createServer(async (req, res) => {
     try {
       const url = new URL(req.url, 'http://localhost');
       if (url.pathname === '/api/board') return await serveBoard(boardPath, res);
+      if (url.pathname === '/api/history') return await serveHistory(historyPath, res);
       if (url.pathname === '/api/config') return serveConfig(config, res);
       return await serveStatic(distDir, url.pathname, res);
     } catch (err) {

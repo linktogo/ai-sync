@@ -4,10 +4,13 @@ import Column from './Column.vue';
 import SummaryHeader from './SummaryHeader.vue';
 import FilterBar from './FilterBar.vue';
 import RepoDetail from './RepoDetail.vue';
+import HistoryView from './HistoryView.vue';
 import { useBoard } from './useBoard.js';
 import { useConfig } from './useConfig.js';
 import { useNotifications } from './useNotifications.js';
+import { useHistory } from './useHistory.js';
 import { useNow } from './useRelativeTime.js';
+import { STATUS_ORDER, STATUS_STYLES } from './statusStyles.js';
 
 const props = defineProps({
   fetchImpl: { type: Function, default: undefined },
@@ -33,6 +36,8 @@ const questionCount = computed(() => {
   return n;
 });
 const { permission, soundOn, requestPermission, toggleSound } = useNotifications(transitions, questionCount, {});
+const { entries: historyEntries, load: loadHistory } = useHistory({ fetchImpl });
+const view = ref('board');
 
 const technologies = computed(() => {
   const set = new Set();
@@ -40,12 +45,7 @@ const technologies = computed(() => {
   return [...set].sort();
 });
 
-const COLUMNS = [
-  { status: 'todo', title: 'To do', accent: 'bg-slate-200' },
-  { status: 'inprogress', title: 'In progress', accent: 'bg-blue-200' },
-  { status: 'question', title: 'Question', accent: 'bg-amber-300' },
-  { status: 'done', title: 'Done', accent: 'bg-emerald-200' },
-];
+const COLUMNS = STATUS_ORDER.map((status) => ({ status, title: STATUS_STYLES[status].label }));
 
 const filtered = computed(() => {
   const out = {};
@@ -83,21 +83,36 @@ const selectedMeta = computed(() => (selected.value ? config.value[selected.valu
 </script>
 
 <template>
-  <main class="min-h-screen bg-slate-100 p-4">
+  <main class="min-h-screen bg-slate-100 p-6">
     <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
-      <h1 class="text-lg font-bold text-slate-800">ai-sync · workspace board</h1>
+      <div class="flex items-center gap-3">
+        <h1 class="text-xl font-bold text-slate-900">ai-sync · workspace board</h1>
+        <div class="inline-flex items-center bg-slate-100 rounded-lg p-0.5 gap-0.5 text-sm">
+          <button
+            data-test="view-board"
+            :class="['rounded-md px-3 py-1 font-medium transition-colors', view === 'board' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700']"
+            @click="view = 'board'"
+          >Board</button>
+          <button
+            data-test="view-history"
+            :class="['rounded-md px-3 py-1 font-medium transition-colors', view === 'history' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700']"
+            @click="view = 'history'; loadHistory()"
+          >Historique</button>
+        </div>
+      </div>
       <div class="flex items-center gap-2 flex-wrap">
         <FilterBar
+          v-if="view === 'board'"
           :name="nameFilter" :tech="techFilter" :technologies="technologies"
           @update:name="nameFilter = $event" @update:tech="techFilter = $event"
         />
         <button
           v-if="permission !== 'granted'"
-          class="border border-slate-300 rounded-md px-3 py-1.5 text-sm bg-white"
+          class="border border-slate-200 rounded-lg shadow-sm hover:shadow px-3 py-1.5 text-sm bg-white"
           @click="requestPermission"
         >🔔 activer</button>
         <button
-          class="border border-slate-300 rounded-md px-3 py-1.5 text-sm bg-white"
+          class="border border-slate-200 rounded-lg shadow-sm hover:shadow px-3 py-1.5 text-sm bg-white"
           :class="soundOn ? 'text-slate-700' : 'text-slate-400'"
           @click="toggleSound"
         >{{ soundOn ? '🔊' : '🔇' }} son</button>
@@ -107,19 +122,22 @@ const selectedMeta = computed(() => (selected.value ? config.value[selected.valu
     <p v-if="!connected" class="mb-3 text-xs text-amber-700">⚠ déconnecté — nouvelle tentative au prochain poll…</p>
     <p v-if="permission === 'denied'" class="mb-3 text-xs text-slate-500">Notifications bloquées par le navigateur.</p>
 
-    <SummaryHeader :repos="repos" />
+    <template v-if="view === 'board'">
+      <SummaryHeader :repos="repos" />
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-      <Column
-        v-for="c in grouped" :key="c.status"
-        :title="c.title" :status="c.status" :accent="c.accent" :entries="c.entries" :now="now"
-        @open="selected = $event"
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <Column
+          v-for="c in grouped" :key="c.status"
+          :title="c.title" :status="c.status" :entries="c.entries" :now="now"
+          @open="selected = $event"
+        />
+      </div>
+
+      <RepoDetail
+        :name="selected?.name ?? null" :session="selectedSession" :meta="selectedMeta" :now="now"
+        @close="selected = null"
       />
-    </div>
-
-    <RepoDetail
-      :name="selected?.name ?? null" :session="selectedSession" :meta="selectedMeta" :now="now"
-      @close="selected = null"
-    />
+    </template>
+    <HistoryView v-else :entries="historyEntries" />
   </main>
 </template>
