@@ -20,13 +20,15 @@ onUnmounted(() => window.removeEventListener('keydown', onKey));
     <div data-test="overlay" class="absolute inset-0 bg-slate-900/30" @click="emit('close')"></div>
     <aside class="absolute right-0 top-0 h-full w-full sm:w-80 max-w-full bg-white shadow-xl p-4 overflow-y-auto">
       <button class="float-right text-slate-400 hover:text-slate-600" @click="emit('close')">✕</button>
-      <h2 class="font-bold text-slate-800">{{ name }}</h2>
-      <p v-if="session?.title" class="text-sm text-slate-600 mt-1">{{ session.title }}</p>
-      <a v-if="meta?.url" :href="meta.url" target="_blank" rel="noopener"
-         class="text-sm text-blue-600 underline break-all">{{ meta.url }}</a>
-      <div v-if="meta" class="mt-2 flex flex-wrap gap-1">
-        <span v-for="t in (meta.technologies || [])" :key="t" class="text-xs bg-slate-100 px-2 py-0.5 rounded">{{ t }}</span>
-        <span v-for="t in (meta.targets || [])" :key="t" class="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded">{{ t }}</span>
+      <div class="pb-3 border-b border-slate-100 mb-3">
+        <h2 class="font-bold text-slate-900">{{ name }}</h2>
+        <p v-if="session?.title" class="text-sm text-slate-600 mt-1">{{ session.title }}</p>
+        <a v-if="meta?.url" :href="meta.url" target="_blank" rel="noopener"
+           class="text-sm text-blue-600 underline break-all">{{ meta.url }}</a>
+        <div v-if="meta" class="mt-2 flex flex-wrap gap-1">
+          <span v-for="t in (meta.technologies || [])" :key="t" class="text-xs font-medium bg-slate-100 px-2 py-0.5 rounded-full">{{ t }}</span>
+          <span v-for="t in (meta.targets || [])" :key="t" class="text-xs font-medium bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">{{ t }}</span>
+        </div>
       </div>
       <p v-if="session?.lastPrompt" class="mt-3 text-sm text-slate-700 whitespace-pre-wrap">{{ session.lastPrompt }}</p>
       <h3 class="mt-4 text-xs font-semibold text-slate-500 uppercase">Historique</h3>

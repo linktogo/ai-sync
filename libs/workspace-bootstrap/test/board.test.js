@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import { STATES, resolveBoardPath, readBoard, writeBoard, setSessionStatus, removeSession, initRepos } from '../src/board.js';
+import { STATES, resolveBoardPath, readBoard, writeBoard, setSessionStatus, removeSession, closeSession, initRepos } from '../src/board.js';
 
 test('STATES are the four kanban columns in order', () => {
   assert.deepEqual(STATES, ['todo', 'inprogress', 'question', 'done']);
@@ -71,6 +71,8 @@ test('setSessionStatus creates a new session on a repo not yet on the board, sto
     lastEvent: 'Notification',
     title: 'first prompt',
     lastPrompt: 'first prompt',
+    startedAt: '2026-06-16T10:00:00Z',
+    usage: null,
     events: [{ event: 'Notification', at: '2026-06-16T10:00:00Z' }],
   });
 });
@@ -116,6 +118,40 @@ test('setSessionStatus overwrites lastPrompt when passed and preserves the previ
 
   const withoutPrompt = await setSessionStatus('/x', 'a', 's1', 'question', { ...io, read });
   assert.equal(withoutPrompt.repos.a.sessions.s1.lastPrompt, 'old prompt');
+});
+
+test('setSessionStatus sets startedAt only on the first write and preserves it afterwards', async () => {
+  const read = async () => JSON.stringify({
+    version: 2,
+    repos: { a: { sessions: { s1: {
+      status: 'inprogress', updatedAt: 'T1', lastEvent: 'x', title: 't', lastPrompt: 'p',
+      startedAt: 'T0', usage: null, events: [],
+    } } } },
+  });
+  const board = await setSessionStatus('/x', 'a', 's1', 'question', {
+    startedAt: 'a different time', now: () => 'T2', read,
+    write: async () => {}, move: async () => {}, ensureDir: async () => {}, tmpSuffix: '.tmp',
+  });
+  assert.equal(board.repos.a.sessions.s1.startedAt, 'T0');
+});
+
+test('setSessionStatus overwrites usage when passed and preserves the previous value when omitted', async () => {
+  const oldUsage = { inputTokens: 1, outputTokens: 1, cacheCreationInputTokens: 1, cacheReadInputTokens: 1 };
+  const read = async () => JSON.stringify({
+    version: 2,
+    repos: { a: { sessions: { s1: {
+      status: 'inprogress', updatedAt: 'T1', lastEvent: 'x', title: 't', lastPrompt: 'p',
+      startedAt: 'T0', usage: oldUsage, events: [],
+    } } } },
+  });
+  const io = { now: () => 'T2', write: async () => {}, move: async () => {}, ensureDir: async () => {}, tmpSuffix: '.tmp' };
+  const newUsage = { inputTokens: 5, outputTokens: 6, cacheCreationInputTokens: 7, cacheReadInputTokens: 8 };
+
+  const withNewUsage = await setSessionStatus('/x', 'a', 's1', 'question', { ...io, read, usage: newUsage });
+  assert.deepEqual(withNewUsage.repos.a.sessions.s1.usage, newUsage);
+
+  const withoutUsage = await setSessionStatus('/x', 'a', 's1', 'inprogress', { ...io, read });
+  assert.deepEqual(withoutUsage.repos.a.sessions.s1.usage, oldUsage);
 });
 
 test('setSessionStatus prepends events newest-first and caps history at MAX_EVENTS per session', async () => {
@@ -184,4 +220,120 @@ test('initRepos adds missing repos with empty sessions without clobbering existi
   });
   assert.deepEqual(board.repos.a, { sessions: { s1: { status: 'done' } } });
   assert.deepEqual(board.repos.b, { sessions: {} });
+});
+
+test('closeSession appends a history entry and removes the session, leaving a sibling session untouched', async () => {
+  const appends = [];
+  const writes = [];
+  const result = await closeSession('/x/board.json', 'a', 's1', {
+    now: () => 'T2',
+    historyPath: '/x/history.jsonl',
+    read: async () => JSON.stringify({
+      version: 2,
+      repos: { a: { sessions: {
+        s1: {
+          status: 'question', updatedAt: 'T1', lastEvent: 'Stop', title: 'fix bug', lastPrompt: 'fix bug',
+          startedAt: 'T0', usage: { inputTokens: 1, outputTokens: 2, cacheCreationInputTokens: 3, cacheReadInputTokens: 4 }, events: [],
+        },
+        s2: { status: 'inprogress', updatedAt: 'T1', lastEvent: 'x', title: 'b', lastPrompt: 'b', startedAt: 'T0', usage: null, events: [] },
+      } } },
+    }),
+    write: async (file, data) => writes.push([file, data]),
+    move: async () => {},
+    ensureDir: async () => {},
+    append: async (file, data) => appends.push([file, data]),
+    tmpSuffix: '.tmp',
+  });
+  assert.deepEqual(result, { closed: true });
+  assert.equal(appends.length, 1);
+  assert.equal(appends[0][0], '/x/history.jsonl');
+  assert.deepEqual(JSON.parse(appends[0][1]), {
+    repo: 'a', sessionId: 's1', title: 'fix bug', startedAt: 'T0', endedAt: 'T2',
+    usage: { inputTokens: 1, outputTokens: 2, cacheCreationInputTokens: 3, cacheReadInputTokens: 4 },
+  });
+  const written = JSON.parse(writes[0][1]);
+  assert.deepEqual(Object.keys(written.repos.a.sessions), ['s2']);
+});
+
+test('closeSession records null usage when the session has none yet', async () => {
+  const appends = [];
+  await closeSession('/x/board.json', 'a', 's1', {
+    now: () => 'T2',
+    historyPath: '/x/history.jsonl',
+    read: async () => JSON.stringify({
+      version: 2,
+      repos: { a: { sessions: { s1: { status: 'question', updatedAt: 'T1', lastEvent: 'Stop', title: null, lastPrompt: null, startedAt: 'T0', usage: null, events: [] } } } },
+    }),
+    write: async () => {}, move: async () => {}, ensureDir: async () => {},
+    append: async (file, data) => appends.push(JSON.parse(data)),
+    tmpSuffix: '.tmp',
+  });
+  assert.equal(appends[0].usage, null);
+  assert.equal(appends[0].title, null);
+});
+
+test('closeSession records null startedAt when the session has none yet', async () => {
+  const appends = [];
+  await closeSession('/x/board.json', 'a', 's1', {
+    now: () => 'T2',
+    historyPath: '/x/history.jsonl',
+    read: async () => JSON.stringify({
+      version: 2,
+      repos: { a: { sessions: { s1: { status: 'question', updatedAt: 'T1', lastEvent: 'Stop', title: 't', lastPrompt: 'p', usage: null, events: [] } } } },
+    }),
+    write: async () => {}, move: async () => {}, ensureDir: async () => {},
+    append: async (file, data) => appends.push(JSON.parse(data)),
+    tmpSuffix: '.tmp',
+  });
+  assert.equal(appends[0].startedAt, null);
+});
+
+test('closeSession is a no-op and returns closed:false when the repo is not on the board', async () => {
+  const result = await closeSession('/x/board.json', 'unknown', 's1', {
+    historyPath: '/x/history.jsonl',
+    read: async () => '{"version":2,"repos":{}}',
+    write: async () => { throw new Error('must not write'); },
+    append: async () => { throw new Error('must not append'); },
+  });
+  assert.deepEqual(result, { closed: false });
+});
+
+test('closeSession is a no-op and returns closed:false when the session is not on the repo', async () => {
+  const result = await closeSession('/x/board.json', 'a', 'unknown-session', {
+    historyPath: '/x/history.jsonl',
+    read: async () => JSON.stringify({ version: 2, repos: { a: { sessions: { s1: { status: 'done' } } } } }),
+    write: async () => { throw new Error('must not write'); },
+    append: async () => { throw new Error('must not append'); },
+  });
+  assert.deepEqual(result, { closed: false });
+});
+
+test('closeSession defaults historyPath to the sibling history.jsonl when not passed', async () => {
+  const appends = [];
+  await closeSession('/d/board.json', 'a', 's1', {
+    now: () => 'T2',
+    read: async () => JSON.stringify({
+      version: 2,
+      repos: { a: { sessions: { s1: { status: 'question', updatedAt: 'T1', lastEvent: 'Stop', title: 't', lastPrompt: 'p', startedAt: 'T0', usage: null, events: [] } } } },
+    }),
+    write: async () => {}, move: async () => {}, ensureDir: async () => {},
+    append: async (file) => appends.push(file),
+    tmpSuffix: '.tmp',
+  });
+  assert.equal(appends[0], path.join('/d', 'history.jsonl'));
+});
+
+test('closeSession stamps endedAt with the current ISO time by default', async () => {
+  const appends = [];
+  await closeSession('/x/board.json', 'a', 's1', {
+    historyPath: '/x/history.jsonl',
+    read: async () => JSON.stringify({
+      version: 2,
+      repos: { a: { sessions: { s1: { status: 'question', updatedAt: 'T1', lastEvent: 'Stop', title: 't', lastPrompt: 'p', startedAt: 'T0', usage: null, events: [] } } } },
+    }),
+    write: async () => {}, move: async () => {}, ensureDir: async () => {},
+    append: async (file, data) => appends.push(JSON.parse(data)),
+    tmpSuffix: '.tmp',
+  });
+  assert.match(appends[0].endedAt, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
 });

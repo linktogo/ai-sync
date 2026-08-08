@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+import { STATUS_STYLES } from './statusStyles.js';
 
 const props = defineProps({ repos: { type: Object, required: true } });
 
@@ -20,16 +21,16 @@ const percentDone = computed(() => (total.value ? Math.round((counts.value.done 
 </script>
 
 <template>
-  <div class="bg-white border border-slate-200 rounded-lg px-4 py-3 mb-4">
-    <div class="flex flex-wrap gap-4 text-sm text-slate-600 mb-2">
-      <span><b class="text-slate-800">{{ total }}</b> repos</span>
-      <span>· <b>{{ counts.todo }}</b> To do</span>
-      <span>· <b>{{ counts.inprogress }}</b> In progress</span>
-      <span class="text-amber-700">· <b>{{ counts.question }}</b> Question</span>
-      <span class="text-emerald-700">· <b>{{ counts.done }}</b> Done</span>
+  <div class="bg-white border border-slate-200 rounded-xl shadow-sm px-4 py-3 mb-4">
+    <div class="flex flex-wrap gap-2 mb-2.5">
+      <span class="rounded-md px-2 py-0.5 text-xs font-semibold bg-slate-100 text-slate-700">{{ total }} repos</span>
+      <span :class="['rounded-md px-2 py-0.5 text-xs font-semibold', STATUS_STYLES.todo.chip]">{{ counts.todo }} To do</span>
+      <span :class="['rounded-md px-2 py-0.5 text-xs font-semibold', STATUS_STYLES.inprogress.chip]">{{ counts.inprogress }} In progress</span>
+      <span :class="['rounded-md px-2 py-0.5 text-xs font-semibold', STATUS_STYLES.question.chip]">{{ counts.question }} Question</span>
+      <span :class="['rounded-md px-2 py-0.5 text-xs font-semibold', STATUS_STYLES.done.chip]">{{ counts.done }} Done</span>
     </div>
-    <div class="h-2 bg-slate-200 rounded overflow-hidden">
-      <div data-test="progress" class="h-full bg-emerald-500" :style="{ width: percentDone + '%' }"></div>
+    <div class="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+      <div data-test="progress" class="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full" :style="{ width: percentDone + '%' }"></div>
     </div>
     <div class="text-xs text-slate-400 mt-1">{{ percentDone }} % terminé</div>
   </div>

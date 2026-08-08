@@ -1,5 +1,6 @@
 import { readFile, writeFile, rename, mkdir } from 'node:fs/promises';
 import path from 'node:path';
+import { resolveHistoryPath, appendHistoryEntry } from './tokens.js';
 
 export const STATES = ['todo', 'inprogress', 'question', 'done'];
 
@@ -47,7 +48,10 @@ export async function writeBoard(boardPath, board, opts = {}) {
 }
 
 export async function setSessionStatus(boardPath, repo, sessionId, state, opts = {}) {
-  const { lastEvent = 'manual', title, lastPrompt, now = () => new Date().toISOString(), ...io } = opts;
+  const {
+    lastEvent = 'manual', title, lastPrompt, usage, startedAt,
+    now = () => new Date().toISOString(), ...io
+  } = opts;
   if (!STATES.includes(state)) {
     throw new Error(`Invalid state "${state}" (valid: ${STATES.join(', ')})`);
   }
@@ -60,8 +64,10 @@ export async function setSessionStatus(boardPath, repo, sessionId, state, opts =
     status: state,
     updatedAt: at,
     lastEvent,
-    title: prevSession?.title ?? title ?? null,          // set once, never overwritten
+    title: prevSession?.title ?? title ?? null,               // set once, never overwritten
     lastPrompt: lastPrompt ?? prevSession?.lastPrompt ?? null, // overwritten every UserPromptSubmit
+    startedAt: prevSession?.startedAt ?? startedAt ?? at,      // set once, never overwritten
+    usage: usage ?? prevSession?.usage ?? null,                // overwritten every Stop
     events,
   };
   board.repos[repo] = repoEntry;
@@ -76,6 +82,27 @@ export async function removeSession(boardPath, repo, sessionId, opts = {}) {
   }
   await writeBoard(boardPath, board, opts);
   return board;
+}
+
+export async function closeSession(boardPath, repo, sessionId, opts = {}) {
+  const {
+    historyPath = resolveHistoryPath(boardPath),
+    now = () => new Date().toISOString(),
+    ...io
+  } = opts;
+  const board = await readBoard(boardPath, io);
+  const session = board.repos[repo]?.sessions?.[sessionId];
+  if (!session) return { closed: false };
+  await appendHistoryEntry(historyPath, {
+    repo, sessionId,
+    title: session.title ?? null,
+    startedAt: session.startedAt ?? null,
+    endedAt: now(),
+    usage: session.usage ?? null,
+  }, io);
+  delete board.repos[repo].sessions[sessionId];
+  await writeBoard(boardPath, board, io);
+  return { closed: true };
 }
 
 export async function initRepos(boardPath, repoNames, opts = {}) {
