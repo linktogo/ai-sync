@@ -1,24 +1,24 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 
-// Each Claude Code lifecycle event maps to the board state the running session
-// is in: a fresh prompt means work resumed (inprogress); a permission/idle
-// notification or a Stop means the session is waiting on the human (question).
+// Each Claude Code lifecycle event maps to an action this hook performs: a
+// fresh prompt or an idle/permission wait updates the board status; a
+// SessionEnd means the process behind this session is going away, so its
+// entry is removed instead of transitioning a status.
 export const HOOK_EVENTS = [
-  { event: 'UserPromptSubmit', state: 'inprogress', matcher: undefined },
-  { event: 'Notification', state: 'question', matcher: 'permission_prompt|idle_prompt' },
-  { event: 'Stop', state: 'question', matcher: undefined },
+  { event: 'UserPromptSubmit', action: 'status', state: 'inprogress', matcher: undefined },
+  { event: 'Notification', action: 'status', state: 'question', matcher: 'permission_prompt|idle_prompt' },
+  { event: 'Stop', action: 'status', state: 'question', matcher: undefined },
+  { event: 'SessionEnd', action: 'session-end', matcher: undefined },
 ];
 
 export function hookSettings(repo, boardPath, { command = 'ai-workspace' } = {}) {
   const hooks = {};
-  for (const { event, state, matcher } of HOOK_EVENTS) {
-    const group = {
-      hooks: [{
-        type: 'command',
-        command: `${command} status ${repo} ${state} --board ${boardPath} --event ${event}`,
-      }],
-    };
+  for (const { event, action, state, matcher } of HOOK_EVENTS) {
+    const cmd = action === 'session-end'
+      ? `${command} session-end ${repo} --board ${boardPath}`
+      : `${command} status ${repo} ${state} --board ${boardPath} --event ${event}`;
+    const group = { hooks: [{ type: 'command', command: cmd }] };
     if (matcher) group.matcher = matcher;
     hooks[event] = [group];
   }

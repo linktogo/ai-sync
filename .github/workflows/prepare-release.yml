@@ -1,0 +1,54 @@
+name: Prepare release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: prepare-release
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Detect bump type from commits since last tag
+        id: detect
+        run: node scripts/detect-bump-type.js >> "$GITHUB_OUTPUT"
+
+      - name: Bump version
+        if: steps.detect.outputs.type != 'none'
+        run: node scripts/bump-version.js ${{ steps.detect.outputs.type }}
+
+      - name: Read new version
+        if: steps.detect.outputs.type != 'none'
+        id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Open or update release PR
+        if: steps.detect.outputs.type != 'none'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: chore/release-next
+          commit-message: "chore(release): v${{ steps.version.outputs.version }}"
+          title: "chore(release): v${{ steps.version.outputs.version }}"
+          body: >-
+            Automated ${{ steps.detect.outputs.type }} version bump to
+            v${{ steps.version.outputs.version }}, computed from commits since
+            the last release tag.${{ steps.detect.outputs.breaking == 'true' &&
+            ' **Warning:** a breaking-change commit was detected — consider
+            closing this PR and running `node scripts/bump-version.js major`
+            instead.' || '' }}
+          labels: release

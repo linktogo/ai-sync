@@ -13,6 +13,7 @@ function expectedHooks(repo) {
     UserPromptSubmit: `${hookCommand} status ${repo} inprogress --board ${boardPath} --event UserPromptSubmit`,
     Notification: `${hookCommand} status ${repo} question --board ${boardPath} --event Notification`,
     Stop: `${hookCommand} status ${repo} question --board ${boardPath} --event Stop`,
+    SessionEnd: `${hookCommand} session-end ${repo} --board ${boardPath}`,
   };
 }
 
@@ -217,6 +218,6 @@ test('default initBoard seeds the board for real when not overridden', async () 
   const bp = path.join(dir, '.ai-sync', 'board.json');
   await reconcileHooks(config, { boardPath: bp, hookCommand });
   const board = JSON.parse(await readFile(bp, 'utf8'));
-  assert.equal(board.repos.a.status, 'todo');
+  assert.deepEqual(board.repos.a, { sessions: {} });
   await rm(dir, { recursive: true, force: true });
 });
