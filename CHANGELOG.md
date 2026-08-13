@@ -23,6 +23,11 @@ While the version is below `1.0.0`, minor releases may contain breaking changes.
   recomputed live on every `Stop`) and keeps a permanent `history.jsonl`
   record of every session's final usage after it ends, browsable in a new
   "Historique" tab (`GET /api/history`).
+- The "Historique" tab now lives at its own `/history` route and adds
+  consumption charts — by day/week/month/year, and by project — on top of
+  the existing detailed session table, with a Tokens ⇄ € toggle. Token usage
+  is now tracked per model (`message.model`) so the € estimate uses each
+  model's own price instead of a single blended rate.
 - A session card can now be dragged onto the "Done" column to close it by
   hand (`POST /api/sessions/close`) — the same effect as a normal
   `SessionEnd`, for when that hook doesn't fire (crash / hard kill).

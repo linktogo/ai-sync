@@ -1,8 +1,23 @@
 import { test, expect, vi, afterEach } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { mount, flushPromises } from '@vue/test-utils';
 import { nextTick } from 'vue';
+import { createMemoryHistory } from 'vue-router';
 import App from './App.vue';
 import Column from './Column.vue';
+import { createBoardRouter } from './router.js';
+
+// The /history route mounts real chart components; jsdom has no <canvas>
+// support, so Chart.js is mocked the same way the dedicated chart test
+// files do, rather than exercising real canvas rendering here.
+vi.mock('chart.js', () => {
+  class Chart {
+    static register() {}
+    constructor() {}
+    update() {}
+    destroy() {}
+  }
+  return { Chart, BarController: {}, BarElement: {}, CategoryScale: {}, LinearScale: {}, Tooltip: {}, Legend: {} };
+});
 
 afterEach(() => { vi.restoreAllMocks(); });
 
@@ -10,6 +25,9 @@ function routedFetch() {
   return vi.fn().mockImplementation((url) => {
     if (url === '/api/config') {
       return Promise.resolve({ json: async () => ({ repos: { a: { url: 'u', technologies: ['nestjs'], targets: [] } } }) });
+    }
+    if (url === '/api/history') {
+      return Promise.resolve({ json: async () => ([]) });
     }
     return Promise.resolve({ json: async () => ({
       version: 2,
@@ -26,11 +44,29 @@ function routedFetch() {
   });
 }
 
-async function settle() { await nextTick(); await Promise.resolve(); await nextTick(); await Promise.resolve(); await nextTick(); }
+// vue-router's navigation guard pipeline resolves push() over many chained
+// microtasks (more than a handful of nextTick/Promise.resolve hops cover),
+// so settle() also does a real macrotask flush via @vue/test-utils'
+// flushPromises() to reliably wait out in-flight route navigations.
+async function settle() {
+  await nextTick(); await Promise.resolve(); await nextTick(); await Promise.resolve(); await nextTick();
+  await flushPromises();
+  await nextTick();
+}
+
+async function mountApp(fetchImpl, { path = '/' } = {}) {
+  // Reuses the real route table instead of duplicating it, so the test
+  // exercises exactly what main.js installs.
+  const router = createBoardRouter(createMemoryHistory());
+  router.push(path);
+  await router.isReady();
+  const wrapper = mount(App, { props: { fetchImpl, intervalMs: 100000 }, global: { plugins: [router] } });
+  await settle();
+  return { wrapper, router };
+}
 
 test('App groups repos into the four columns', async () => {
-  const wrapper = mount(App, { props: { fetchImpl: routedFetch(), intervalMs: 100000 } });
-  await settle();
+  const { wrapper } = await mountApp(routedFetch());
   const columns = wrapper.findAll('section');
   expect(columns).toHaveLength(4);
   expect(columns[2].text()).toContain('(3)'); // repos b, c and d each have a session in "question"
@@ -39,17 +75,13 @@ test('App groups repos into the four columns', async () => {
 });
 
 test('a repo with sessions in two different statuses gets a separate card per matching column', async () => {
-  const wrapper = mount(App, { props: { fetchImpl: routedFetch(), intervalMs: 100000 } });
-  await settle();
+  const { wrapper } = await mountApp(routedFetch());
   const columns = wrapper.findAll('section');
   const todoColumn = columns[0];
   const questionColumn = columns[2];
 
-  // repo "d" shows up in both the "todo" and "question" columns...
   expect(todoColumn.text()).toContain('d');
   expect(questionColumn.text()).toContain('d');
-
-  // ...but each column's card for "d" lists only that column's matching session.
   expect(todoColumn.text()).toContain('d todo item');
   expect(todoColumn.text()).not.toContain('d question item');
   expect(questionColumn.text()).toContain('d question item');
@@ -57,48 +89,63 @@ test('a repo with sessions in two different statuses gets a separate card per ma
 });
 
 test('App renders the summary header and filter bar', async () => {
-  const wrapper = mount(App, { props: { fetchImpl: routedFetch(), intervalMs: 100000 } });
-  await settle();
+  const { wrapper } = await mountApp(routedFetch());
   expect(wrapper.text()).toContain('repos');
   expect(wrapper.find('[data-test=search]').exists()).toBe(true);
 });
 
 test('clicking a session row opens the detail panel', async () => {
-  const wrapper = mount(App, { props: { fetchImpl: routedFetch(), intervalMs: 100000 } });
-  await settle();
+  const { wrapper } = await mountApp(routedFetch());
   await wrapper.get('[data-test=session-row]').trigger('click');
   expect(wrapper.find('aside').exists()).toBe(true);
 });
 
 test('typing in the search filters the cards', async () => {
-  const wrapper = mount(App, { props: { fetchImpl: routedFetch(), intervalMs: 100000 } });
-  await settle();
+  const { wrapper } = await mountApp(routedFetch());
   await wrapper.get('[data-test=search]').setValue('b');
   await nextTick();
   expect(wrapper.text()).toContain('b');
   expect(wrapper.text()).not.toContain('Notification'); // card 'c' filtered out
 });
 
-test('toggling to the Historique tab shows history entries instead of the board', async () => {
+test('clicking the Historique tab navigates to /history and shows history entries instead of the board', async () => {
   const fetchImpl = vi.fn().mockImplementation((url) => {
     if (url === '/api/config') return Promise.resolve({ json: async () => ({ repos: {} }) });
     if (url === '/api/history') {
       return Promise.resolve({
         json: async () => ([{
           repo: 'oc-be', sessionId: 's1', title: 'fix login',
-          startedAt: 'T0', endedAt: 'T1',
+          startedAt: '2026-06-21T09:00:00.000Z', endedAt: '2026-06-21T09:10:00.000Z',
           usage: { inputTokens: 1, outputTokens: 1, cacheCreationInputTokens: 1, cacheReadInputTokens: 1 },
         }]),
       });
     }
     return Promise.resolve({ json: async () => ({ version: 2, repos: {} }) });
   });
-  const wrapper = mount(App, { props: { fetchImpl, intervalMs: 100000 } });
-  await settle();
+  const { wrapper, router } = await mountApp(fetchImpl);
   await wrapper.get('[data-test=view-history]').trigger('click');
   await settle();
+  expect(router.currentRoute.value.path).toBe('/history');
   expect(wrapper.find('section').exists()).toBe(false);
   expect(wrapper.text()).toContain('fix login');
+});
+
+test('opening /history directly renders the history page (deep link)', async () => {
+  const fetchImpl = vi.fn().mockImplementation((url) => {
+    if (url === '/api/history') {
+      return Promise.resolve({
+        json: async () => ([{
+          repo: 'oc-be', sessionId: 's1', title: 'fix login',
+          startedAt: '2026-06-21T09:00:00.000Z', endedAt: '2026-06-21T09:10:00.000Z',
+          usage: { inputTokens: 1, outputTokens: 1, cacheCreationInputTokens: 1, cacheReadInputTokens: 1 },
+        }]),
+      });
+    }
+    return Promise.resolve({ json: async () => ({ version: 2, repos: {} }) });
+  });
+  const { wrapper } = await mountApp(fetchImpl, { path: '/history' });
+  expect(wrapper.text()).toContain('fix login');
+  expect(wrapper.find('section').exists()).toBe(false);
 });
 
 test('dropping a session on Done confirms, closes it via the API, and refreshes the board', async () => {
@@ -113,8 +160,7 @@ test('dropping a session on Done confirms, closes it via the API, and refreshes 
     }) });
   });
   vi.spyOn(window, 'confirm').mockReturnValue(true);
-  const wrapper = mount(App, { props: { fetchImpl, intervalMs: 100000 } });
-  await settle();
+  const { wrapper } = await mountApp(fetchImpl);
   const boardCallsBefore = calls.filter((u) => u === '/api/board').length;
 
   const doneColumn = wrapper.findAllComponents(Column)[3];
@@ -135,8 +181,7 @@ test('dropping a session on Done confirms, closes it via the API, and refreshes 
 test('declining the confirm on drop does not call the close API', async () => {
   const fetchImpl = routedFetch();
   vi.spyOn(window, 'confirm').mockReturnValue(false);
-  const wrapper = mount(App, { props: { fetchImpl, intervalMs: 100000 } });
-  await settle();
+  const { wrapper } = await mountApp(fetchImpl);
   const doneColumn = wrapper.findAllComponents(Column)[3];
   await doneColumn.vm.$emit('close-session', { repo: 'b', sessionId: 's1' });
   await settle();
