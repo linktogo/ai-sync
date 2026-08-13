@@ -7,10 +7,17 @@ Claude Code status hooks into each checkout, and maintains the shared
 `board.json` kanban state.
 
 ```js
-import { setStatus } from '@linktogo/ai-workspace-bootstrap';
+import { setSessionStatus } from '@linktogo/ai-workspace-bootstrap';
 
-await setStatus('/ws/.ai-sync/board.json', 'example-api', 'done');
+await setSessionStatus('/ws/.ai-sync/board.json', 'example-api', 'sess-1', 'done');
 ```
 
-Board states are `todo`, `inprogress`, `question`, and `done`. Writes are
-atomic and keep a bounded per-repo event history.
+Board states are `todo`, `inprogress`, `question`, and `done`. Each repo tracks
+one entry per Claude Code session (keyed by `session_id`); writes are atomic
+and keep a bounded per-session event history.
+
+Each session also tracks `startedAt` (set once) and `usage` — an
+`{ inputTokens, outputTokens, cacheCreationInputTokens, cacheReadInputTokens }`
+object recomputed from the session's transcript on every `Stop` event, kept
+`null` until the first one. See `tokens.js` for the transcript-parsing and
+`history.jsonl` helpers.

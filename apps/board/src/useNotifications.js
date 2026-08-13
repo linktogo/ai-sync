@@ -40,7 +40,10 @@ export function useNotifications(transitions, questionCount, {
   watch(transitions, (list) => {
     if (!list || list.length === 0) return;
     if (notifier && permission.value === 'granted') {
-      for (const t of list) new notifier(`${t.name} → ${t.status}`, { body: bodyFor(t.status) });
+      for (const t of list) {
+        const label = t.title ? `${t.name} · ${t.title}` : t.name;
+        new notifier(`${label} → ${t.status}`, { body: bodyFor(t.status) });
+      }
     }
     if (soundOn.value) playSound();
   });

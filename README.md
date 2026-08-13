@@ -210,11 +210,14 @@ automatically:
 - `Stop` → `question`
 
 The hooks shell out to this CLI's `status` subcommand, which you can also run by
-hand — e.g. to mark a repo done:
+hand — e.g. to mark a session done. Since board entries are keyed per Claude Code
+session (see below), pass `--session <id>` with the id shown as the key under
+`repos.<repo>.sessions` in `board.json` — without it, the command falls back to a
+fixed `"manual"` pseudo-session that won't match any real session's card:
 
 ```bash
-node apps/workspace/bin/workspace.js status example-api done --board ~/work/myorg/.ai-sync/board.json
-# or, if installed on PATH: ai-workspace status example-api done --board <board.json>
+node apps/workspace/bin/workspace.js status example-api done --session <session_id> --board ~/work/myorg/.ai-sync/board.json
+# or, if installed on PATH: ai-workspace status example-api done --session <session_id> --board <board.json>
 ```
 
 The board is seeded (`todo` for every repo) at bootstrap and updated atomically.
@@ -241,6 +244,7 @@ npm start -- --board /tmp/board.json          # use a specific board file
 AI_SYNC_BOARD=/tmp/board.json npm start       # board path via env instead of --flag
 npm start -- --board /tmp/board.json --port 8080   # custom port
 npm start -- --config repos.example.json      # also serve repo metadata at /api/config
+npm start -- --config-repo https://github.com/example-org/ai-config.git  # ...from a shared config repo instead
 npm run board:build                           # build only, without starting the server
 ```
 
@@ -264,9 +268,11 @@ off-by-default sound toggle persisted in `localStorage`) and a tab-title badge w
 transitions into `question` (an agent is blocked on you) or `done`. A **summary header** shows
 per-status counts and a done-progress bar, a **filter bar** narrows the board by repo name or
 technology, and clicking a card opens a **detail side panel** with the repo URL, technology/target
-chips, and its event timeline. When started with `--config repos.example.json` (or `AI_SYNC_CONFIG`), the
-server also exposes `GET /api/config` to power the links and technology filter; without it the
-board still runs in a degraded mode (no links/filter).
+chips, and its event timeline. When started with `--config repos.example.json` (or `AI_SYNC_CONFIG`) —
+or `--config-repo <url>` (plus optional `--config-file`) to pull the same JSON from a shared config
+repo instead, same as the [`ai-sync`/`ai-workspace` CLIs](#config-source) — the server also exposes
+`GET /api/config` to power the links and technology filter; without it the board still runs in a
+degraded mode (no links/filter).
 
 ## Project layout
 

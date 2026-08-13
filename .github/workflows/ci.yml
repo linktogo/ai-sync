@@ -27,5 +27,7 @@ jobs:
         run: npx nx run-many -t lint
       - name: Test (100% coverage gate per project)
         run: npx nx run-many -t test
+      - name: Test release scripts
+        run: npm run test:scripts
       - name: Build
         run: npx nx run-many -t build

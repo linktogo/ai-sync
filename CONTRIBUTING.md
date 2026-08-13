@@ -124,19 +124,53 @@ CLI package `@linktogo/ai-sync` (the repo root) and the five `@linktogo/ai-*`
 libraries under `libs/`. The libraries depend on each other by caret range
 (`^0.1.0`), so a version that moves in one place must move everywhere.
 
-1. Bump `version` in the root `package.json` and in all five `libs/*/package.json`
-   to the same value.
-2. Update the internal `@linktogo/ai-*` dependency ranges to match the new version
-   (root `dependencies`, plus the `libs/*` and `apps/*` manifests).
-3. Update `CHANGELOG.md`: move `Unreleased` entries under the new version, and
-   add the comparison links at the bottom.
-4. Run `npm install` so `package-lock.json` picks up the new versions, then
-   `npm run lint && npm test && npm run build`.
-5. Merge, then publish a GitHub Release tagged `vX.Y.Z`.
+### Patch and minor releases (automatic)
 
-The release triggers `.github/workflows/publish.yml`, which refuses to publish
-unless every publishable package already carries the tag's version, then pushes
-the libraries first and the CLI package second (it depends on them).
+Every push to `main` runs `.github/workflows/prepare-release.yml`, which looks
+at commits since the last release tag and opens or updates a
+`chore(release): vX.Y.Z` pull request with the version already bumped
+(`node scripts/bump-version.js patch|minor`, run for you) and the
+`Unreleased` section of `CHANGELOG.md` moved under the new version heading.
+Any `feat:` commit produces a minor bump; any `fix:` commit (with no `feat:`)
+produces a patch bump; anything else is a no-op. Review and merge that PR like
+any other change.
+
+If a commit contains a `BREAKING CHANGE:` footer or a `!` after its type
+(`feat!:`), the workflow still opens a patch/minor PR but flags it as
+recommending a manual major bump instead — it never bumps major on its own.
+
+### Major releases (manual)
+
+Run the bump script yourself:
+
+```bash
+node scripts/bump-version.js major
+git add -A && git commit -m "chore(release): vX.Y.Z"
+git push -u origin HEAD
+```
+
+Then open a PR the same way.
+
+### Publishing (gated to `lk-publish`)
+
+Once the version-bump PR is merged to `main`, an `lk-publish` team member
+pushes the release tag:
+
+```bash
+git tag vX.Y.Z
+git push origin vX.Y.Z
+```
+
+Only `lk-publish` can create tags matching `v*` (enforced by a repository tag
+ruleset). Pushing the tag triggers `.github/workflows/release.yml`, which
+verifies the tag matches `package.json`, extracts the matching section of
+`CHANGELOG.md`, and creates a GitHub Release with it as the notes — no
+hand-written release notes needed.
+
+That Release's `published` event triggers `.github/workflows/publish.yml`,
+which requires a second, independent approval from an `lk-publish` reviewer on
+the `npm-publish` environment before it runs `npm publish --workspaces`
+(libraries) and then `npm publish` (the CLI package, which depends on them).
 
 To rehearse a release against a local registry:
 

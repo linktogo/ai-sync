@@ -4,9 +4,12 @@ const NOTIFY_STATES = ['question', 'done'];
 
 function diffTransitions(prev, next) {
   const out = [];
-  for (const [name, r] of Object.entries(next)) {
-    if (NOTIFY_STATES.includes(r.status) && prev[name]?.status !== r.status) {
-      out.push({ name, status: r.status });
+  for (const [name, repoEntry] of Object.entries(next)) {
+    const prevSessions = prev[name]?.sessions ?? {};
+    for (const [sessionId, session] of Object.entries(repoEntry.sessions ?? {})) {
+      if (NOTIFY_STATES.includes(session.status) && prevSessions[sessionId]?.status !== session.status) {
+        out.push({ name, sessionId, title: session.title, status: session.status });
+      }
     }
   }
   return out;
