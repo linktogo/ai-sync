@@ -55,6 +55,10 @@ export function updateInternalDependencyRanges(filePath, newVersion) {
   if (changed) writeFileSync(filePath, JSON.stringify(pkg, null, 2) + '\n');
 }
 
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export function updateChangelog(changelogText, { oldVersion, newVersion, date, repoUrl = REPO_URL }) {
   const heading = '## [Unreleased]';
   const idx = changelogText.indexOf(heading);
@@ -64,7 +68,7 @@ export function updateChangelog(changelogText, { oldVersion, newVersion, date, r
     changelogText.slice(0, insertAt) + `\n\n## [${newVersion}] - ${date}` + changelogText.slice(insertAt);
 
   const unreleasedLinkRe = /^\[Unreleased\]: .*$/m;
-  const oldVersionLinkRe = new RegExp(`^\\[${oldVersion.replace(/\./g, '\\.')}\\]: .*$`, 'm');
+  const oldVersionLinkRe = new RegExp(`^\\[${escapeRegExp(oldVersion)}\\]: .*$`, 'm');
   const newUnreleasedLink = `[Unreleased]: ${repoUrl}/compare/v${newVersion}...HEAD`;
   const newVersionLink = oldVersionLinkRe.test(withHeading)
     ? `[${newVersion}]: ${repoUrl}/compare/v${oldVersion}...v${newVersion}`
