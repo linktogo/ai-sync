@@ -12,7 +12,7 @@
 # The last matching pattern wins, so put more specific rules further down.
 
 # Default owner for everything in the repository.
-*   linktogo-org/lk-admin
+*   @linktogo
 
 # As more maintainers join, narrow ownership by area rather than adding
 # everyone to the default rule, for example:
