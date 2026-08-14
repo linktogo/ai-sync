@@ -151,25 +151,25 @@ git push -u origin HEAD
 
 Then open a PR the same way.
 
-### Publishing (gated to `lk-publish`)
+### Publishing (gated to `@linktogo`)
 
-Once the version-bump PR is merged to `main`, an `lk-publish` team member
-pushes the release tag:
+Once the version-bump PR is merged to `main`, `@linktogo` pushes the release
+tag:
 
 ```bash
 git tag vX.Y.Z
 git push origin vX.Y.Z
 ```
 
-Only `lk-publish` can create tags matching `v*` (enforced by a repository tag
+Only `@linktogo` can create tags matching `v*` (enforced by a repository tag
 ruleset). Pushing the tag triggers `.github/workflows/release.yml`, which
 verifies the tag matches `package.json`, extracts the matching section of
 `CHANGELOG.md`, and creates a GitHub Release with it as the notes — no
 hand-written release notes needed.
 
 That Release's `published` event triggers `.github/workflows/publish.yml`,
-which requires a second, independent approval from an `lk-publish` reviewer on
-the `npm-publish` environment before it runs `npm publish --workspaces`
+which requires a second, independent approval from `@linktogo` on the
+`npm-publish` environment before it runs `npm publish --workspaces`
 (libraries) and then `npm publish` (the CLI package, which depends on them).
 
 To rehearse a release against a local registry:
