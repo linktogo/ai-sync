@@ -1,6 +1,6 @@
 {
   "name": "@linktogo/ai-sync",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Sync AI agent skills, practices, and workflows across repositories — author once, render for Claude Code, GitHub Copilot, Cursor, and Windsurf.",
   "license": "Apache-2.0",
   "type": "module",
@@ -50,9 +50,9 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^7.2.0",
-    "@linktogo/ai-config": "^0.3.0",
-    "@linktogo/ai-skill-sync": "^0.3.0",
-    "@linktogo/ai-workspace-bootstrap": "^0.3.0"
+    "@linktogo/ai-config": "^0.4.0",
+    "@linktogo/ai-skill-sync": "^0.4.0",
+    "@linktogo/ai-workspace-bootstrap": "^0.4.0"
   },
   "overrides": {
     "nx": {
