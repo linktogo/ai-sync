@@ -1,6 +1,6 @@
 {
   "name": "@linktogo/ai-workspace-bootstrap",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Clone and install a multi-repo workspace, install Claude Code status hooks, and maintain the shared kanban board state.",
   "license": "Apache-2.0",
   "type": "module",
@@ -33,6 +33,6 @@
     "provenance": true
   },
   "dependencies": {
-    "@linktogo/ai-git": "^0.3.0"
+    "@linktogo/ai-git": "^0.4.0"
   }
 }

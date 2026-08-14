@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@linktogo/ai-ci-status": "^0.3.0",
-    "@linktogo/ai-config": "^0.3.0",
-    "@linktogo/ai-workspace-bootstrap": "^0.3.0",
+    "@linktogo/ai-ci-status": "^0.4.0",
+    "@linktogo/ai-config": "^0.4.0",
+    "@linktogo/ai-workspace-bootstrap": "^0.4.0",
     "chart.js": "^4.5.1",
     "vue": "^3.5.0",
     "vue-router": "^4.6.4"
