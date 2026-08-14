@@ -2,9 +2,10 @@
 defineProps({
   name: { type: String, default: '' },
   tech: { type: String, default: '' },
+  ci: { type: String, default: '' },
   technologies: { type: Array, default: () => [] },
 });
-defineEmits(['update:name', 'update:tech']);
+defineEmits(['update:name', 'update:tech', 'update:ci']);
 </script>
 
 <template>
@@ -24,6 +25,17 @@ defineEmits(['update:name', 'update:tech']);
     >
       <option value="">techno : toutes</option>
       <option v-for="t in technologies" :key="t" :value="t">{{ t }}</option>
+    </select>
+    <select
+      data-test="ci"
+      :value="ci"
+      @change="$emit('update:ci', $event.target.value)"
+      class="border border-slate-300 rounded-md px-3 py-1.5 text-sm bg-white text-slate-600"
+    >
+      <option value="">CI : tous</option>
+      <option value="failure">en échec</option>
+      <option value="ok">OK</option>
+      <option value="unknown">inconnu</option>
     </select>
   </div>
 </template>

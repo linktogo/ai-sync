@@ -85,7 +85,7 @@ async function syncRepo(repo, ctx) {
   }
 
   await gitRepo.commitAll(COMMIT_MESSAGE);
-  await gitRepo.push(BRANCH);
+  await gitRepo.push(BRANCH, { force: true });
   if (pr) await gitRepo.createPR(PR_TITLE, PR_BODY);
 
   logger.log(`✓ ${repo.name}: ${files.length} files pushed${pr ? ' + PR' : ''}`);

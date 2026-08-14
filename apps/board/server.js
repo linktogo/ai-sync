@@ -6,6 +6,7 @@ import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { loadConfig, loadConfigFromRepo, resolveConfigSource } from '@linktogo/ai-config';
 import { reconcileHooks, resolveHistoryPath, closeSession } from '@linktogo/ai-workspace-bootstrap';
+import { createCiReader } from './ciReader.js';
 
 // Resolve the board file the server should read. Explicit --board and the
 // AI_SYNC_BOARD env var always win; otherwise auto-detect the workspace board
@@ -66,6 +67,19 @@ function serveConfig(config, res) {
   res.end(JSON.stringify({ repos }));
 }
 
+function repoNamesFromConfig(config) {
+  if (!config) return null;
+  return (config.repos ?? []).map((r) => r?.name).filter(Boolean);
+}
+
+async function serveCi(ciReader, config, res) {
+  const body = ciReader
+    ? await ciReader.read(repoNamesFromConfig(config))
+    : { generatedAt: new Date().toISOString(), lastSyncError: 'status repo not configured', repos: {} };
+  res.writeHead(200, { 'content-type': 'application/json' });
+  res.end(JSON.stringify(body));
+}
+
 async function readJSONBody(req) {
   const chunks = [];
   for await (const chunk of req) chunks.push(chunk);
@@ -111,7 +125,7 @@ async function serveStatic(distDir, pathname, res) {
   }
 }
 
-export function createBoardServer({ boardPath, distDir, config = null }) {
+export function createBoardServer({ boardPath, distDir, config = null, ciReader = null }) {
   const historyPath = resolveHistoryPath(boardPath);
   return createServer(async (req, res) => {
     try {
@@ -119,6 +133,7 @@ export function createBoardServer({ boardPath, distDir, config = null }) {
       if (url.pathname === '/api/board') return await serveBoard(boardPath, res);
       if (url.pathname === '/api/history') return await serveHistory(historyPath, res);
       if (url.pathname === '/api/config') return serveConfig(config, res);
+      if (url.pathname === '/api/ci') return await serveCi(ciReader, config, res);
       if (url.pathname === '/api/sessions/close' && req.method === 'POST') return await serveCloseSession(boardPath, req, res);
       return await serveStatic(distDir, url.pathname, res);
     } catch (err) {
@@ -138,6 +153,8 @@ export async function startFromArgv(argv, {
     options: {
       board: { type: 'string' }, port: { type: 'string', default: '4180' },
       dist: { type: 'string' }, config: { type: 'string' },
+      'status-repo': { type: 'string' }, 'ci-interval': { type: 'string', default: '60' },
+      'ci-state': { type: 'string' }, 'ci-cache': { type: 'string' },
       'config-repo': { type: 'string' }, 'config-file': { type: 'string' },
     },
   });
@@ -165,13 +182,28 @@ export async function startFromArgv(argv, {
       log(`  ⚠ hook reconciliation skipped: ${err.message}`);
     }
   }
+  const boardDir = path.dirname(boardPath);
+  const statusRepo = values['status-repo'] ?? process.env.AI_SYNC_STATUS_REPO ?? null;
+  const ciReader = createCiReader({
+    statusRepo,
+    token: process.env.AI_SYNC_STATUS_TOKEN ?? null,
+    stateFile: values['ci-state'] ? path.resolve(values['ci-state']) : path.join(boardDir, 'ci.json'),
+    cacheDir: values['ci-cache'] ? path.resolve(values['ci-cache']) : path.join(boardDir, 'ci-status'),
+    logger: { log, warn: log },
+  });
+  if (statusRepo) {
+    log(`  ci status from ${statusRepo} (${values['ci-interval']}s)`);
+    void ciReader.tick();
+  }
   const distDir = values.dist ?? path.join(path.dirname(fileURLToPath(import.meta.url)), 'dist');
-  const server = createBoardServer({ boardPath, distDir, config });
+  const server = createBoardServer({ boardPath, distDir, config, ciReader });
 
   // Like the Angular CLI: if the port is taken, fall back to the next one.
   const maxAttempts = 10;
   let port = Number(values.port);
   let attempts = 1;
+  const ciTimer = statusRepo ? setInterval(() => void ciReader.tick(), Number(values['ci-interval']) * 1000) : null;
+  server.on('close', () => { if (ciTimer) clearInterval(ciTimer); });
   server.on('listening', () => log(`board on http://localhost:${port} (data: ${boardPath})`));
   server.on('error', (err) => {
     if (err.code === 'EADDRINUSE' && attempts++ < maxAttempts) {

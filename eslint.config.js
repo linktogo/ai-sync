@@ -40,4 +40,11 @@ export default [
       ],
     },
   },
+  {
+    // Relative imports here are deliberate; report.test.js asserts them.
+    files: ['.github/actions/ci-status-report/**/*.js'],
+    rules: {
+      '@nx/enforce-module-boundaries': 'off',
+    },
+  },
 ];

@@ -108,6 +108,60 @@ test('typing in the search filters the cards', async () => {
   expect(wrapper.text()).not.toContain('Notification'); // card 'c' filtered out
 });
 
+function ciRoutedFetch({ board = { version: 2, repos: {} }, ci = { repos: {}, lastSyncError: null } }) {
+  return vi.fn().mockImplementation((url) => {
+    if (url === '/api/config') return Promise.resolve({ json: async () => ({ repos: {} }) });
+    if (url === '/api/ci') return Promise.resolve({ json: async () => ci });
+    if (url === '/api/history') return Promise.resolve({ json: async () => ([]) });
+    return Promise.resolve({ json: async () => board });
+  });
+}
+
+const CARD = { sessions: {} }; // idle repo -> todo placeholder card
+
+test('renders CI badges coming from /api/ci', async () => {
+  const fetchImpl = ciRoutedFetch({
+    board: { version: 2, repos: { 'oc-be': CARD } },
+    ci: { repos: { 'oc-be': { users: { alice: { state: 'failure' } } } }, lastSyncError: null },
+  });
+  const { wrapper } = await mountApp(fetchImpl);
+  expect(wrapper.get('[data-test=ci-badge]').text()).toBe('AL');
+});
+
+test('the CI filter hides repos that do not match', async () => {
+  const fetchImpl = ciRoutedFetch({
+    board: { version: 2, repos: { 'repo-green': CARD, 'repo-red': CARD } },
+    ci: { repos: {
+      'repo-green': { users: { alice: { state: 'success' } } },
+      'repo-red': { users: { alice: { state: 'failure' } } },
+    }, lastSyncError: null },
+  });
+  const { wrapper } = await mountApp(fetchImpl);
+  await wrapper.get('[data-test=ci]').setValue('failure');
+  await nextTick();
+  expect(wrapper.text()).toContain('repo-red');
+  expect(wrapper.text()).not.toContain('repo-green');
+});
+
+test('shows a desync banner when the server reports a sync error', async () => {
+  const fetchImpl = ciRoutedFetch({ ci: { repos: {}, lastSyncError: 'could not read from remote' } });
+  const { wrapper } = await mountApp(fetchImpl);
+  expect(wrapper.get('[data-test=ci-desync]').text()).toContain('désynchronisé');
+});
+
+test('shows a board-wide banner when CI is unavailable, distinct from the desync banner', async () => {
+  const fetchImpl = ciRoutedFetch({
+    board: { version: 2, repos: { 'oc-be': CARD } },
+    ci: {
+      repos: { 'oc-be': { users: {}, unavailable: 'status repo not configured' } },
+      lastSyncError: null,
+    },
+  });
+  const { wrapper } = await mountApp(fetchImpl);
+  expect(wrapper.get('[data-test=ci-unavailable-banner]').text()).toContain('status repo not configured');
+  expect(wrapper.find('[data-test=ci-desync]').exists()).toBe(false);
+});
+
 test('clicking the Historique tab navigates to /history and shows history entries instead of the board', async () => {
   const fetchImpl = vi.fn().mockImplementation((url) => {
     if (url === '/api/config') return Promise.resolve({ json: async () => ({ repos: {} }) });

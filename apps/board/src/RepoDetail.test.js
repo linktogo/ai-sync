@@ -35,3 +35,33 @@ test('emits close on overlay click and on Escape', async () => {
   expect(w.emitted('close').length).toBeGreaterThanOrEqual(2);
   w.unmount();
 });
+
+const nowTs = Date.parse('2026-07-29T10:00:00.000Z');
+
+test('lists each contributor CI run with a link to it', () => {
+  const ci = { users: { fabien: { state: 'failure', run: {
+    workflow: 'CI', branch: 'feat/x', conclusion: 'failure',
+    url: 'https://github.com/linktogo/lk-myasso/actions/runs/42',
+    startedAt: '2026-07-29T09:59:00.000Z',
+  } } } };
+  const w = mount(RepoDetail, { props: { name: 'lk-myasso', session: null, meta: null, now: nowTs, ci } });
+  const line = w.get('[data-test=ci-user]');
+  expect(line.text()).toContain('fabien');
+  expect(line.text()).toContain('CI');
+  expect(line.text()).toContain('feat/x');
+  // The relative time is the guard against a stale green reading as current.
+  expect(line.text()).toContain('il y a 1 min');
+  expect(w.get('[data-test=ci-link]').attributes('href')).toBe('https://github.com/linktogo/lk-myasso/actions/runs/42');
+});
+
+test('shows the reason instead of the list when CI is unavailable', () => {
+  const ci = { users: {}, unavailable: 'status repo not configured' };
+  const w = mount(RepoDetail, { props: { name: 'lk-myasso', session: null, meta: null, now: nowTs, ci } });
+  expect(w.get('[data-test=ci-unavailable]').text()).toContain('status repo not configured');
+  expect(w.findAll('[data-test=ci-user]')).toHaveLength(0);
+});
+
+test('says nothing has been reported when no contributor has run CI', () => {
+  const w = mount(RepoDetail, { props: { name: 'lk-myasso', session: null, meta: null, now: nowTs, ci: { users: {} } } });
+  expect(w.get('[data-test=ci-empty]').text()).toContain('Aucun statut');
+});

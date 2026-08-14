@@ -23,18 +23,30 @@ export function createRepo(dir, { exec = defaultExec } = {}) {
       await git('add', '-A');
       await git('commit', '-m', message);
     },
-    async push(branch) {
-      await git('push', '-f', '-u', 'origin', branch);
+    async push(branch, { force = false } = {}) {
+      const args = ['push'];
+      if (force) args.push('-f');
+      args.push('-u', 'origin', branch);
+      await git(...args);
     },
     async createPR(title, body) {
       await exec('gh', ['pr', 'create', '--title', title, '--body', body], { cwd: dir });
     },
+    async fetchReset(branch) {
+      await git('fetch', 'origin', branch);
+      await git('reset', '--hard', `origin/${branch}`);
+    },
+    async configureIdentity(name, email) {
+      await git('config', 'user.name', name);
+      await git('config', 'user.email', email);
+    },
   };
 }
 
-export async function clone(url, dir, { exec = defaultExec, depth } = {}) {
+export async function clone(url, dir, { exec = defaultExec, depth, branch } = {}) {
   const args = ['clone'];
   if (depth) args.push('--depth', String(depth));
+  if (branch) args.push('--branch', branch, '--single-branch');
   args.push(url, dir);
   await exec('git', args, {});
   return createRepo(dir, { exec });

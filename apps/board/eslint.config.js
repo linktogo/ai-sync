@@ -39,6 +39,7 @@ export default [
     files: [
       'server.js',
       'server.test.js',
+      'ciReader.test.js',
       'vite.config.js',
       'postcss.config.js',
       'tailwind.config.js',

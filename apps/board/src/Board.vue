@@ -5,10 +5,12 @@ import SummaryHeader from './SummaryHeader.vue';
 import FilterBar from './FilterBar.vue';
 import RepoDetail from './RepoDetail.vue';
 import { STATUS_ORDER, STATUS_STYLES } from './statusStyles.js';
+import { matchesCiFilter } from './ciBadge.js';
 
 const props = defineProps({
   repos: { type: Object, required: true },
   config: { type: Object, required: true },
+  ci: { type: Object, default: () => ({}) },
   now: { type: Number, required: true },
   fetchImpl: { type: Function, required: true },
   refresh: { type: Function, required: true },
@@ -16,6 +18,7 @@ const props = defineProps({
 
 const nameFilter = ref('');
 const techFilter = ref('');
+const ciFilter = ref('');
 const selected = ref(null); // { name, sessionId } | null
 
 const technologies = computed(() => {
@@ -31,6 +34,7 @@ const filtered = computed(() => {
   for (const [name, repo] of Object.entries(props.repos)) {
     if (nameFilter.value && !name.toLowerCase().includes(nameFilter.value.toLowerCase())) continue;
     if (techFilter.value && !(props.config[name]?.technologies ?? []).includes(techFilter.value)) continue;
+    if (!matchesCiFilter(props.ci[name]?.users, ciFilter.value)) continue;
     out[name] = repo;
   }
   return out;
@@ -70,14 +74,15 @@ async function onCloseSession({ repo, sessionId }) {
 const selectedRepo = computed(() => (selected.value ? props.repos[selected.value.name] : null));
 const selectedSession = computed(() => selectedRepo.value?.sessions?.[selected.value?.sessionId] ?? null);
 const selectedMeta = computed(() => (selected.value ? props.config[selected.value.name] ?? null : null));
+const selectedCi = computed(() => (selected.value ? props.ci[selected.value.name] ?? null : null));
 </script>
 
 <template>
   <div>
     <div class="flex items-center gap-2 flex-wrap mb-4">
       <FilterBar
-        :name="nameFilter" :tech="techFilter" :technologies="technologies"
-        @update:name="nameFilter = $event" @update:tech="techFilter = $event"
+        :name="nameFilter" :tech="techFilter" :ci="ciFilter" :technologies="technologies"
+        @update:name="nameFilter = $event" @update:tech="techFilter = $event" @update:ci="ciFilter = $event"
       />
     </div>
 
@@ -86,14 +91,14 @@ const selectedMeta = computed(() => (selected.value ? props.config[selected.valu
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
       <Column
         v-for="c in grouped" :key="c.status"
-        :title="c.title" :status="c.status" :entries="c.entries" :now="now"
+        :title="c.title" :status="c.status" :entries="c.entries" :now="now" :ci="ci"
         @open="selected = $event"
         @close-session="onCloseSession"
       />
     </div>
 
     <RepoDetail
-      :name="selected?.name ?? null" :session="selectedSession" :meta="selectedMeta" :now="now"
+      :name="selected?.name ?? null" :session="selectedSession" :meta="selectedMeta" :ci="selectedCi" :now="now"
       @close="selected = null"
     />
   </div>

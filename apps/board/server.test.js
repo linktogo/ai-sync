@@ -342,6 +342,21 @@ test('startFromArgv logs a warning and still starts when the config file is inva
   await rm(dir, { recursive: true, force: true });
 });
 
+test('GET /api/ci returns the reader payload for the configured repos', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
+  const config = { repos: [{ name: 'lk-myasso' }, { name: 'lk-mind' }] };
+  const seen = [];
+  const ciReader = { read: async (names) => { seen.push(names); return { generatedAt: 'now', lastSyncError: null, repos: {} }; } };
+  const server = createBoardServer({ boardPath: path.join(dir, 'board.json'), distDir: dir, config, ciReader });
+  const port = await listen(server);
+  const res = await fetch(`http://127.0.0.1:${port}/api/ci`);
+  assert.equal(res.status, 200);
+  assert.deepEqual(await res.json(), { generatedAt: 'now', lastSyncError: null, repos: {} });
+  assert.deepEqual(seen[0], ['lk-myasso', 'lk-mind']);
+  server.close();
+  await rm(dir, { recursive: true, force: true });
+});
+
 test('startFromArgv loads config from --config-repo and serves it at /api/config', async () => {
   const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
   const checkout = path.join(dir, 'checkout');
@@ -367,6 +382,18 @@ test('startFromArgv loads config from --config-repo and serves it at /api/config
   assert.deepEqual(await res.json(), {
     repos: { demo: { url: 'https://h/demo.git', technologies: ['nestjs'], targets: ['claude'] } },
   });
+  server.close();
+  await rm(dir, { recursive: true, force: true });
+});
+
+test('GET /api/ci reports unavailable when no reader is wired', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
+  const server = createBoardServer({ boardPath: path.join(dir, 'board.json'), distDir: dir });
+  const port = await listen(server);
+  const res = await fetch(`http://127.0.0.1:${port}/api/ci`);
+  const body = await res.json();
+  assert.deepEqual(body.repos, {});
+  assert.equal(body.lastSyncError, 'status repo not configured');
   server.close();
   await rm(dir, { recursive: true, force: true });
 });

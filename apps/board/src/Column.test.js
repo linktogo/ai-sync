@@ -41,3 +41,22 @@ test('a non-done column has no drag listeners: dragover does not highlight, drop
   await body.trigger('drop', { dataTransfer });
   expect(w.emitted('close-session')).toBeUndefined();
 });
+
+const session = { sessionId: 's1', status: 'todo', lastEvent: 'init', updatedAt: '2026-06-21T09:59:00.000Z' };
+const now = Date.parse('2026-06-21T10:00:00.000Z');
+
+test('passes each entry its own CI status', () => {
+  const w = mount(Column, {
+    props: {
+      title: 'To do', status: 'todo', entries: [{ name: 'oc-be', sessions: [session] }], now,
+      ci: { 'oc-be': { users: { alice: { state: 'failure' } } } },
+    },
+  });
+  expect(w.get('[data-test=ci-badge]').text()).toBe('AL');
+});
+
+test('renders cards unharmed when no CI map is given', () => {
+  const w = mount(Column, { props: { title: 'To do', status: 'todo', entries: [{ name: 'oc-be', sessions: [session] }], now } });
+  expect(w.text()).toContain('oc-be');
+  expect(w.findAll('[data-test=ci-badge]')).toHaveLength(0);
+});

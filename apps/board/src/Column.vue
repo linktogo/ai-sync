@@ -8,6 +8,7 @@ const props = defineProps({
   status: { type: String, required: true },
   entries: { type: Array, required: true }, // [{ name, sessions }]
   now: { type: Number, default: () => Date.now() },
+  ci: { type: Object, default: () => ({}) },
 });
 const emit = defineEmits(['open', 'close-session']);
 
@@ -41,7 +42,7 @@ function onDrop(e) {
                dragOver ? 'ring-2 ring-emerald-400' : '']"
       v-on="isDropTarget ? { dragover: onDragOver, dragleave: onDragLeave, drop: onDrop } : {}"
     >
-      <Card v-for="e in entries" :key="e.name" :name="e.name" :sessions="e.sessions" :status="status" :now="now" @open="$emit('open', $event)" />
+      <Card v-for="e in entries" :key="e.name" :name="e.name" :sessions="e.sessions" :status="status" :now="now" :ci="ci[e.name] ?? null" @open="$emit('open', $event)" />
     </div>
   </section>
 </template>
