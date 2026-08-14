@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -27,5 +27,7 @@ jobs:
         run: npx nx run-many -t lint
       - name: Test (100% coverage gate per project)
         run: npx nx run-many -t test
+      - name: Test release scripts
+        run: npm run test:scripts
       - name: Build
         run: npx nx run-many -t build

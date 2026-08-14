@@ -1,0 +1,58 @@
+<script setup>
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { Chart, BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
+import { tokenTotal } from './useHistoryStats.js';
+
+Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
+
+const props = defineProps({
+  totals: { type: Array, required: true }, // [{ repo, tokens, costByModel }]
+  mode: { type: String, required: true }, // 'tokens' | 'cost'
+});
+
+function costTotal(costByModel) {
+  return Object.values(costByModel).reduce((sum, c) => sum + c, 0);
+}
+
+const values = computed(() => (props.mode === 'tokens'
+  ? props.totals.map((t) => tokenTotal(t.tokens))
+  : props.totals.map((t) => Number(costTotal(t.costByModel).toFixed(4)))));
+
+const canvas = ref(null);
+let chart = null;
+
+function render() {
+  const config = {
+    type: 'bar',
+    data: {
+      labels: props.totals.map((t) => t.repo),
+      datasets: [{
+        label: props.mode === 'tokens' ? 'Tokens' : 'Coût (€)',
+        backgroundColor: '#2563eb',
+        data: values.value,
+      }],
+    },
+    options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } },
+  };
+  if (chart) {
+    chart.data = config.data;
+    chart.options = config.options;
+    chart.update();
+  } else {
+    chart = new Chart(canvas.value, config);
+  }
+}
+
+onMounted(render);
+watch([() => props.totals, () => props.mode], render);
+onUnmounted(() => { chart?.destroy(); chart = null; });
+</script>
+
+<template>
+  <div class="relative h-64">
+    <canvas ref="canvas" data-test="project-bar-canvas"></canvas>
+    <p v-if="totals.length === 0" class="absolute inset-0 flex items-center justify-center text-xs text-slate-400">
+      Aucune session terminée pour l'instant.
+    </p>
+  </div>
+</template>

@@ -5,28 +5,113 @@ import { resolveConfigSource } from '@linktogo/ai-config';
 import {
   bootstrap,
   resolveBoardPath,
-  setStatus as defaultSetStatus,
+  readBoard as defaultReadBoard,
+  setSessionStatus as defaultSetSessionStatus,
+  removeSession as defaultRemoveSession,
+  readTranscriptUsage as defaultReadTranscriptUsage,
+  resolveHistoryPath,
+  appendHistoryEntry as defaultAppendHistoryEntry,
 } from '@linktogo/ai-workspace-bootstrap';
+
+const TITLE_MAX = 60;
+
+function truncate(text, max) {
+  return text.length > max ? `${text.slice(0, max - 1)}…` : text;
+}
+
+async function readStdinJSON(stdin) {
+  if (stdin.isTTY) return {};
+  const chunks = [];
+  for await (const chunk of stdin) chunks.push(chunk);
+  const raw = Buffer.concat(chunks).toString('utf8');
+  if (!raw.trim()) return {};
+  try { return JSON.parse(raw); } catch { return {}; }
+}
 
 export async function main(argv, deps = {}) {
   const [sub, ...rest] = argv;
   if (sub === 'status') return runStatus(rest, deps);
+  if (sub === 'session-end') return runSessionEnd(rest, deps);
   if (sub === 'bootstrap') return runBootstrapMain(rest, deps);
   return runBootstrapMain(argv, deps);
 }
 
 async function runStatus(argv, deps = {}) {
-  const { setStatus = defaultSetStatus, logger = console } = deps;
+  const {
+    setSessionStatus = defaultSetSessionStatus,
+    readTranscriptUsage = defaultReadTranscriptUsage,
+    logger = console,
+    stdin = process.stdin,
+  } = deps;
   const { values, positionals } = parseArgs({
     args: argv,
     allowPositionals: true,
-    options: { board: { type: 'string' }, event: { type: 'string' } },
+    options: { board: { type: 'string' }, event: { type: 'string' }, session: { type: 'string' } },
   });
   const [repo, state] = positionals;
-  if (!repo || !state) throw new Error('Usage: ai-workspace status <repo> <state> [--board <path>] [--event <name>]');
+  if (!repo || !state) throw new Error('Usage: ai-workspace status <repo> <state> [--board <path>] [--event <name>] [--session <id>]');
   const boardPath = resolveBoardPath({ board: values.board });
-  await setStatus(boardPath, repo, state, { lastEvent: values.event ?? 'manual' });
-  logger.log(`${repo} → ${state}`);
+  const payload = await readStdinJSON(stdin);
+  const sessionId = values.session ?? payload.session_id ?? 'manual';
+  const opts = { lastEvent: values.event ?? 'manual' };
+  if (payload.hook_event_name === 'UserPromptSubmit' && typeof payload.prompt === 'string') {
+    opts.title = truncate(payload.prompt, TITLE_MAX);
+    opts.lastPrompt = payload.prompt;
+  }
+  if (payload.hook_event_name === 'Stop' && typeof payload.transcript_path === 'string') {
+    opts.usage = await readTranscriptUsage(payload.transcript_path);
+  }
+  await setSessionStatus(boardPath, repo, sessionId, state, opts);
+  logger.log(`${repo} [${sessionId}] → ${state}`);
+  return 0;
+}
+
+async function runSessionEnd(argv, deps = {}) {
+  const {
+    removeSession = defaultRemoveSession,
+    readBoard = defaultReadBoard,
+    readTranscriptUsage = defaultReadTranscriptUsage,
+    appendHistoryEntry = defaultAppendHistoryEntry,
+    now = () => new Date().toISOString(),
+    logger = console,
+    stdin = process.stdin,
+  } = deps;
+  const { values, positionals } = parseArgs({
+    args: argv,
+    allowPositionals: true,
+    options: { board: { type: 'string' } },
+  });
+  const [repo] = positionals;
+  if (!repo) throw new Error('Usage: ai-workspace session-end <repo> [--board <path>]');
+  const boardPath = resolveBoardPath({ board: values.board });
+  const payload = await readStdinJSON(stdin);
+  const sessionId = payload.session_id ?? 'manual';
+
+  // Removing the session from the board is the load-bearing behavior here —
+  // a failure recording token-usage history must never leave a zombie card
+  // stuck on the board forever (SessionEnd only fires once).
+  try {
+    const board = await readBoard(boardPath);
+    const session = board.repos[repo]?.sessions?.[sessionId];
+    if (session) {
+      const usage = typeof payload.transcript_path === 'string'
+        ? await readTranscriptUsage(payload.transcript_path)
+        : session.usage ?? null;
+      await appendHistoryEntry(resolveHistoryPath(boardPath), {
+        repo,
+        sessionId,
+        title: session.title ?? null,
+        startedAt: session.startedAt ?? null,
+        endedAt: now(),
+        usage,
+      });
+    }
+  } catch (err) {
+    logger.warn(`${repo} [${sessionId}] failed to record token-usage history: ${err.message}`);
+  }
+
+  await removeSession(boardPath, repo, sessionId);
+  logger.log(`${repo} [${sessionId}] session ended`);
   return 0;
 }
 

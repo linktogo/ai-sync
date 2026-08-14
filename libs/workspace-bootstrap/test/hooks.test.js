@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { hookSettings, installHooks } from '../src/hooks.js';
 import path from 'node:path';
 
-test('hookSettings maps the three events to status commands', () => {
+test('hookSettings maps the four events to their commands', () => {
   const s = hookSettings('oc-be', '/ws/.ai-sync/board.json', { command: 'node /a/bin/workspace.js' });
   const cmd = (e) => s.hooks[e][0].hooks[0].command;
   assert.equal(s.hooks.UserPromptSubmit[0].matcher, undefined);
@@ -15,11 +15,14 @@ test('hookSettings maps the three events to status commands', () => {
   assert.equal(cmd('Stop'),
     'node /a/bin/workspace.js status oc-be question --board /ws/.ai-sync/board.json --event Stop');
   assert.equal(s.hooks.Stop[0].hooks[0].type, 'command');
+  assert.equal(s.hooks.SessionEnd[0].matcher, undefined);
+  assert.equal(cmd('SessionEnd'), 'node /a/bin/workspace.js session-end oc-be --board /ws/.ai-sync/board.json');
 });
 
 test('hookSettings defaults the command to ai-workspace', () => {
   const s = hookSettings('a', '/b.json');
   assert.match(s.hooks.Stop[0].hooks[0].command, /^ai-workspace status a question /);
+  assert.match(s.hooks.SessionEnd[0].hooks[0].command, /^ai-workspace session-end a /);
 });
 
 test('installHooks writes a fresh settings.local.json when none exists', async () => {
@@ -33,6 +36,7 @@ test('installHooks writes a fresh settings.local.json when none exists', async (
   assert.equal(res.file, path.join('/ws/oc-be', '.claude', 'settings.local.json'));
   assert.equal(writes.length, 1);
   assert.ok(JSON.parse(writes[0].data).hooks.Stop);
+  assert.ok(JSON.parse(writes[0].data).hooks.SessionEnd);
 });
 
 test('installHooks merges hooks while preserving existing unrelated settings', async () => {

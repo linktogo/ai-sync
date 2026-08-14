@@ -1,28 +1,31 @@
 <script setup>
 import { computed } from 'vue';
-import { relativeTime } from './useRelativeTime.js';
+import SessionRow from './SessionRow.vue';
+import { STATUS_STYLES } from './statusStyles.js';
 import { visibleBadges, pillClass } from './ciBadge.js';
 
 const props = defineProps({
   name: { type: String, required: true },
-  repo: { type: Object, required: true },
+  sessions: { type: Array, required: true }, // [{ sessionId, title, lastPrompt, updatedAt, lastEvent, ... }]
+  status: { type: String, required: true },
   now: { type: Number, default: () => Date.now() },
   ci: { type: Object, default: null },
 });
-defineEmits(['open']);
+const emit = defineEmits(['open']);
 
-const isQuestion = computed(() => props.repo.status === 'question');
-const when = computed(() => relativeTime(props.repo.updatedAt, props.now));
+const isQuestion = computed(() => props.status === 'question');
+const style = computed(() => STATUS_STYLES[props.status]);
 const badges = computed(() => visibleBadges(props.ci?.users));
 const overflowTitle = computed(() => badges.value.overflow.map((b) => `${b.login} — ${b.state}`).join('\n'));
+
+function open(sessionId) {
+  emit('open', { name: props.name, sessionId });
+}
 </script>
 
 <template>
-  <button
-    type="button"
-    @click="$emit('open', name)"
-    :class="['w-full text-left rounded-md bg-white shadow-sm border p-3 transition',
-             isQuestion ? 'border-amber-400 ring-4 ring-amber-200' : 'border-slate-200 hover:border-slate-300']"
+  <div
+    :class="['rounded-xl bg-white shadow-md p-3 border-l-4', style.border, isQuestion ? style.ring : '']"
   >
     <div class="flex items-start justify-between gap-2">
       <div class="font-medium text-slate-800 min-w-0 truncate">{{ name }}</div>
@@ -45,6 +48,9 @@ const overflowTitle = computed(() => badges.value.overflow.map((b) => `${b.login
         >+{{ badges.overflow.length }}</span>
       </div>
     </div>
-    <div class="mt-1 text-xs text-slate-500">{{ repo.lastEvent }} · {{ when }}</div>
-  </button>
+    <p v-if="sessions.length === 0" class="mt-1 text-xs text-slate-400">Aucune session active</p>
+    <div v-else class="mt-2 flex flex-col gap-1.5">
+      <SessionRow v-for="s in sessions" :key="s.sessionId" :session="s" :repo-name="name" :now="now" @open="open" />
+    </div>
+  </div>
 </template>

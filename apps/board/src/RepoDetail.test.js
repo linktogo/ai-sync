@@ -3,8 +3,9 @@ import { mount } from '@vue/test-utils';
 import RepoDetail from './RepoDetail.vue';
 
 const now = Date.parse('2026-06-21T10:00:00.000Z');
-const repo = {
+const session = {
   status: 'question', lastEvent: 'waiting', updatedAt: '2026-06-21T10:00:00.000Z',
+  title: 'fix auth redirect', lastPrompt: 'fix the auth redirect loop on logout',
   events: [
     { event: 'waiting input', at: '2026-06-21T09:59:48.000Z' },
     { event: 'edit src/', at: '2026-06-21T09:57:00.000Z' },
@@ -12,21 +13,23 @@ const repo = {
 };
 const meta = { url: 'https://h/oc-auth.git', technologies: ['nestjs'], targets: ['claude'] };
 
-test('renders url, technologies and the event timeline', () => {
-  const w = mount(RepoDetail, { props: { name: 'oc-auth', repo, meta, now } });
+test('renders url, technologies, the session title/prompt, and the event timeline', () => {
+  const w = mount(RepoDetail, { props: { name: 'oc-auth', session, meta, now } });
   expect(w.get('a').attributes('href')).toBe('https://h/oc-auth.git');
   expect(w.text()).toContain('nestjs');
+  expect(w.text()).toContain('fix auth redirect');
+  expect(w.text()).toContain('fix the auth redirect loop on logout');
   expect(w.text()).toContain('waiting input');
   expect(w.text()).toContain('il y a 12 s');
 });
 
 test('renders nothing when name is null', () => {
-  const w = mount(RepoDetail, { props: { name: null, repo: null, meta: null, now } });
+  const w = mount(RepoDetail, { props: { name: null, session: null, meta: null, now } });
   expect(w.find('aside').exists()).toBe(false);
 });
 
 test('emits close on overlay click and on Escape', async () => {
-  const w = mount(RepoDetail, { props: { name: 'oc-auth', repo, meta, now }, attachTo: document.body });
+  const w = mount(RepoDetail, { props: { name: 'oc-auth', session, meta, now }, attachTo: document.body });
   await w.get('[data-test=overlay]').trigger('click');
   window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
   expect(w.emitted('close').length).toBeGreaterThanOrEqual(2);
@@ -41,7 +44,7 @@ test('lists each contributor CI run with a link to it', () => {
     url: 'https://github.com/linktogo/lk-myasso/actions/runs/42',
     startedAt: '2026-07-29T09:59:00.000Z',
   } } } };
-  const w = mount(RepoDetail, { props: { name: 'lk-myasso', repo: null, meta: null, now: nowTs, ci } });
+  const w = mount(RepoDetail, { props: { name: 'lk-myasso', session: null, meta: null, now: nowTs, ci } });
   const line = w.get('[data-test=ci-user]');
   expect(line.text()).toContain('fabien');
   expect(line.text()).toContain('CI');
@@ -53,12 +56,12 @@ test('lists each contributor CI run with a link to it', () => {
 
 test('shows the reason instead of the list when CI is unavailable', () => {
   const ci = { users: {}, unavailable: 'status repo not configured' };
-  const w = mount(RepoDetail, { props: { name: 'lk-myasso', repo: null, meta: null, now: nowTs, ci } });
+  const w = mount(RepoDetail, { props: { name: 'lk-myasso', session: null, meta: null, now: nowTs, ci } });
   expect(w.get('[data-test=ci-unavailable]').text()).toContain('status repo not configured');
   expect(w.findAll('[data-test=ci-user]')).toHaveLength(0);
 });
 
 test('says nothing has been reported when no contributor has run CI', () => {
-  const w = mount(RepoDetail, { props: { name: 'lk-myasso', repo: null, meta: null, now: nowTs, ci: { users: {} } } });
+  const w = mount(RepoDetail, { props: { name: 'lk-myasso', session: null, meta: null, now: nowTs, ci: { users: {} } } });
   expect(w.get('[data-test=ci-empty]').text()).toContain('Aucun statut');
 });

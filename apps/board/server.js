@@ -4,8 +4,8 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
-import { loadConfig } from '@linktogo/ai-config';
-import { reconcileHooks } from '@linktogo/ai-workspace-bootstrap';
+import { loadConfig, loadConfigFromRepo, resolveConfigSource } from '@linktogo/ai-config';
+import { reconcileHooks, resolveHistoryPath, closeSession } from '@linktogo/ai-workspace-bootstrap';
 import { createCiReader } from './ciReader.js';
 
 // Resolve the board file the server should read. Explicit --board and the
@@ -36,45 +36,74 @@ async function serveBoard(boardPath, res) {
     body = await readFile(boardPath, 'utf8');
   } catch (err) {
     if (err.code !== 'ENOENT') throw err;
-    body = JSON.stringify({ version: 1, repos: {} });
+    body = JSON.stringify({ version: 2, repos: {} });
   }
   res.writeHead(200, { 'content-type': 'application/json' });
   res.end(body);
 }
 
-async function serveConfig(configPath, res) {
+async function serveHistory(historyPath, res) {
+  let raw;
+  try {
+    raw = await readFile(historyPath, 'utf8');
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
+    raw = '';
+  }
+  const entries = raw.split('\n')
+    .filter((line) => line.trim())
+    .map((line) => { try { return JSON.parse(line); } catch { return null; } })
+    .filter((entry) => entry !== null);
+  res.writeHead(200, { 'content-type': 'application/json' });
+  res.end(JSON.stringify(entries));
+}
+
+function serveConfig(config, res) {
   const repos = {};
-  if (configPath) {
-    try {
-      const parsed = JSON.parse(await readFile(configPath, 'utf8'));
-      for (const r of parsed.repos ?? []) {
-        if (r?.name) repos[r.name] = { url: r.url, technologies: r.technologies ?? [], targets: r.targets ?? [] };
-      }
-    } catch (err) {
-      if (err.code !== 'ENOENT') throw err;
-    }
+  for (const r of config?.repos ?? []) {
+    repos[r.name] = { url: r.url, technologies: r.technologies, targets: r.targets };
   }
   res.writeHead(200, { 'content-type': 'application/json' });
   res.end(JSON.stringify({ repos }));
 }
 
-async function readRepoNames(configPath) {
-  if (!configPath) return null;
-  try {
-    const parsed = JSON.parse(await readFile(configPath, 'utf8'));
-    return (parsed.repos ?? []).map((r) => r?.name).filter(Boolean);
-  } catch (err) {
-    if (err.code !== 'ENOENT') throw err;
-    return null;
-  }
+function repoNamesFromConfig(config) {
+  if (!config) return null;
+  return (config.repos ?? []).map((r) => r?.name).filter(Boolean);
 }
 
-async function serveCi(ciReader, configPath, res) {
+async function serveCi(ciReader, config, res) {
   const body = ciReader
-    ? await ciReader.read(await readRepoNames(configPath))
+    ? await ciReader.read(repoNamesFromConfig(config))
     : { generatedAt: new Date().toISOString(), lastSyncError: 'status repo not configured', repos: {} };
   res.writeHead(200, { 'content-type': 'application/json' });
   res.end(JSON.stringify(body));
+}
+
+async function readJSONBody(req) {
+  const chunks = [];
+  for await (const chunk of req) chunks.push(chunk);
+  return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+}
+
+async function serveCloseSession(boardPath, req, res) {
+  let body;
+  try {
+    body = await readJSONBody(req);
+  } catch {
+    res.writeHead(400, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: 'invalid JSON body' }));
+    return;
+  }
+  const { repo, sessionId } = body ?? {};
+  if (!repo || !sessionId) {
+    res.writeHead(400, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: 'repo and sessionId are required' }));
+    return;
+  }
+  const result = await closeSession(boardPath, repo, sessionId);
+  res.writeHead(result.closed ? 200 : 404, { 'content-type': 'application/json' });
+  res.end(JSON.stringify(result));
 }
 
 async function serveStatic(distDir, pathname, res) {
@@ -96,13 +125,16 @@ async function serveStatic(distDir, pathname, res) {
   }
 }
 
-export function createBoardServer({ boardPath, distDir, configPath = null, ciReader = null }) {
+export function createBoardServer({ boardPath, distDir, config = null, ciReader = null }) {
+  const historyPath = resolveHistoryPath(boardPath);
   return createServer(async (req, res) => {
     try {
       const url = new URL(req.url, 'http://localhost');
       if (url.pathname === '/api/board') return await serveBoard(boardPath, res);
-      if (url.pathname === '/api/config') return await serveConfig(configPath, res);
-      if (url.pathname === '/api/ci') return await serveCi(ciReader, configPath, res);
+      if (url.pathname === '/api/history') return await serveHistory(historyPath, res);
+      if (url.pathname === '/api/config') return serveConfig(config, res);
+      if (url.pathname === '/api/ci') return await serveCi(ciReader, config, res);
+      if (url.pathname === '/api/sessions/close' && req.method === 'POST') return await serveCloseSession(boardPath, req, res);
       return await serveStatic(distDir, url.pathname, res);
     } catch (err) {
       res.writeHead(500, { 'content-type': 'text/plain' });
@@ -111,7 +143,11 @@ export function createBoardServer({ boardPath, distDir, configPath = null, ciRea
   });
 }
 
-export async function startFromArgv(argv, { log = console.log } = {}) {
+export async function startFromArgv(argv, {
+  log = console.log,
+  loadConfig: loadConfigDep = loadConfig,
+  loadConfigFromRepo: loadConfigFromRepoDep = loadConfigFromRepo,
+} = {}) {
   const { values } = parseArgs({
     args: argv,
     options: {
@@ -119,14 +155,19 @@ export async function startFromArgv(argv, { log = console.log } = {}) {
       dist: { type: 'string' }, config: { type: 'string' },
       'status-repo': { type: 'string' }, 'ci-interval': { type: 'string', default: '60' },
       'ci-state': { type: 'string' }, 'ci-cache': { type: 'string' },
+      'config-repo': { type: 'string' }, 'config-file': { type: 'string' },
     },
   });
   const boardPath = resolveServerBoardPath({ board: values.board });
   const configSrc = values.config ?? process.env.AI_SYNC_CONFIG ?? null;
-  const configPath = configSrc ? path.resolve(configSrc) : null;
-  if (configPath) {
+  const configRepo = values['config-repo'] ?? null;
+  let config = null;
+  if (configSrc || configRepo) {
     try {
-      const config = await loadConfig(configPath);
+      config = await resolveConfigSource(
+        { config: configSrc ? path.resolve(configSrc) : null, configRepo, configFile: values['config-file'] },
+        { loadConfig: loadConfigDep, loadConfigFromRepo: loadConfigFromRepoDep },
+      );
       const hookCommand = fileURLToPath(new URL('../workspace/bin/workspace.js', import.meta.url));
       const results = await reconcileHooks(config, { boardPath, hookCommand });
       for (const r of results) {
@@ -155,7 +196,7 @@ export async function startFromArgv(argv, { log = console.log } = {}) {
     void ciReader.tick();
   }
   const distDir = values.dist ?? path.join(path.dirname(fileURLToPath(import.meta.url)), 'dist');
-  const server = createBoardServer({ boardPath, distDir, configPath, ciReader });
+  const server = createBoardServer({ boardPath, distDir, config, ciReader });
 
   // Like the Angular CLI: if the port is taken, fall back to the next one.
   const maxAttempts = 10;

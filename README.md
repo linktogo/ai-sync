@@ -105,21 +105,17 @@ All are released in lockstep on the same version — see
 [Releasing](CONTRIBUTING.md#releasing). The `apps/*` projects stay private, keep
 internal `@ai-sync/*` names, and are never published on their own.
 
-## Development
+## Tests
 
 ```bash
-npm test       # every project
-npm run lint
-npm run build
+npm test          # nx run-many -t test: every lib/app, 100% coverage gate each (except board)
+npm run test:board # apps/board suite only: server (node:test) + front-end (vitest)
 ```
 
-Nx enforces module boundaries by `scope:*` tags, and every `libs/` project
-carries a 100% line/function/branch coverage gate. Layout, testing conventions
-and the reasons behind them are in [Architecture](docs/architecture.md).
-
-Because Nx detects the package manager from the lockfile, keep
-`package-lock.json` as the only lockfile — a `pnpm-lock.yaml` breaks the project
-graph.
+CI runs `nx run-many -t lint test build`. Because Nx detects the package
+manager from the lockfile, keep `package-lock.json` as the only lockfile — a
+`pnpm-lock.yaml` breaks the Nx project graph. Layout, testing conventions and
+the reasons behind them are in [Architecture](docs/architecture.md).
 
 ## Contributing
 
@@ -131,3 +127,21 @@ bar, the commit format, and how to add a skill. Participation is governed by our
 - 🐛 [Report a bug](https://github.com/linktogo/ai-sync/issues/new/choose)
 - 💡 [Propose a feature or a skill](https://github.com/linktogo/ai-sync/issues/new/choose)
 - 🔒 Security issues: see [SECURITY.md](SECURITY.md) — never a public issue
+
+Release notes live in [CHANGELOG.md](CHANGELOG.md).
+
+## Security model
+
+The CLIs run git and package-manager commands on your machine: they clone the
+repositories named in the config, install their dependencies, and shell out to
+`gh` when `--pr` is passed. Treat the config file — and any repository you pass
+to `--config-repo` — as trusted input. The board server is a local development
+tool with no authentication and should not be exposed to a network. See
+[SECURITY.md](SECURITY.md) for the full scope and reporting process.
+
+## License
+
+[Apache License 2.0](LICENSE) © Linktogo.
+
+Third-party material redistributed in this repository is listed in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

@@ -15,13 +15,13 @@ defineEmits(['update:name', 'update:tech', 'update:ci']);
       :value="name"
       @input="$emit('update:name', $event.target.value)"
       placeholder="🔍 filtrer un repo…"
-      class="border border-slate-300 rounded-md px-3 py-1.5 text-sm bg-white flex-1 min-w-0"
+      class="border border-slate-200 rounded-lg shadow-sm px-3 py-1.5 text-sm bg-white flex-1 min-w-0 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
     />
     <select
       data-test="tech"
       :value="tech"
       @change="$emit('update:tech', $event.target.value)"
-      class="border border-slate-300 rounded-md px-3 py-1.5 text-sm bg-white text-slate-600"
+      class="border border-slate-200 rounded-lg shadow-sm px-3 py-1.5 text-sm bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
     >
       <option value="">techno : toutes</option>
       <option v-for="t in technologies" :key="t" :value="t">{{ t }}</option>

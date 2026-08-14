@@ -13,3 +13,5 @@ vite.config.*.timestamp*
 vitest.config.*.timestamp*
 
 .nx/
+history.jsonl
+board.json
