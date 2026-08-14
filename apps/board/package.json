@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@linktogo/ai-ci-status": "^0.1.0",
-    "@linktogo/ai-config": "^0.1.0",
-    "@linktogo/ai-workspace-bootstrap": "^0.1.0",
+    "@linktogo/ai-ci-status": "^0.2.0",
+    "@linktogo/ai-config": "^0.2.0",
+    "@linktogo/ai-workspace-bootstrap": "^0.2.0",
     "chart.js": "^4.5.1",
     "vue": "^3.5.0",
     "vue-router": "^4.6.4"
@@ -45,7 +45,9 @@
       },
       "test-reader": {
         "executor": "nx:run-commands",
-        "options": { "command": "node --test apps/board/ciReader.test.js" }
+        "options": {
+          "command": "node --test apps/board/ciReader.test.js"
+        }
       },
       "test": {
         "dependsOn": [

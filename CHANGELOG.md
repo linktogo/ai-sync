@@ -8,6 +8,8 @@ While the version is below `1.0.0`, minor releases may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-14
+
 ### Added
 
 - Community and governance files: `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`,
@@ -78,5 +80,6 @@ Initial release.
 - Starter skills library for NestJS, Postgres, Next.js, React, Angular, Vue, Nx,
   Firebase, and Cloudflare Workers.
 
-[Unreleased]: https://github.com/linktogo/ai-sync/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/linktogo/ai-sync/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/linktogo/ai-sync/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/linktogo/ai-sync/releases/tag/v0.1.0
