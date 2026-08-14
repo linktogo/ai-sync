@@ -7,7 +7,7 @@
     "ai-sync": "./bin/sync.js"
   },
   "dependencies": {
-    "@linktogo/ai-config": "^0.2.0",
-    "@linktogo/ai-skill-sync": "^0.2.0"
+    "@linktogo/ai-config": "^0.3.0",
+    "@linktogo/ai-skill-sync": "^0.3.0"
   }
 }
