@@ -21,9 +21,17 @@ jobs:
   prepare:
     runs-on: ubuntu-latest
     steps:
+      # Checks out with RELEASE_PAT rather than the default GITHUB_TOKEN: the
+      # release tag is pushed from this checkout, and creating `v*` tags is
+      # restricted to the Admin role (scripts/setup-release-protections.sh),
+      # which `github-actions[bot]` does not hold. The token has to be supplied
+      # here and not at push time — actions/checkout persists it as an
+      # `http.extraheader` for github.com, and that header takes precedence
+      # over any credentials embedded in a push URL.
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          token: ${{ secrets.RELEASE_PAT }}
 
       - uses: actions/setup-node@v7
         with:
@@ -64,9 +72,7 @@ jobs:
 
       - name: Create and push release tag
         if: steps.pending.outputs.pending == 'true'
-        env:
-          RELEASE_PAT: ${{ secrets.RELEASE_PAT }}
         run: |
           tag="${{ steps.pending.outputs.tag }}"
           git tag "$tag"
-          git push "https://x-access-token:${RELEASE_PAT}@github.com/${{ github.repository }}.git" "$tag"
+          git push origin "$tag"
