@@ -1,5 +1,10 @@
 name: Prepare release
 
+# On every push to main this either opens/updates the `chore(release):
+# vX.Y.Z` PR (when new feat/fix commits landed) or, once that PR is merged,
+# pushes the release tag for the version it bumped to — see "Tagging and
+# publishing" in CONTRIBUTING.md.
+
 on:
   push:
     branches: [main]
@@ -52,3 +57,16 @@ jobs:
             closing this PR and running `node scripts/bump-version.js major`
             instead.' || '' }}
           labels: release
+
+      - name: Check if a release tag is pending
+        id: pending
+        run: node scripts/should-tag-release.js >> "$GITHUB_OUTPUT"
+
+      - name: Create and push release tag
+        if: steps.pending.outputs.pending == 'true'
+        env:
+          RELEASE_PAT: ${{ secrets.RELEASE_PAT }}
+        run: |
+          tag="${{ steps.pending.outputs.tag }}"
+          git tag "$tag"
+          git push "https://x-access-token:${RELEASE_PAT}@github.com/${{ github.repository }}.git" "$tag"

@@ -151,26 +151,30 @@ git push -u origin HEAD
 
 Then open a PR the same way.
 
-### Publishing (gated to `@linktogo`)
+### Tagging and publishing (fully automatic)
 
-Once the version-bump PR is merged to `main`, `@linktogo` pushes the release
-tag:
+Once the version-bump PR is merged to `main`, `prepare-release.yml` runs
+again, notices `package.json` is now ahead of the last `v*` tag
+(`scripts/should-tag-release.js`), and pushes the release tag itself — no
+human action needed. It authenticates as the `RELEASE_PAT` repository secret,
+a fine-grained personal access token belonging to `@linktogo` scoped to this
+repo only (Contents: read/write). A repository tag ruleset still restricts
+`v*` tag creation to the Admin role, so this only works because the token
+belongs to an Admin account — anyone else's push is still rejected.
 
-```bash
-git tag vX.Y.Z
-git push origin vX.Y.Z
-```
-
-Only `@linktogo` can create tags matching `v*` (enforced by a repository tag
-ruleset). Pushing the tag triggers `.github/workflows/release.yml`, which
-verifies the tag matches `package.json`, extracts the matching section of
+Pushing the tag triggers `.github/workflows/release.yml`, which verifies the
+tag matches `package.json`, extracts the matching section of
 `CHANGELOG.md`, and creates a GitHub Release with it as the notes — no
 hand-written release notes needed.
 
 That Release's `published` event triggers `.github/workflows/publish.yml`,
-which requires a second, independent approval from `@linktogo` on the
-`npm-publish` environment before it runs `npm publish --workspaces`
-(libraries) and then `npm publish` (the CLI package, which depends on them).
+which runs `npm publish --workspaces` (libraries) and then `npm publish` (the
+CLI package, which depends on them) with no manual approval step.
+
+If `RELEASE_PAT` is missing or expired, the tagging step fails loudly in the
+Actions log and nothing downstream (release, npm publish) happens — rotate it
+by generating a new fine-grained PAT for `@linktogo` scoped to this repo and
+updating the secret.
 
 To rehearse a release against a local registry:
 
