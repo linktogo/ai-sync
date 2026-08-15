@@ -8,6 +8,17 @@ While the version is below `1.0.0`, minor releases may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-15
+
+### Fixed
+
+- The release pipeline now tags and publishes without manual steps:
+  `prepare-release.yml` pushes the release tag itself once the version-bump PR
+  merges to `main`, and `release.yml` creates the GitHub Release with a
+  personal access token instead of the default `GITHUB_TOKEN` — GitHub does
+  not fire the `release: published` event for releases created by the default
+  token, which had silently prevented `publish.yml` from ever running.
+
 ## [0.5.0] - 2026-08-14
 
 ## [0.4.0] - 2026-08-14
@@ -86,7 +97,8 @@ Initial release.
 - Starter skills library for NestJS, Postgres, Next.js, React, Angular, Vue, Nx,
   Firebase, and Cloudflare Workers.
 
-[Unreleased]: https://github.com/linktogo/ai-sync/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/linktogo/ai-sync/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/linktogo/ai-sync/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/linktogo/ai-sync/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/linktogo/ai-sync/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/linktogo/ai-sync/compare/v0.2.0...v0.3.0

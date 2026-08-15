@@ -1,6 +1,6 @@
 {
   "name": "@linktogo/ai-git",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Thin git and GitHub CLI wrapper used by ai-sync: clone, branch, commit, push, and open pull requests.",
   "license": "Apache-2.0",
   "type": "module",
