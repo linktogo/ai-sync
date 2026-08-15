@@ -1,29 +1,21 @@
 #!/usr/bin/env bash
-# One-time setup for the two @linktogo release gates. Run by hand, once.
-# Requires repo-admin `gh` auth.
+# One-time setup for the repository's release tag protection. Run by hand,
+# once. Requires repo-admin `gh` auth.
 #
 # `linktogo` is a personal GitHub account, not an organization, so there is
-# no Teams feature to gate on: the environment reviewer is the `linktogo`
-# user directly, and tag creation is restricted to the repository's Admin
-# role (which today only `linktogo` holds).
+# no Teams feature to gate on: tag creation is restricted to the
+# repository's Admin role (which today only `linktogo` holds). Automated
+# tagging (.github/workflows/prepare-release.yml) authenticates as that same
+# account via the RELEASE_PAT repository secret, so it satisfies this
+# restriction too — see "Tagging and publishing" in CONTRIBUTING.md.
+#
+# Publishing to npm (.github/workflows/publish.yml) has no equivalent gate:
+# it runs unattended once a GitHub Release is published.
 set -euo pipefail
 
 OWNER="linktogo"
 REPO="ai-sync"
 USER="linktogo"
-ENVIRONMENT="npm-publish"
-
-echo "Looking up user $USER..."
-USER_ID="$(gh api "users/$USER" --jq .id)" || {
-  echo "User '$USER' was not found (or is not visible to your token)." >&2
-  exit 1
-}
-echo "Found user id $USER_ID"
-
-echo "Configuring environment '$ENVIRONMENT' with $USER as required reviewer..."
-echo "{\"reviewers\":[{\"type\":\"User\",\"id\":$USER_ID}]}" \
-  | gh api --method PUT "repos/$OWNER/$REPO/environments/$ENVIRONMENT" --input - >/dev/null
-echo "Environment configured — only $USER can approve a run using it."
 
 echo "Configuring tag ruleset restricting v* tag creation to the repository Admin role..."
 gh api --method POST "repos/$OWNER/$REPO/rulesets" --input - >/dev/null <<'JSON'
@@ -40,4 +32,12 @@ gh api --method POST "repos/$OWNER/$REPO/rulesets" --input - >/dev/null <<'JSON'
 JSON
 echo "Ruleset configured — only accounts with the Admin role (today: $USER) can create v* tags."
 
-echo "Done. Verify under Settings > Environments and Settings > Rules on the repo."
+echo
+echo "Manual step required: create a fine-grained personal access token for"
+echo "$USER, scoped to $OWNER/$REPO only with Contents: Read and write"
+echo "permission, then add it as the RELEASE_PAT repository secret:"
+echo "  gh secret set RELEASE_PAT --repo $OWNER/$REPO"
+echo "prepare-release.yml uses it to push release tags on $USER's behalf,"
+echo "which is what lets automated tag creation bypass the ruleset above."
+echo
+echo "Done. Verify the ruleset under Settings > Rules on the repo."
