@@ -51,12 +51,37 @@ jobs:
       - run: npm test
 
       # Libraries first: the root CLI package depends on them by version range.
+      #
+      # Published one at a time, skipping versions already on the registry, so a
+      # job that dies partway through (expired token, npm outage) can just be
+      # re-run: `npm publish --workspaces` would abort on the first
+      # already-published package with E403 and never reach the rest.
       - name: Publish libraries
-        run: npm publish --workspaces
+        run: |
+          for manifest in libs/*/package.json; do
+            name=$(node -p "require('./$manifest').name")
+            version=$(node -p "require('./$manifest').version")
+            if [ "$(node -p "require('./$manifest').private === true")" = "true" ]; then
+              echo "skip $name (private)"
+              continue
+            fi
+            if npm view "$name@$version" version >/dev/null 2>&1; then
+              echo "skip $name@$version (already published)"
+              continue
+            fi
+            npm publish --workspace "$name"
+          done
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish CLI package
-        run: npm publish
+        run: |
+          name=$(node -p "require('./package.json').name")
+          version=$(node -p "require('./package.json').version")
+          if npm view "$name@$version" version >/dev/null 2>&1; then
+            echo "skip $name@$version (already published)"
+            exit 0
+          fi
+          npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -168,8 +168,18 @@ tag matches `package.json`, extracts the matching section of
 hand-written release notes needed.
 
 That Release's `published` event triggers `.github/workflows/publish.yml`,
-which runs `npm publish --workspaces` (libraries) and then `npm publish` (the
-CLI package, which depends on them) with no manual approval step.
+which publishes the libraries first and then the CLI package (which depends on
+them by version range), with no manual approval step. Each package is published
+only if that exact version is not already on the registry, so a job that fails
+partway through can be re-run from the Actions UI without hitting E403 on the
+packages that did go out.
+
+It authenticates with the `NPM_TOKEN` secret on the `npm-publish` environment,
+which **must** be an npm *automation* token (classic Automation token, or a
+granular access token). Those are the only kinds that bypass the account's
+two-factor requirement; a classic *Publish* token makes every `npm publish`
+fail with `npm error code EOTP — This operation requires a one-time password`,
+since no one is there to type one.
 
 If `RELEASE_PAT` is missing or expired, the tagging step fails loudly in the
 Actions log and nothing downstream (release, npm publish) happens — rotate it
