@@ -1,6 +1,6 @@
 {
   "name": "@linktogo/maggie",
-  "version": "0.6.0",
+  "version": "1.0.0",
   "description": "Sync AI agent skills, practices, and workflows across repositories — author once, render for Claude Code, GitHub Copilot, Cursor, and Windsurf.",
   "license": "Apache-2.0",
   "type": "module",
@@ -50,9 +50,9 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^7.2.0",
-    "@linktogo/maggie-config": "^0.6.0",
-    "@linktogo/maggie-skill-sync": "^0.6.0",
-    "@linktogo/maggie-workspace-bootstrap": "^0.6.0"
+    "@linktogo/maggie-config": "^1.0.0",
+    "@linktogo/maggie-skill-sync": "^1.0.0",
+    "@linktogo/maggie-workspace-bootstrap": "^1.0.0"
   },
   "overrides": {
     "nx": {
