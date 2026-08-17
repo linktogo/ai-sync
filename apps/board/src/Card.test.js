@@ -23,7 +23,7 @@ test('renders the repo name and one row per session', () => {
 
 test('shows a placeholder when the repo has no active sessions', () => {
   const w = mount(Card, { props: { name: 'oc-be', sessions: [], status: 'todo', now } });
-  expect(w.text()).toContain('Aucune session active');
+  expect(w.text()).toContain('No active session');
 });
 
 test('highlights a question card', () => {

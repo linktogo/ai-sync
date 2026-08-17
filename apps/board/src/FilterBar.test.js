@@ -20,7 +20,7 @@ test('lists technologies and emits tech selection', async () => {
 test('offers the three CI filters and emits the selection', async () => {
   const w = mount(FilterBar, { props: { name: '', tech: '', ci: '', technologies: [] } });
   const options = w.get('[data-test=ci]').findAll('option').map((o) => o.text());
-  expect(options).toEqual(['CI : tous', 'en échec', 'OK', 'inconnu']);
+  expect(options).toEqual(['CI: all', 'failing', 'OK', 'unknown']);
   await w.get('[data-test=ci]').setValue('failure');
   expect(w.emitted('update:ci')[0]).toEqual(['failure']);
 });

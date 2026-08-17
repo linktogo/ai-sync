@@ -32,7 +32,7 @@ function fetchImplWith(entries) {
 
 async function settle() { await nextTick(); await Promise.resolve(); await nextTick(); }
 
-test('defaults to the "Par période" tab with day granularity, and always renders the table below', async () => {
+test('defaults to the "By period" tab with day granularity, and always renders the table below', async () => {
   const wrapper = mount(HistoryPage, { props: { fetchImpl: fetchImplWith([entry()]) } });
   await settle();
   expect(wrapper.findComponent(TimeSeriesChart).exists()).toBe(true);
@@ -40,7 +40,7 @@ test('defaults to the "Par période" tab with day granularity, and always render
   expect(wrapper.text()).toContain('fix login'); // HistoryTable row
 });
 
-test('switching to the "Par projet" tab shows the project chart instead of the time series', async () => {
+test('switching to the "By project" tab shows the project chart instead of the time series', async () => {
   const wrapper = mount(HistoryPage, { props: { fetchImpl: fetchImplWith([entry()]) } });
   await settle();
   await wrapper.get('[data-test=tab-project]').trigger('click');

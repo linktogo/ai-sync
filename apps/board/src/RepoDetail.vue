@@ -2,6 +2,9 @@
 import { onMounted, onUnmounted, computed } from 'vue';
 import { relativeTime } from './useRelativeTime.js';
 import { visibleBadges, pillClass } from './ciBadge.js';
+import { useI18n } from './i18n.js';
+
+const { t } = useI18n();
 
 const props = defineProps({
   name: { type: String, default: null },
@@ -36,12 +39,12 @@ onUnmounted(() => window.removeEventListener('keydown', onKey));
       </div>
       <p v-if="session?.lastPrompt" class="mt-3 text-sm text-slate-700 whitespace-pre-wrap">{{ session.lastPrompt }}</p>
 
-      <h3 class="mt-4 text-xs font-semibold text-slate-500 uppercase">Intégration continue</h3>
+      <h3 class="mt-4 text-xs font-semibold text-slate-500 uppercase">{{ t('detail.ci') }}</h3>
       <p v-if="ci?.unavailable" data-test="ci-unavailable" class="mt-1 text-xs text-slate-500">
-        Indisponible — {{ ci.unavailable }}
+        {{ t('detail.ciUnavailable', { reason: ci.unavailable }) }}
       </p>
       <p v-else-if="ciUsers.length === 0" data-test="ci-empty" class="mt-1 text-xs text-slate-500">
-        Aucun statut remonté.
+        {{ t('detail.ciEmpty') }}
       </p>
       <ul v-else class="mt-1 space-y-1">
         <li v-for="u in ciUsers" :key="u.login" data-test="ci-user" class="text-xs text-slate-600">
@@ -56,7 +59,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey));
         </li>
       </ul>
 
-      <h3 class="mt-4 text-xs font-semibold text-slate-500 uppercase">Historique</h3>
+      <h3 class="mt-4 text-xs font-semibold text-slate-500 uppercase">{{ t('detail.history') }}</h3>
       <ul class="mt-1 space-y-1">
         <li v-for="(e, i) in (session?.events || [])" :key="i" class="text-xs text-slate-600">
           • {{ e.event }} — {{ relativeTime(e.at, now) }}

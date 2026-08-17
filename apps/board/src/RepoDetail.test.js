@@ -20,7 +20,7 @@ test('renders url, technologies, the session title/prompt, and the event timelin
   expect(w.text()).toContain('fix auth redirect');
   expect(w.text()).toContain('fix the auth redirect loop on logout');
   expect(w.text()).toContain('waiting input');
-  expect(w.text()).toContain('il y a 12 s');
+  expect(w.text()).toContain('12s ago');
 });
 
 test('renders nothing when name is null', () => {
@@ -50,7 +50,7 @@ test('lists each contributor CI run with a link to it', () => {
   expect(line.text()).toContain('CI');
   expect(line.text()).toContain('feat/x');
   // The relative time is the guard against a stale green reading as current.
-  expect(line.text()).toContain('il y a 1 min');
+  expect(line.text()).toContain('1 min ago');
   expect(w.get('[data-test=ci-link]').attributes('href')).toBe('https://github.com/linktogo/lk-myasso/actions/runs/42');
 });
 
@@ -63,5 +63,5 @@ test('shows the reason instead of the list when CI is unavailable', () => {
 
 test('says nothing has been reported when no contributor has run CI', () => {
   const w = mount(RepoDetail, { props: { name: 'lk-myasso', session: null, meta: null, now: nowTs, ci: { users: {} } } });
-  expect(w.get('[data-test=ci-empty]').text()).toContain('Aucun statut');
+  expect(w.get('[data-test=ci-empty]').text()).toContain('No status reported');
 });

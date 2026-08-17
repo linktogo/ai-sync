@@ -33,12 +33,12 @@ test('renders one stacked dataset per token type in tokens mode', () => {
   mount(TimeSeriesChart, { props: { buckets: [bucket()], mode: 'tokens' } });
   const chart = chartInstances[0];
   expect(chart.data.labels).toEqual(['2026-08-01']);
-  expect(chart.data.datasets.map((d) => d.label)).toEqual(['Input', 'Output', 'Cache écrit', 'Cache lu']);
+  expect(chart.data.datasets.map((d) => d.label)).toEqual(['Input', 'Output', 'Cache write', 'Cache read']);
   expect(chart.data.datasets[0].data).toEqual([10]);
   expect(chart.options.scales.x.stacked).toBe(true);
 });
 
-test('renders one dataset per model in cost mode, labeling a missing model as "Modèle inconnu"', () => {
+test('renders one dataset per model in cost mode, labeling a missing model as "Unknown model"', () => {
   mount(TimeSeriesChart, {
     props: {
       buckets: [bucket({ costByModel: { 'claude-sonnet-5': 0.02, unknown: 0.01 } })],
@@ -46,7 +46,7 @@ test('renders one dataset per model in cost mode, labeling a missing model as "M
     },
   });
   const chart = chartInstances[0];
-  expect(chart.data.datasets.map((d) => d.label).sort()).toEqual(['Modèle inconnu', 'claude-sonnet-5']);
+  expect(chart.data.datasets.map((d) => d.label).sort()).toEqual(['Unknown model', 'claude-sonnet-5']);
 });
 
 test('re-renders (not re-creates) the chart when buckets or mode change', async () => {
@@ -65,5 +65,5 @@ test('destroys the chart instance on unmount', () => {
 
 test('shows an empty-state message when there are no buckets', () => {
   const wrapper = mount(TimeSeriesChart, { props: { buckets: [], mode: 'tokens' } });
-  expect(wrapper.text()).toContain('Aucune session terminée');
+  expect(wrapper.text()).toContain('No completed session yet');
 });

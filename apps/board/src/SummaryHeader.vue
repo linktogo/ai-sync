@@ -1,6 +1,9 @@
 <script setup>
 import { computed } from 'vue';
 import { STATUS_STYLES } from './statusStyles.js';
+import { useI18n } from './i18n.js';
+
+const { t } = useI18n();
 
 const props = defineProps({ repos: { type: Object, required: true } });
 
@@ -23,15 +26,15 @@ const percentDone = computed(() => (total.value ? Math.round((counts.value.done 
 <template>
   <div class="bg-white border border-slate-200 rounded-xl shadow-sm px-4 py-3 mb-4">
     <div class="flex flex-wrap gap-2 mb-2.5">
-      <span class="rounded-md px-2 py-0.5 text-xs font-semibold bg-slate-100 text-slate-700">{{ total }} repos</span>
-      <span :class="['rounded-md px-2 py-0.5 text-xs font-semibold', STATUS_STYLES.todo.chip]">{{ counts.todo }} To do</span>
-      <span :class="['rounded-md px-2 py-0.5 text-xs font-semibold', STATUS_STYLES.inprogress.chip]">{{ counts.inprogress }} In progress</span>
-      <span :class="['rounded-md px-2 py-0.5 text-xs font-semibold', STATUS_STYLES.question.chip]">{{ counts.question }} Question</span>
-      <span :class="['rounded-md px-2 py-0.5 text-xs font-semibold', STATUS_STYLES.done.chip]">{{ counts.done }} Done</span>
+      <span class="rounded-md px-2 py-0.5 text-xs font-semibold bg-slate-100 text-slate-700">{{ total }} {{ t('summary.repos') }}</span>
+      <span :class="['rounded-md px-2 py-0.5 text-xs font-semibold', STATUS_STYLES.todo.chip]">{{ counts.todo }} {{ t('status.todo') }}</span>
+      <span :class="['rounded-md px-2 py-0.5 text-xs font-semibold', STATUS_STYLES.inprogress.chip]">{{ counts.inprogress }} {{ t('status.inprogress') }}</span>
+      <span :class="['rounded-md px-2 py-0.5 text-xs font-semibold', STATUS_STYLES.question.chip]">{{ counts.question }} {{ t('status.question') }}</span>
+      <span :class="['rounded-md px-2 py-0.5 text-xs font-semibold', STATUS_STYLES.done.chip]">{{ counts.done }} {{ t('status.done') }}</span>
     </div>
     <div class="h-2.5 bg-slate-100 rounded-full overflow-hidden">
       <div data-test="progress" class="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full" :style="{ width: percentDone + '%' }"></div>
     </div>
-    <div class="text-xs text-slate-400 mt-1">{{ percentDone }} % terminé</div>
+    <div class="text-xs text-slate-400 mt-1">{{ t('summary.percentDone', { percent: percentDone }) }}</div>
   </div>
 </template>

@@ -3,6 +3,9 @@ import { computed } from 'vue';
 import SessionRow from './SessionRow.vue';
 import { STATUS_STYLES } from './statusStyles.js';
 import { visibleBadges, pillClass } from './ciBadge.js';
+import { useI18n } from './i18n.js';
+
+const { t } = useI18n();
 
 const props = defineProps({
   name: { type: String, required: true },
@@ -48,7 +51,7 @@ function open(sessionId) {
         >+{{ badges.overflow.length }}</span>
       </div>
     </div>
-    <p v-if="sessions.length === 0" class="mt-1 text-xs text-slate-400">Aucune session active</p>
+    <p v-if="sessions.length === 0" class="mt-1 text-xs text-slate-400">{{ t('card.noActiveSession') }}</p>
     <div v-else class="mt-2 flex flex-col gap-1.5">
       <SessionRow v-for="s in sessions" :key="s.sessionId" :session="s" :repo-name="name" :now="now" @open="open" />
     </div>

@@ -10,6 +10,17 @@ changes in minor releases.
 
 ## [Unreleased]
 
+### Added
+
+- The board dashboard is now translated: English by default, switchable to
+  French, German or Spanish from the header picker. The choice is persisted in
+  `localStorage` and re-applied on the next visit.
+
+### Changed
+
+- **Breaking (UI):** the dashboard used to render in French only; it now starts
+  in English for every visitor, whatever their browser language.
+
 ## [1.0.0] - 2026-08-17
 
 ### Changed

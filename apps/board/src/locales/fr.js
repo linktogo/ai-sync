@@ -1,0 +1,73 @@
+export default {
+  'nav.board': 'Tableau',
+  'nav.history': 'Historique',
+  'nav.language': 'Langue',
+
+  'notifications.enable': 'activer',
+  'notifications.sound': 'son',
+  'notifications.blocked': 'Notifications bloquées par le navigateur.',
+  'notification.question': 'Un agent attend votre saisie',
+  'notification.done': 'Travail terminé',
+
+  'banner.disconnected': 'déconnecté — nouvelle tentative au prochain poll…',
+  'banner.ciDesync': 'CI désynchronisé — {reason}',
+  'banner.ciUnavailable': 'Statut CI indisponible — {reason}',
+
+  'status.todo': 'À faire',
+  'status.inprogress': 'En cours',
+  'status.question': 'Question',
+  'status.done': 'Terminé',
+
+  'summary.repos': 'repos',
+  'summary.percentDone': '{percent} % terminé',
+
+  'filter.searchRepo': '🔍 filtrer un repo…',
+  'filter.techAll': 'techno : toutes',
+  'filter.ciAll': 'CI : tous',
+  'filter.ciFailure': 'en échec',
+  'filter.ciOk': 'OK',
+  'filter.ciUnknown': 'inconnu',
+
+  'card.noActiveSession': 'Aucune session active',
+  'card.confirmClose': 'Marquer la session « {title} » de {repo} comme terminée ?',
+
+  'session.untitled': '(sans titre)',
+  'session.showMore': 'voir plus',
+  'session.showLess': 'voir moins',
+  'session.tokens': '{count} tokens',
+  'session.usageTooltip': 'entrée {input} · sortie {output} · cache écrit {cacheWrite} · cache lu {cacheRead}',
+
+  'detail.ci': 'Intégration continue',
+  'detail.ciUnavailable': 'Indisponible — {reason}',
+  'detail.ciEmpty': 'Aucun statut remonté.',
+  'detail.history': 'Historique',
+
+  'history.tabPeriod': 'Par période',
+  'history.tabProject': 'Par projet',
+  'history.modeTokens': 'Tokens',
+  'history.day': 'Jour',
+  'history.week': 'Semaine',
+  'history.month': 'Mois',
+  'history.year': 'Année',
+  'history.empty': 'Aucune session terminée pour l’instant.',
+
+  'chart.input': 'Entrée',
+  'chart.output': 'Sortie',
+  'chart.cacheWrite': 'Cache écrit',
+  'chart.cacheRead': 'Cache lu',
+  'chart.cost': 'Coût (€)',
+  'chart.unknownModel': 'Modèle inconnu',
+
+  'table.repo': 'Repo',
+  'table.title': 'Titre',
+  'table.started': 'Démarrée',
+  'table.ended': 'Terminée',
+  'table.duration': 'Durée',
+  'table.total': 'Total',
+  'table.durationMinutes': '{minutes} min',
+
+  'time.secondsAgo': 'il y a {n} s',
+  'time.minutesAgo': 'il y a {n} min',
+  'time.hoursAgo': 'il y a {n} h',
+  'time.daysAgo': 'il y a {n} j',
+};

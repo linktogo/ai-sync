@@ -79,6 +79,8 @@ or not the server is running.
 
 ## What the UI does
 
+![The board in English](images/board/board-en.png)
+
 - **Four columns**, one per status.
 - **Browser notification** plus a tab-title badge whenever a repo moves into
   `question` (an agent is blocked on you) or `done`. An optional sound toggle is
@@ -87,6 +89,35 @@ or not the server is running.
 - **Filter bar** narrowing by repo name, technology, or CI state.
 - **Detail side panel** on click: repo URL, technology and target chips, CI
   breakdown per contributor, and the event timeline.
+- **Language picker** in the header: English (the default), French, German and
+  Spanish. See below.
+
+## Language
+
+The interface ships in English by default — a fresh browser always starts in
+English, regardless of the OS or browser language. The header picker switches
+the whole UI (columns, filters, banners, history table and charts, notification
+bodies, relative times) to French, German or Spanish, and the choice is
+persisted in `localStorage` under `maggie:locale` and re-applied on the next
+visit. Switching also updates `<html lang>`.
+
+The same board in French, German and Spanish:
+
+![The board in French](images/board/board-fr.png)
+![The board in German](images/board/board-de.png)
+![The board in Spanish](images/board/board-es.png)
+
+Charts and the history table follow along — the Chart.js series are relabelled
+and redrawn on a language change:
+
+![The history page in Spanish](images/board/history-es.png)
+
+Translations live in `apps/board/src/locales/<code>.js`, keyed by flat dotted
+keys, with `en.js` as the source catalog: a key missing from another locale
+falls back to its English text rather than showing the key. To add a language,
+drop a catalog next to the others, register it in `MESSAGES` and `LOCALES` in
+`apps/board/src/i18n.js`, and the picker gains an entry. Repo data (names,
+session titles, prompts, CI branches) is never translated.
 
 Without `--config` the board still runs, in a degraded mode with no repo links
 and no technology filter.

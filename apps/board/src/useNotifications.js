@@ -1,4 +1,5 @@
 import { ref, watch } from 'vue';
+import { translate } from './i18n.js';
 
 const SOUND_KEY = 'maggie:sound';
 
@@ -16,7 +17,7 @@ function defaultPlaySound() {
 }
 
 function bodyFor(status) {
-  return status === 'question' ? 'Un agent attend ton input' : 'Travail terminé';
+  return translate(status === 'question' ? 'notification.question' : 'notification.done');
 }
 
 export function useNotifications(transitions, questionCount, {

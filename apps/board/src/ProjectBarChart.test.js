@@ -48,7 +48,7 @@ test('renders the summed cost across models in cost mode', () => {
   });
   const chart = chartInstances[0];
   expect(chart.data.datasets[0].data).toEqual([0.07]);
-  expect(chart.data.datasets[0].label).toBe('Coût (€)');
+  expect(chart.data.datasets[0].label).toBe('Cost (€)');
 });
 
 test('re-renders (not re-creates) the chart when totals or mode change', async () => {
@@ -67,5 +67,5 @@ test('destroys the chart instance on unmount', () => {
 
 test('shows an empty-state message when there are no totals', () => {
   const wrapper = mount(ProjectBarChart, { props: { totals: [], mode: 'tokens' } });
-  expect(wrapper.text()).toContain('Aucune session terminée');
+  expect(wrapper.text()).toContain('No completed session yet');
 });

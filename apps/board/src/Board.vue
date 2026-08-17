@@ -4,8 +4,11 @@ import Column from './Column.vue';
 import SummaryHeader from './SummaryHeader.vue';
 import FilterBar from './FilterBar.vue';
 import RepoDetail from './RepoDetail.vue';
-import { STATUS_ORDER, STATUS_STYLES } from './statusStyles.js';
+import { STATUS_ORDER } from './statusStyles.js';
 import { matchesCiFilter } from './ciBadge.js';
+import { useI18n } from './i18n.js';
+
+const { t } = useI18n();
 
 const props = defineProps({
   repos: { type: Object, required: true },
@@ -26,8 +29,6 @@ const technologies = computed(() => {
   for (const meta of Object.values(props.config)) for (const t of meta.technologies ?? []) set.add(t);
   return [...set].sort();
 });
-
-const COLUMNS = STATUS_ORDER.map((status) => ({ status, title: STATUS_STYLES[status].label }));
 
 const filtered = computed(() => {
   const out = {};
@@ -58,11 +59,15 @@ function entriesFor(status) {
   }
   return out;
 }
-const grouped = computed(() => COLUMNS.map((c) => ({ ...c, entries: entriesFor(c.status) })));
+const grouped = computed(() => STATUS_ORDER.map((status) => ({
+  status,
+  title: t(`status.${status}`),
+  entries: entriesFor(status),
+})));
 
 async function onCloseSession({ repo, sessionId }) {
   const label = props.repos[repo]?.sessions?.[sessionId]?.title ?? sessionId;
-  if (!window.confirm(`Marquer la session « ${label} » de ${repo} comme terminée ?`)) return;
+  if (!window.confirm(t('card.confirmClose', { title: label, repo }))) return;
   await props.fetchImpl('/api/sessions/close', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },

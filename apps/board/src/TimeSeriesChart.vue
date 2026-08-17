@@ -2,6 +2,9 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { Chart, BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
 import { UNKNOWN_MODEL } from './pricing.js';
+import { useI18n } from './i18n.js';
+
+const { t, locale } = useI18n();
 
 Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
@@ -11,16 +14,16 @@ const props = defineProps({
 });
 
 const TOKEN_SERIES = [
-  { key: 'inputTokens', label: 'Input', color: '#2563eb' },
-  { key: 'outputTokens', label: 'Output', color: '#10b981' },
-  { key: 'cacheCreationInputTokens', label: 'Cache écrit', color: '#f59e0b' },
-  { key: 'cacheReadInputTokens', label: 'Cache lu', color: '#94a3b8' },
+  { key: 'inputTokens', labelKey: 'chart.input', color: '#2563eb' },
+  { key: 'outputTokens', labelKey: 'chart.output', color: '#10b981' },
+  { key: 'cacheCreationInputTokens', labelKey: 'chart.cacheWrite', color: '#f59e0b' },
+  { key: 'cacheReadInputTokens', labelKey: 'chart.cacheRead', color: '#94a3b8' },
 ];
 const MODEL_COLORS = ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6'];
 const UNKNOWN_COLOR = '#94a3b8';
 
 function modelLabel(model) {
-  return model === UNKNOWN_MODEL ? 'Modèle inconnu' : model;
+  return model === UNKNOWN_MODEL ? t('chart.unknownModel') : model;
 }
 
 const modelKeys = computed(() => {
@@ -32,7 +35,7 @@ const modelKeys = computed(() => {
 const datasets = computed(() => {
   if (props.mode === 'tokens') {
     return TOKEN_SERIES.map((s) => ({
-      label: s.label,
+      label: t(s.labelKey),
       backgroundColor: s.color,
       data: props.buckets.map((b) => b.tokens[s.key]),
     }));
@@ -67,7 +70,7 @@ function render() {
 }
 
 onMounted(render);
-watch([() => props.buckets, () => props.mode], render);
+watch([() => props.buckets, () => props.mode, locale], render);
 onUnmounted(() => { chart?.destroy(); chart = null; });
 </script>
 
@@ -75,7 +78,7 @@ onUnmounted(() => { chart?.destroy(); chart = null; });
   <div class="relative h-64">
     <canvas ref="canvas" data-test="time-series-canvas"></canvas>
     <p v-if="buckets.length === 0" class="absolute inset-0 flex items-center justify-center text-xs text-slate-400">
-      Aucune session terminée pour l'instant.
+      {{ t('history.empty') }}
     </p>
   </div>
 </template>
