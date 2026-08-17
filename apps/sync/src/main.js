@@ -3,8 +3,8 @@ import path from 'node:path';
 import os from 'node:os';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { resolveConfigSource } from '@linktogo/ai-config';
-import { run as defaultRun } from '@linktogo/ai-skill-sync';
+import { resolveConfigSource } from '@linktogo/maggie-config';
+import { run as defaultRun } from '@linktogo/maggie-skill-sync';
 
 // The skills library shipped inside the installed package, used when the
 // current directory has none of its own (i.e. the CLI is not run from a clone).
@@ -49,7 +49,7 @@ export async function main(argv, deps = {}) {
   );
   const results = await runPipeline(config, {
     skillsDir: resolveSkillsDir(values.skills, { cwd, exists }),
-    workDir: values['work-dir'] ?? path.join(os.tmpdir(), 'ai-sync'),
+    workDir: values['work-dir'] ?? path.join(os.tmpdir(), 'maggie'),
     pr: values.pr,
     dryRun: values['dry-run'],
     strict: values.strict,

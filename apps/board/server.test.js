@@ -215,7 +215,7 @@ test('POST /api/sessions/close returns 400 for an unparsable body', async () => 
 });
 
 test('resolveServerBoardPath: explicit --board wins over everything', () => {
-  const wkBoard = path.resolve('/c', 'wk', '.ai-sync', 'board.json');
+  const wkBoard = path.resolve('/c', 'wk', '.maggie', 'board.json');
   assert.equal(
     resolveServerBoardPath({ board: 'x/b.json', env: { AI_SYNC_BOARD: '/e.json' }, cwd: '/c', exists: () => true }),
     path.resolve('/c', 'x/b.json'),
@@ -230,8 +230,8 @@ test('resolveServerBoardPath: AI_SYNC_BOARD wins over auto-detect', () => {
   );
 });
 
-test('resolveServerBoardPath: auto-detects wk/.ai-sync/board.json when present', () => {
-  const wkBoard = path.resolve('/c', 'wk', '.ai-sync', 'board.json');
+test('resolveServerBoardPath: auto-detects wk/.maggie/board.json when present', () => {
+  const wkBoard = path.resolve('/c', 'wk', '.maggie', 'board.json');
   assert.equal(
     resolveServerBoardPath({ env: {}, cwd: '/c', exists: (p) => p === wkBoard }),
     wkBoard,
@@ -267,7 +267,7 @@ test('startFromArgv reconciles a repo\'s hooks on start and logs what changed', 
   const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
   const checkout = path.join(dir, 'checkout');
   await mkdir(checkout, { recursive: true });
-  const boardPath = path.join(dir, '.ai-sync', 'board.json');
+  const boardPath = path.join(dir, '.maggie', 'board.json');
   const configPath = path.join(dir, 'repos.json');
   await writeFile(configPath, JSON.stringify({
     repos: [{ name: 'demo', url: 'https://h/demo.git', path: checkout, technologies: ['nestjs'], targets: ['claude'] }],
@@ -289,7 +289,7 @@ test('startFromArgv logs "all up to date" on a second start once hooks are alrea
   const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
   const checkout = path.join(dir, 'checkout');
   await mkdir(checkout, { recursive: true });
-  const boardPath = path.join(dir, '.ai-sync', 'board.json');
+  const boardPath = path.join(dir, '.maggie', 'board.json');
   const configPath = path.join(dir, 'repos.json');
   await writeFile(configPath, JSON.stringify({
     repos: [{ name: 'demo', url: 'https://h/demo.git', path: checkout, technologies: ['nestjs'], targets: ['claude'] }],
@@ -364,7 +364,7 @@ test('startFromArgv loads config from --config-repo and serves it at /api/config
   const config = {
     repos: [{ name: 'demo', url: 'https://h/demo.git', path: checkout, technologies: ['nestjs'], targets: ['claude'] }],
   };
-  const boardPath = path.join(dir, '.ai-sync', 'board.json');
+  const boardPath = path.join(dir, '.maggie', 'board.json');
   let repoArgs;
   const logs = [];
   const server = await startFromArgv(

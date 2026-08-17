@@ -1,14 +1,14 @@
 {
-  "name": "@ai-sync/workspace",
+  "name": "@maggie/workspace",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "bin": {
-    "ai-workspace": "./bin/workspace.js"
+    "maggie-workspace": "./bin/workspace.js"
   },
   "dependencies": {
-    "@linktogo/ai-config": "^0.6.0",
-    "@linktogo/ai-workspace-bootstrap": "^0.6.0",
+    "@linktogo/maggie-config": "^0.6.0",
+    "@linktogo/maggie-workspace-bootstrap": "^0.6.0",
     "@inquirer/prompts": "^7.2.0"
   }
 }

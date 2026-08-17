@@ -46,7 +46,7 @@ const routeProps = computed(() => (route.name === 'history'
   <main class="min-h-screen bg-slate-100 p-6">
     <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
       <div class="flex items-center gap-3">
-        <h1 class="text-xl font-bold text-slate-900">ai-sync · workspace board</h1>
+        <h1 class="text-xl font-bold text-slate-900">maggie · workspace board</h1>
         <div class="inline-flex items-center bg-slate-100 rounded-lg p-0.5 gap-0.5 text-sm">
           <router-link
             data-test="view-board" to="/"

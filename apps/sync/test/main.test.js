@@ -74,7 +74,7 @@ test('main defaults pr/dryRun to false and derives a workDir', async () => {
   });
   assert.equal(received.pr, false);
   assert.equal(received.dryRun, false);
-  assert.match(received.workDir, /ai-sync$/);
+  assert.match(received.workDir, /maggie$/);
   assert.match(received.skillsDir, /skills$/);
 });
 

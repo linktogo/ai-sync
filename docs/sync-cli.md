@@ -1,10 +1,10 @@
-# `ai-sync` CLI
+# `maggie` CLI
 
 Renders the [skills library](skills-library.md) into every configured repo and
 pushes the result on a branch.
 
 Examples call the CLI through its source entry (`node apps/sync/bin/sync.js`).
-Once the package is installed the same commands are available as `ai-sync`.
+Once the package is installed the same commands are available as `maggie`.
 
 ## What a run does
 
@@ -13,7 +13,7 @@ For each repo in the [config](configuration.md):
 1. Clone it into a temporary work dir (`--work-dir` to choose the parent).
 2. Resolve the skills matching the repo's `technologies`.
 3. Render each skill for each of the repo's `targets`.
-4. Check out `ai-sync/update-skills`, write the files, commit, force-push.
+4. Check out `maggie/update-skills`, write the files, commit, force-push.
 5. Optionally open a PR with `gh` (`--pr`).
 
 The branch is rewritten on every sync — it is a throwaway output branch, not a

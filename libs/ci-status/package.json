@@ -1,7 +1,7 @@
 {
-  "name": "@linktogo/ai-ci-status",
+  "name": "@linktogo/maggie-ci-status",
   "version": "0.6.0",
-  "description": "CI status payloads for ai-sync: build them from a GitHub Actions run, validate them, and fold them into per-repo, per-contributor state.",
+  "description": "CI status payloads for maggie: build them from a GitHub Actions run, validate them, and fold them into per-repo, per-contributor state.",
   "license": "Apache-2.0",
   "type": "module",
   "main": "./src/ci-status.js",
@@ -15,15 +15,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/linktogo/ai-sync.git",
+    "url": "git+https://github.com/linktogo/maggie.git",
     "directory": "libs/ci-status"
   },
-  "homepage": "https://github.com/linktogo/ai-sync/tree/main/libs/ci-status#readme",
+  "homepage": "https://github.com/linktogo/maggie/tree/main/libs/ci-status#readme",
   "bugs": {
-    "url": "https://github.com/linktogo/ai-sync/issues"
+    "url": "https://github.com/linktogo/maggie/issues"
   },
   "keywords": [
-    "ai-sync",
+    "maggie",
     "ai-agents",
     "github-actions",
     "ci",

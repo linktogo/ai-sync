@@ -58,8 +58,8 @@ test('full run writes files, commits, pushes, and skips PR when --pr absent', as
     logger: silentLogger(),
   });
   assert.equal(results[0].status, 'pushed');
-  assert.equal(state.branch, 'ai-sync/update-skills');
-  assert.equal(state.pushed, 'ai-sync/update-skills');
+  assert.equal(state.branch, 'maggie/update-skills');
+  assert.equal(state.pushed, 'maggie/update-skills');
   assert.deepEqual(state.pushOpts, { force: true });
   assert.equal(state.pr, undefined);
   const written = await readFile(path.join(workDir, 'a', '.claude/skills/s/SKILL.md'), 'utf8');
@@ -74,7 +74,7 @@ test('--pr opens a PR after push', async () => {
     clone: fakeCloneFactory(state), logger: silentLogger(),
   });
   assert.equal(results[0].status, 'pr');
-  assert.deepEqual(state.pr, { title: 'Sync AI agent skills', body: 'Automated skill sync from ai-sync.' });
+  assert.deepEqual(state.pr, { title: 'Sync AI agent skills', body: 'Automated skill sync from maggie.' });
 });
 
 test('no-op when nothing changed: no commit/push', async () => {

@@ -1,11 +1,11 @@
-# `ai-workspace` CLI
+# `maggie-workspace` CLI
 
 Clones the configured repos into one workspace folder, installs their
 dependencies, wires up kanban status tracking, and prints the command to open
 the workspace in Claude Code or VS Code.
 
 Examples call the CLI through its source entry
-(`node apps/workspace/bin/workspace.js`). Once installed it is `ai-workspace`.
+(`node apps/workspace/bin/workspace.js`). Once installed it is `maggie-workspace`.
 
 ## Bootstrap
 
@@ -61,7 +61,7 @@ node apps/workspace/bin/workspace.js $CFG --workspace ~/work/myorg --worktree fe
 ## Status tracking
 
 Bootstrap wires each checkout to report its kanban status into a shared
-`board.json` at `<workspace>/.ai-sync/board.json`. The four states are `todo`,
+`board.json` at `<workspace>/.maggie/board.json`. The four states are `todo`,
 `inprogress`, `question` and `done`.
 
 It works by merging Claude Code hooks into each repo's
@@ -77,9 +77,9 @@ Each hook shells out to this CLI's `status` subcommand, which you can also run
 by hand:
 
 ```bash
-node apps/workspace/bin/workspace.js status example-api done --board ~/work/myorg/.ai-sync/board.json
+node apps/workspace/bin/workspace.js status example-api done --board ~/work/myorg/.maggie/board.json
 # installed on PATH:
-ai-workspace status example-api done --board <board.json>
+maggie-workspace status example-api done --board <board.json>
 ```
 
 The board is seeded with `todo` for every repo at bootstrap and updated

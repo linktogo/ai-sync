@@ -1,12 +1,12 @@
-# @linktogo/ai-skill-sync
+# @linktogo/maggie-skill-sync
 
 Resolves which skills apply to a repository — by matching its `technologies`
 against `skills/<techno>/` — and drives the
-[ai-sync](https://github.com/linktogo/ai-sync) pipeline: clone, render, branch,
+[maggie](https://github.com/linktogo/maggie) pipeline: clone, render, branch,
 commit, push, and optionally open a pull request.
 
 ```js
-import { run } from '@linktogo/ai-skill-sync';
+import { run } from '@linktogo/maggie-skill-sync';
 
 const results = await run(config, { skillsDir: 'skills', dryRun: true, logger: console });
 ```

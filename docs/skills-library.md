@@ -64,4 +64,4 @@ otherwise resolves to zero skills — logs a warning and is left untouched.
 
 Pass `--strict` to turn that into a hard error with a non-zero exit and the repo
 recorded as `error`. Use it in CI to catch a typo'd technology or a skill folder
-that was never created. See the [`ai-sync` CLI](sync-cli.md).
+that was never created. See the [`maggie` CLI](sync-cli.md).

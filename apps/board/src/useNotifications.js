@@ -1,6 +1,6 @@
 import { ref, watch } from 'vue';
 
-const SOUND_KEY = 'ai-sync:sound';
+const SOUND_KEY = 'maggie:sound';
 
 function defaultPlaySound() {
   try {
@@ -49,7 +49,7 @@ export function useNotifications(transitions, questionCount, {
   });
 
   watch(questionCount, (n) => {
-    if (doc) doc.title = n > 0 ? `(${n}) ai-sync board` : 'ai-sync board';
+    if (doc) doc.title = n > 0 ? `(${n}) maggie board` : 'maggie board';
   }, { immediate: true });
 
   return { permission, soundOn, requestPermission, toggleSound };

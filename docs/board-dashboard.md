@@ -1,7 +1,7 @@
 # Board dashboard
 
 A read-only kanban dashboard (Vue 3 + Tailwind) showing each repo's status, fed
-by the `board.json` that [`ai-workspace` status tracking](workspace-cli.md#status-tracking)
+by the `board.json` that [`maggie-workspace` status tracking](workspace-cli.md#status-tracking)
 writes. It lives in `apps/board/` with a zero-dependency Node server.
 
 ## Running it
@@ -34,7 +34,7 @@ First match wins:
 
 1. `--board <path>`
 2. `AI_SYNC_BOARD`
-3. auto-detected `wk/.ai-sync/board.json`
+3. auto-detected `wk/.maggie/board.json`
 4. `board.json` in the current directory
 
 So a plain `npm start` from the repo root picks up a live `wk/` workspace

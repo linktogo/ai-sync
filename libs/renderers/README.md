@@ -1,11 +1,11 @@
-# @linktogo/ai-renderers
+# @linktogo/maggie-renderers
 
 Renders an agent skill into each target platform's on-disk format for
-[ai-sync](https://github.com/linktogo/ai-sync). Known targets: `claude`,
+[maggie](https://github.com/linktogo/maggie). Known targets: `claude`,
 `copilot`, `cursor`, `windsurf`.
 
 ```js
-import { getRenderer, knownTargets } from '@linktogo/ai-renderers';
+import { getRenderer, knownTargets } from '@linktogo/maggie-renderers';
 
 const render = getRenderer('claude');
 ```

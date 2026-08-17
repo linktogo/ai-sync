@@ -7,21 +7,21 @@ An [Nx](https://nx.dev) monorepo on npm workspaces. Applications live in
 
 | Project | Published as | Role |
 |---|---|---|
-| `apps/sync` | — (`@linktogo/ai-sync` bin) | `ai-sync` CLI — render skills into each repo and push |
-| `apps/workspace` | — (`@linktogo/ai-sync` bin) | `ai-workspace` CLI — bootstrap a workspace + status board |
+| `apps/sync` | — (`@linktogo/maggie` bin) | `maggie` CLI — render skills into each repo and push |
+| `apps/workspace` | — (`@linktogo/maggie` bin) | `maggie-workspace` CLI — bootstrap a workspace + status board |
 | `apps/board` | private | Vue 3 kanban dashboard + zero-dependency server |
-| `libs/config` | `@linktogo/ai-config` | load and validate the config, from a file or a git repo |
-| `libs/git` | `@linktogo/ai-git` | thin git/`gh` wrapper (clone, branch, commit, push, PR) |
-| `libs/renderers` | `@linktogo/ai-renderers` | per-target renderers (claude, copilot, cursor, windsurf) |
-| `libs/skill-sync` | `@linktogo/ai-skill-sync` | resolve skills for a repo and drive the sync pipeline |
-| `libs/workspace-bootstrap` | `@linktogo/ai-workspace-bootstrap` | clone/install, Claude Code hooks, board state model |
-| `libs/ci-status` | `@linktogo/ai-ci-status` | CI status payloads, validation, state mapping and folding |
+| `libs/config` | `@linktogo/maggie-config` | load and validate the config, from a file or a git repo |
+| `libs/git` | `@linktogo/maggie-git` | thin git/`gh` wrapper (clone, branch, commit, push, PR) |
+| `libs/renderers` | `@linktogo/maggie-renderers` | per-target renderers (claude, copilot, cursor, windsurf) |
+| `libs/skill-sync` | `@linktogo/maggie-skill-sync` | resolve skills for a repo and drive the sync pipeline |
+| `libs/workspace-bootstrap` | `@linktogo/maggie-workspace-bootstrap` | clone/install, Claude Code hooks, board state model |
+| `libs/ci-status` | `@linktogo/maggie-ci-status` | CI status payloads, validation, state mapping and folding |
 | `.github/actions/ci-status-report` | private | composite action depositing CI status on the `ci-status` branch |
 
 Everything published lives under the single `@linktogo` scope and is released in
 lockstep on one version — see [Releasing](../CONTRIBUTING.md#releasing). The
-`apps/*` projects keep internal `@ai-sync/*` names and are never published on
-their own; the CLIs reach users through the root `@linktogo/ai-sync` package's
+`apps/*` projects keep internal `@maggie/*` names and are never published on
+their own; the CLIs reach users through the root `@linktogo/maggie` package's
 `bin` entries.
 
 Each library exposes its public surface through its package entry

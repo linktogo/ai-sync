@@ -24,24 +24,24 @@ async function deposit(repo, update, branch) {
     if (existing) {
       const parsed = parseUpdate(existing, { login: update.actor, repo: update.repo });
       if (parsed.ok && parsed.update.runId > update.runId) {
-        console.log(`ai-sync: run ${parsed.update.runId} already reported, skipping ${update.runId}`);
+        console.log(`maggie: run ${parsed.update.runId} already reported, skipping ${update.runId}`);
         return;
       }
     }
     await mkdir(path.dirname(file), { recursive: true });
     await writeFile(file, `${JSON.stringify(update, null, 2)}\n`);
     if (!(await repo.hasChanges())) {
-      console.log('ai-sync: status unchanged, nothing to push');
+      console.log('maggie: status unchanged, nothing to push');
       return;
     }
     await repo.commitAll(`chore(ci-status): ${update.actor}/${update.repo} ${update.conclusion ?? update.status}`);
     try {
       await repo.push(branch);
-      console.log(`ai-sync: reported ${rel}`);
+      console.log(`maggie: reported ${rel}`);
       return;
     } catch (err) {
       if (attempt === ATTEMPTS) throw err;
-      console.log(`ai-sync: push rejected (attempt ${attempt}/${ATTEMPTS}), retrying`);
+      console.log(`maggie: push rejected (attempt ${attempt}/${ATTEMPTS}), retrying`);
       await new Promise((r) => setTimeout(r, 2 ** attempt * 250));
       await repo.fetchReset(branch);
     }
@@ -50,16 +50,16 @@ async function deposit(repo, update, branch) {
 
 const { INPUT_TOKEN, INPUT_STATUS_REPO, INPUT_BRANCH, GITHUB_EVENT_PATH } = process.env;
 const url = statusRepoUrl(INPUT_STATUS_REPO, INPUT_TOKEN);
-const dir = path.join(await mkdtemp(path.join(tmpdir(), 'ai-sync-status-')), 'repo');
+const dir = path.join(await mkdtemp(path.join(tmpdir(), 'maggie-status-')), 'repo');
 
 try {
   const update = buildUpdate(process.env, await readEvent(GITHUB_EVENT_PATH), new Date().toISOString());
   const repo = await clone(url, dir, { depth: 1, branch: INPUT_BRANCH });
-  await repo.configureIdentity('ai-sync[bot]', 'ai-sync@users.noreply.github.com');
+  await repo.configureIdentity('maggie[bot]', 'maggie@users.noreply.github.com');
   await deposit(repo, update, INPUT_BRANCH);
 } catch (err) {
   const message = redactToken(String(err.message), INPUT_TOKEN);
-  console.error(`ai-sync: ${message}`);
+  console.error(`maggie: ${message}`);
   process.exitCode = 1;
 } finally {
   await rm(path.dirname(dir), { recursive: true, force: true });

@@ -1,8 +1,8 @@
 import { readFile, mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { knownTargets } from '@linktogo/ai-renderers';
-import { clone as defaultClone } from '@linktogo/ai-git';
+import { knownTargets } from '@linktogo/maggie-renderers';
+import { clone as defaultClone } from '@linktogo/maggie-git';
 
 export async function loadConfig(filePath) {
   return parseConfig(await readFile(filePath, 'utf8'));
@@ -27,7 +27,7 @@ export async function resolveConfigSource(
 // shared config repo) instead of a local file. Shallow-clones into a temp dir, reads the
 // config file, and removes the checkout afterwards.
 export async function loadConfigFromRepo(repoUrl, { configFile = 'repos.json', clone = defaultClone } = {}) {
-  const tmp = await mkdtemp(path.join(os.tmpdir(), 'ai-sync-config-'));
+  const tmp = await mkdtemp(path.join(os.tmpdir(), 'maggie-config-'));
   const checkout = path.join(tmp, 'repo');
   try {
     await clone(toHttpsUrl(repoUrl), checkout, { depth: 1 });

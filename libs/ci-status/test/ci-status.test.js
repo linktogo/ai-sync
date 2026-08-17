@@ -168,14 +168,14 @@ test('redactToken returns the message unchanged when the token is empty or absen
 
 test('statusRepoUrl builds an authenticated github.com URL from owner/name and a token', () => {
   assert.equal(
-    statusRepoUrl('linktogo/ai-sync', 'secret123'),
-    'https://x-access-token:secret123@github.com/linktogo/ai-sync.git',
+    statusRepoUrl('linktogo/maggie', 'secret123'),
+    'https://x-access-token:secret123@github.com/linktogo/maggie.git',
   );
 });
 
 test('statusRepoUrl builds an unauthenticated github.com URL from owner/name with no token', () => {
-  assert.equal(statusRepoUrl('linktogo/ai-sync', ''), 'https://github.com/linktogo/ai-sync.git');
-  assert.equal(statusRepoUrl('linktogo/ai-sync', undefined), 'https://github.com/linktogo/ai-sync.git');
+  assert.equal(statusRepoUrl('linktogo/maggie', ''), 'https://github.com/linktogo/maggie.git');
+  assert.equal(statusRepoUrl('linktogo/maggie', undefined), 'https://github.com/linktogo/maggie.git');
 });
 
 test('statusRepoUrl passes through a value that already contains ://', () => {

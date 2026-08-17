@@ -86,13 +86,13 @@ test('bumpManifestVersion updates only the version field', async () => {
   assert.deepEqual(pkg.dependencies, { y: '^1.0.0' });
 });
 
-test('updateInternalDependencyRanges bumps only @linktogo/ai-* deps', async () => {
+test('updateInternalDependencyRanges bumps only @linktogo/maggie-* deps', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'bump-'));
   const file = path.join(root, 'package.json');
   await writeFile(
     file,
     JSON.stringify(
-      { name: 'x', version: '1.2.3', dependencies: { '@linktogo/ai-git': '^1.2.3', 'gray-matter': '^4.0.3' } },
+      { name: 'x', version: '1.2.3', dependencies: { '@linktogo/maggie-git': '^1.2.3', 'gray-matter': '^4.0.3' } },
       null,
       2,
     ) + '\n',
@@ -101,7 +101,7 @@ test('updateInternalDependencyRanges bumps only @linktogo/ai-* deps', async () =
   updateInternalDependencyRanges(file, '1.3.0');
 
   const pkg = JSON.parse(await readFile(file, 'utf8'));
-  assert.equal(pkg.dependencies['@linktogo/ai-git'], '^1.3.0');
+  assert.equal(pkg.dependencies['@linktogo/maggie-git'], '^1.3.0');
   assert.equal(pkg.dependencies['gray-matter'], '^4.0.3');
 });
 
@@ -130,17 +130,17 @@ test('updateChangelog moves Unreleased under a new version heading and updates l
     '',
     'Initial release.',
     '',
-    '[Unreleased]: https://github.com/linktogo/ai-sync/compare/v0.1.0...HEAD',
-    '[0.1.0]: https://github.com/linktogo/ai-sync/releases/tag/v0.1.0',
+    '[Unreleased]: https://github.com/linktogo/maggie/compare/v0.1.0...HEAD',
+    '[0.1.0]: https://github.com/linktogo/maggie/releases/tag/v0.1.0',
     '',
   ].join('\n');
 
   const out = updateChangelog(input, { oldVersion: '0.1.0', newVersion: '0.2.0', date: '2026-08-10' });
 
   assert.match(out, /## \[Unreleased\]\n\n## \[0\.2\.0\] - 2026-08-10\n\n### Added/);
-  assert.match(out, /\[Unreleased\]: https:\/\/github\.com\/linktogo\/ai-sync\/compare\/v0\.2\.0\.\.\.HEAD/);
-  assert.match(out, /\[0\.2\.0\]: https:\/\/github\.com\/linktogo\/ai-sync\/compare\/v0\.1\.0\.\.\.v0\.2\.0/);
-  assert.match(out, /\[0\.1\.0\]: https:\/\/github\.com\/linktogo\/ai-sync\/releases\/tag\/v0\.1\.0/);
+  assert.match(out, /\[Unreleased\]: https:\/\/github\.com\/linktogo\/maggie\/compare\/v0\.2\.0\.\.\.HEAD/);
+  assert.match(out, /\[0\.2\.0\]: https:\/\/github\.com\/linktogo\/maggie\/compare\/v0\.1\.0\.\.\.v0\.2\.0/);
+  assert.match(out, /\[0\.1\.0\]: https:\/\/github\.com\/linktogo\/maggie\/releases\/tag\/v0\.1\.0/);
 });
 
 test('updateChangelog falls back to a releases/tag link when there is no prior version link', () => {
@@ -149,13 +149,13 @@ test('updateChangelog falls back to a releases/tag link when there is no prior v
     '',
     '- First entry.',
     '',
-    '[Unreleased]: https://github.com/linktogo/ai-sync/compare/v0.1.0...HEAD',
+    '[Unreleased]: https://github.com/linktogo/maggie/compare/v0.1.0...HEAD',
     '',
   ].join('\n');
 
   const out = updateChangelog(input, { oldVersion: '0.1.0', newVersion: '0.2.0', date: '2026-08-10' });
 
-  assert.match(out, /\[0\.2\.0\]: https:\/\/github\.com\/linktogo\/ai-sync\/releases\/tag\/v0\.2\.0/);
+  assert.match(out, /\[0\.2\.0\]: https:\/\/github\.com\/linktogo\/maggie\/releases\/tag\/v0\.2\.0/);
 });
 
 test('CLI dry-run reports the computed bump without writing any file', async () => {
@@ -170,7 +170,7 @@ test('CLI dry-run reports the computed bump without writing any file', async () 
   );
   await writeFile(
     path.join(root, 'CHANGELOG.md'),
-    '## [Unreleased]\n\n- x\n\n[Unreleased]: https://github.com/linktogo/ai-sync/compare/v1.2.3...HEAD\n',
+    '## [Unreleased]\n\n- x\n\n[Unreleased]: https://github.com/linktogo/maggie/compare/v1.2.3...HEAD\n',
   );
 
   const out = execFileSync('node', [path.join(root, 'scripts', 'bump-version.js'), 'minor', '--dry-run'], {

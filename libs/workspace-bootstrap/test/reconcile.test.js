@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { reconcileHooks } from '../src/reconcile.js';
 
-const boardPath = '/ws/.ai-sync/board.json'; // workspaceDir derives to /ws
+const boardPath = '/ws/.maggie/board.json'; // workspaceDir derives to /ws
 const hookCommand = '/cli/workspace.js';
 
 function expectedHooks(repo) {
@@ -151,7 +151,7 @@ test('default exists/readCurrentHooks/installRepoHooks work end-to-end against t
   const checkout = path.join(dir, 'repo');
   await mkdir(checkout, { recursive: true });
   const config = { repos: [{ name: 'a', url: 'u', path: checkout, technologies: ['t'], targets: ['claude'] }] };
-  const bp = path.join(dir, '.ai-sync', 'board.json');
+  const bp = path.join(dir, '.maggie', 'board.json');
 
   const results = await reconcileHooks(config, { boardPath: bp, hookCommand, initBoard: async () => {} });
   assert.deepEqual(results, [{ repo: 'a', status: 'repointed', checkout }]);
@@ -170,7 +170,7 @@ test('default exists returns false for a checkout missing on the real filesystem
   const dir = await mkdtemp(path.join(tmpdir(), 'reconcile-'));
   const missing = path.join(dir, 'missing');
   const config = { repos: [{ name: 'a', url: 'u', path: missing, technologies: ['t'], targets: ['claude'] }] };
-  const bp = path.join(dir, '.ai-sync', 'board.json');
+  const bp = path.join(dir, '.maggie', 'board.json');
   const results = await reconcileHooks(config, { boardPath: bp, hookCommand, initBoard: async () => {} });
   assert.deepEqual(results, [{ repo: 'a', status: 'skipped-missing', checkout: missing }]);
   await rm(dir, { recursive: true, force: true });
@@ -185,7 +185,7 @@ test('a repo with a settings file that has no hooks key gets hooks installed for
     JSON.stringify({ permissions: { allow: ['Bash(ls)'] } }),
   );
   const config = { repos: [{ name: 'a', url: 'u', path: checkout, technologies: ['t'], targets: ['claude'] }] };
-  const bp = path.join(dir, '.ai-sync', 'board.json');
+  const bp = path.join(dir, '.maggie', 'board.json');
   const results = await reconcileHooks(config, { boardPath: bp, hookCommand, initBoard: async () => {} });
   assert.deepEqual(results, [{ repo: 'a', status: 'repointed', checkout }]);
   const settings = JSON.parse(await readFile(path.join(checkout, '.claude', 'settings.local.json'), 'utf8'));
@@ -201,7 +201,7 @@ test('a repo whose settings.local.json cannot be read for a reason other than EN
   // (EISDIR) read failure, exercising defaultReadCurrentHooks' rethrow path.
   await mkdir(path.join(checkout, '.claude', 'settings.local.json'), { recursive: true });
   const config = { repos: [{ name: 'a', url: 'u', path: checkout, technologies: ['t'], targets: ['claude'] }] };
-  const bp = path.join(dir, '.ai-sync', 'board.json');
+  const bp = path.join(dir, '.maggie', 'board.json');
   const results = await reconcileHooks(config, { boardPath: bp, hookCommand, initBoard: async () => {} });
   assert.equal(results.length, 1);
   assert.equal(results[0].status, 'error');
@@ -215,7 +215,7 @@ test('default initBoard seeds the board for real when not overridden', async () 
   const checkout = path.join(dir, 'repo');
   await mkdir(checkout, { recursive: true });
   const config = { repos: [{ name: 'a', url: 'u', path: checkout, technologies: ['t'], targets: ['claude'] }] };
-  const bp = path.join(dir, '.ai-sync', 'board.json');
+  const bp = path.join(dir, '.maggie', 'board.json');
   await reconcileHooks(config, { boardPath: bp, hookCommand });
   const board = JSON.parse(await readFile(bp, 'utf8'));
   assert.deepEqual(board.repos.a, { sessions: {} });

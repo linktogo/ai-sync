@@ -1,4 +1,4 @@
-# ai-sync documentation
+# maggie documentation
 
 Reference documentation for every feature. The [root README](../README.md) is
 the overview and quickstart; these pages are the detail.
@@ -9,12 +9,12 @@ the overview and quickstart; these pages are the detail.
 |---|---|
 | [Configuration](configuration.md) | The `repos.json` schema, and the two ways both CLIs resolve it |
 | [Skills library](skills-library.md) | Authoring skills, how they map to each target platform |
-| [`ai-sync` CLI](sync-cli.md) | Rendering skills into repos and pushing them |
-| [`ai-workspace` CLI](workspace-cli.md) | Bootstrapping a workspace, worktrees, status tracking |
+| [`maggie` CLI](sync-cli.md) | Rendering skills into repos and pushing them |
+| [`maggie-workspace` CLI](workspace-cli.md) | Bootstrapping a workspace, worktrees, status tracking |
 | [Board dashboard](board-dashboard.md) | The kanban dashboard, its server and endpoints |
 | [CI status](ci-status.md) | Per-contributor CI badges on the board, and how to enable them |
 
-## Working on ai-sync
+## Working on maggie
 
 | Page | What it covers |
 |---|---|

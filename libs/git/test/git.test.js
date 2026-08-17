@@ -31,14 +31,14 @@ test('clone + checkoutBranch + commitAll + push round-trips through a bare remot
   const dest = path.join(root, 'work');
   const repo = await clone(bare, dest);
   configure(dest);
-  await repo.checkoutBranch('ai-sync/update-skills');
+  await repo.checkoutBranch('maggie/update-skills');
   await writeFile(path.join(dest, 'new.txt'), 'hello\n');
   assert.equal(await repo.hasChanges(), true);
   await repo.commitAll('chore: sync');
-  await repo.push('ai-sync/update-skills');
+  await repo.push('maggie/update-skills');
 
   const verify = path.join(root, 'verify');
-  execFileSync('git', ['clone', '--branch', 'ai-sync/update-skills', bare, verify]);
+  execFileSync('git', ['clone', '--branch', 'maggie/update-skills', bare, verify]);
   assert.equal(await readFile(path.join(verify, 'new.txt'), 'utf8'), 'hello\n');
 });
 
@@ -80,9 +80,9 @@ test('push omits -f by default and includes it when force is set', async () => {
     exec: async (file, args) => { calls.push(args); return ''; },
   });
   await repo.push('ci-status');
-  await repo.push('ai-sync/update-skills', { force: true });
+  await repo.push('maggie/update-skills', { force: true });
   assert.deepEqual(calls[0], ['push', '-u', 'origin', 'ci-status']);
-  assert.deepEqual(calls[1], ['push', '-f', '-u', 'origin', 'ai-sync/update-skills']);
+  assert.deepEqual(calls[1], ['push', '-f', '-u', 'origin', 'maggie/update-skills']);
 });
 
 test('clone passes --branch --single-branch when a branch is given', async () => {
@@ -139,9 +139,9 @@ test('fetchReset discards a local-only commit and matches what a concurrent push
 test('configureIdentity sets the local committer', async () => {
   const calls = [];
   const repo = createRepo('/somewhere', { exec: async (file, args) => { calls.push(args); return ''; } });
-  await repo.configureIdentity('ai-sync[bot]', 'bot@example.com');
+  await repo.configureIdentity('maggie[bot]', 'bot@example.com');
   assert.deepEqual(calls, [
-    ['config', 'user.name', 'ai-sync[bot]'],
+    ['config', 'user.name', 'maggie[bot]'],
     ['config', 'user.email', 'bot@example.com'],
   ]);
 });

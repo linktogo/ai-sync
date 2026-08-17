@@ -57,7 +57,7 @@ test('readTranscriptUsage returns zeroed totals and an empty byModel when the fi
 });
 
 test('resolveHistoryPath derives history.jsonl next to the board file', () => {
-  assert.equal(resolveHistoryPath('/ws/.ai-sync/board.json'), path.join('/ws/.ai-sync', 'history.jsonl'));
+  assert.equal(resolveHistoryPath('/ws/.maggie/board.json'), path.join('/ws/.maggie', 'history.jsonl'));
 });
 
 test('appendHistoryEntry ensures the directory and appends one JSON line per call', async () => {

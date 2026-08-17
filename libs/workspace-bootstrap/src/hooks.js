@@ -12,7 +12,7 @@ export const HOOK_EVENTS = [
   { event: 'SessionEnd', action: 'session-end', matcher: undefined },
 ];
 
-export function hookSettings(repo, boardPath, { command = 'ai-workspace' } = {}) {
+export function hookSettings(repo, boardPath, { command = 'maggie-workspace' } = {}) {
   const hooks = {};
   for (const { event, action, state, matcher } of HOOK_EVENTS) {
     const cmd = action === 'session-end'

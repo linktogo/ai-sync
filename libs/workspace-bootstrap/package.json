@@ -1,5 +1,5 @@
 {
-  "name": "@linktogo/ai-workspace-bootstrap",
+  "name": "@linktogo/maggie-workspace-bootstrap",
   "version": "0.6.0",
   "description": "Clone and install a multi-repo workspace, install Claude Code status hooks, and maintain the shared kanban board state.",
   "license": "Apache-2.0",
@@ -15,15 +15,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/linktogo/ai-sync.git",
+    "url": "git+https://github.com/linktogo/maggie.git",
     "directory": "libs/workspace-bootstrap"
   },
-  "homepage": "https://github.com/linktogo/ai-sync/tree/main/libs/workspace-bootstrap#readme",
+  "homepage": "https://github.com/linktogo/maggie/tree/main/libs/workspace-bootstrap#readme",
   "bugs": {
-    "url": "https://github.com/linktogo/ai-sync/issues"
+    "url": "https://github.com/linktogo/maggie/issues"
   },
   "keywords": [
-    "ai-sync",
+    "maggie",
     "ai-agents",
     "claude-code",
     "developer-tools"
@@ -33,6 +33,6 @@
     "provenance": true
   },
   "dependencies": {
-    "@linktogo/ai-git": "^0.6.0"
+    "@linktogo/maggie-git": "^0.6.0"
   }
 }

@@ -4,13 +4,13 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
-import { loadConfig, loadConfigFromRepo, resolveConfigSource } from '@linktogo/ai-config';
-import { reconcileHooks, resolveHistoryPath, closeSession } from '@linktogo/ai-workspace-bootstrap';
+import { loadConfig, loadConfigFromRepo, resolveConfigSource } from '@linktogo/maggie-config';
+import { reconcileHooks, resolveHistoryPath, closeSession } from '@linktogo/maggie-workspace-bootstrap';
 import { createCiReader } from './ciReader.js';
 
 // Resolve the board file the server should read. Explicit --board and the
 // AI_SYNC_BOARD env var always win; otherwise auto-detect the workspace board
-// (`wk/.ai-sync/board.json`, where bootstrap's hooks write) so `npm start` with
+// (`wk/.maggie/board.json`, where bootstrap's hooks write) so `npm start` with
 // no flags "just works" instead of reading an empty `./board.json`.
 export function resolveServerBoardPath({
   board,
@@ -20,7 +20,7 @@ export function resolveServerBoardPath({
 } = {}) {
   if (board) return path.resolve(cwd, board);
   if (env.AI_SYNC_BOARD) return path.resolve(cwd, env.AI_SYNC_BOARD);
-  const workspaceBoard = path.resolve(cwd, 'wk', '.ai-sync', 'board.json');
+  const workspaceBoard = path.resolve(cwd, 'wk', '.maggie', 'board.json');
   if (exists(workspaceBoard)) return workspaceBoard;
   return path.resolve(cwd, 'board.json');
 }

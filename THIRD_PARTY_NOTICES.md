@@ -1,6 +1,6 @@
 # Third-party notices
 
-`ai-sync` is distributed under the [Apache License 2.0](LICENSE). It also
+`maggie` is distributed under the [Apache License 2.0](LICENSE). It also
 redistributes third-party material, listed below with its own license terms.
 
 Runtime and build dependencies pulled from npm are **not** listed here — their
@@ -13,7 +13,7 @@ licenses ship inside `node_modules` and are declared in `package.json` /
 
 The agent skills under `.claude/skills/` are vendored from
 [obra/superpowers](https://github.com/obra/superpowers), used unmodified as a
-local Claude Code plugin. They are not part of the published `ai-sync` package
+local Claude Code plugin. They are not part of the published `maggie` package
 and are not required to build or run the CLIs.
 
 Licensed under the MIT License:

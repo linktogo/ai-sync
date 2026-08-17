@@ -1,4 +1,4 @@
-import { rankState } from '@linktogo/ai-ci-status';
+import { rankState } from '@linktogo/maggie-ci-status';
 
 const MAX_BADGES = 4;
 

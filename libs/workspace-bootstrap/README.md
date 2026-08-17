@@ -1,15 +1,15 @@
-# @linktogo/ai-workspace-bootstrap
+# @linktogo/maggie-workspace-bootstrap
 
-Backs the `ai-workspace` CLI from
-[ai-sync](https://github.com/linktogo/ai-sync): clones the configured
+Backs the `maggie-workspace` CLI from
+[maggie](https://github.com/linktogo/maggie): clones the configured
 repositories into a workspace, installs their dependencies cache-first, wires
 Claude Code status hooks into each checkout, and maintains the shared
 `board.json` kanban state.
 
 ```js
-import { setSessionStatus } from '@linktogo/ai-workspace-bootstrap';
+import { setSessionStatus } from '@linktogo/maggie-workspace-bootstrap';
 
-await setSessionStatus('/ws/.ai-sync/board.json', 'example-api', 'sess-1', 'done');
+await setSessionStatus('/ws/.maggie/board.json', 'example-api', 'sess-1', 'done');
 ```
 
 Board states are `todo`, `inprogress`, `question`, and `done`. Each repo tracks

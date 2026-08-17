@@ -14,7 +14,7 @@ Managed repos **push** their status; the board only reads.
 managed repo, CI finishes
   └─ composite action ─ commit + push ─┐
                                        ▼
-              ai-sync @ ci-status : updates/<login>/<repo>.json
+              maggie @ ci-status : updates/<login>/<repo>.json
                                        │
         board server, every 60s ─ fetch + reset ─┘   (read-only)
                     │
@@ -51,11 +51,11 @@ does not fail.
 ### 2. Report from each managed repo
 
 Create an `AI_SYNC_STATUS_TOKEN` secret in the repo — a fine-grained token with
-**Contents: write** on `linktogo/ai-sync` — then add
-`.github/workflows/ai-sync-status.yml`:
+**Contents: write** on `linktogo/maggie` — then add
+`.github/workflows/maggie-status.yml`:
 
 ```yaml
-name: ai-sync status
+name: maggie status
 on:
   workflow_run:
     workflows: [CI]
@@ -64,7 +64,7 @@ jobs:
   report:
     runs-on: ubuntu-latest
     steps:
-      - uses: linktogo/ai-sync/.github/actions/ci-status-report@main
+      - uses: linktogo/maggie/.github/actions/ci-status-report@main
         with:
           token: ${{ secrets.AI_SYNC_STATUS_TOKEN }}
 ```
@@ -80,7 +80,7 @@ nothing when the run is cancelled.
 | Action input | Required | Default |
 |---|---|---|
 | `token` | yes | — |
-| `status-repo` | no | `linktogo/ai-sync` |
+| `status-repo` | no | `linktogo/maggie` |
 | `branch` | no | `ci-status` |
 
 `status-repo` also accepts a full URL, which is how a GitHub Enterprise host is
@@ -89,7 +89,7 @@ targeted.
 ### 3. Point the board at the branch
 
 ```sh
-AI_SYNC_STATUS_REPO=https://github.com/linktogo/ai-sync.git npm start
+AI_SYNC_STATUS_REPO=https://github.com/linktogo/maggie.git npm start
 ```
 
 | Flag | Env | Default |

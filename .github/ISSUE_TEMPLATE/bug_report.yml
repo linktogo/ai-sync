@@ -14,8 +14,8 @@ body:
       label: Component
       description: Which part of the project is affected?
       options:
-        - ai-sync CLI (skill push)
-        - ai-workspace CLI (bootstrap / status)
+        - maggie CLI (skill push)
+        - maggie-workspace CLI (bootstrap / status)
         - Board dashboard or server
         - Skills library (skills/)
         - Renderers (claude / copilot / cursor / windsurf)

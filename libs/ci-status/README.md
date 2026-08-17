@@ -1,6 +1,6 @@
-# @linktogo/ai-ci-status
+# @linktogo/maggie-ci-status
 
-CI status payloads for [ai-sync](https://github.com/linktogo/ai-sync): build one
+CI status payloads for [maggie](https://github.com/linktogo/maggie): build one
 from a GitHub Actions run, validate one read back from disk, and fold a set of
 them into per-repo, per-contributor state.
 
@@ -8,7 +8,7 @@ Pure functions only — no I/O, no git, no network. The composite action uses it
 to produce a status file; the board server uses it to consume one.
 
 ```js
-import { buildUpdate, parseUpdate, buildState, normalizeState } from '@linktogo/ai-ci-status';
+import { buildUpdate, parseUpdate, buildState, normalizeState } from '@linktogo/maggie-ci-status';
 
 // In a GitHub Actions runner: build the payload from either trigger context
 const update = buildUpdate(process.env, event, new Date().toISOString());
@@ -33,5 +33,5 @@ normalizeState('completed', 'timed_out'); // → 'failure'
 | `redactToken(message, token)` | Replace a token with `***` in an error message. |
 | `statusRepoUrl(statusRepo, token)` | Build the clone URL for `owner/name`, passing a full URL through unchanged. |
 
-See [CI status](https://github.com/linktogo/ai-sync/blob/main/docs/ci-status.md)
+See [CI status](https://github.com/linktogo/maggie/blob/main/docs/ci-status.md)
 for how the pieces fit together.

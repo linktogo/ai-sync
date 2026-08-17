@@ -20,7 +20,7 @@ const SAMPLE = [
   '',
   'Initial release.',
   '',
-  '[Unreleased]: https://github.com/linktogo/ai-sync/compare/v0.2.0...HEAD',
+  '[Unreleased]: https://github.com/linktogo/maggie/compare/v0.2.0...HEAD',
 ].join('\n');
 
 test('extractChangelogSection returns the body between two headings', () => {

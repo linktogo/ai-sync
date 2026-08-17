@@ -1,7 +1,7 @@
 import { parseArgs } from 'node:util';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { resolveConfigSource } from '@linktogo/ai-config';
+import { resolveConfigSource } from '@linktogo/maggie-config';
 import {
   bootstrap,
   resolveBoardPath,
@@ -11,7 +11,7 @@ import {
   readTranscriptUsage as defaultReadTranscriptUsage,
   resolveHistoryPath,
   appendHistoryEntry as defaultAppendHistoryEntry,
-} from '@linktogo/ai-workspace-bootstrap';
+} from '@linktogo/maggie-workspace-bootstrap';
 
 const TITLE_MAX = 60;
 
@@ -49,7 +49,7 @@ async function runStatus(argv, deps = {}) {
     options: { board: { type: 'string' }, event: { type: 'string' }, session: { type: 'string' } },
   });
   const [repo, state] = positionals;
-  if (!repo || !state) throw new Error('Usage: ai-workspace status <repo> <state> [--board <path>] [--event <name>] [--session <id>]');
+  if (!repo || !state) throw new Error('Usage: maggie-workspace status <repo> <state> [--board <path>] [--event <name>] [--session <id>]');
   const boardPath = resolveBoardPath({ board: values.board });
   const payload = await readStdinJSON(stdin);
   const sessionId = values.session ?? payload.session_id ?? 'manual';
@@ -82,7 +82,7 @@ async function runSessionEnd(argv, deps = {}) {
     options: { board: { type: 'string' } },
   });
   const [repo] = positionals;
-  if (!repo) throw new Error('Usage: ai-workspace session-end <repo> [--board <path>]');
+  if (!repo) throw new Error('Usage: maggie-workspace session-end <repo> [--board <path>]');
   const boardPath = resolveBoardPath({ board: values.board });
   const payload = await readStdinJSON(stdin);
   const sessionId = payload.session_id ?? 'manual';

@@ -1,13 +1,13 @@
 import path from 'node:path';
 import { mkdir, writeFile, rm } from 'node:fs/promises';
-import { clone as defaultClone } from '@linktogo/ai-git';
+import { clone as defaultClone } from '@linktogo/maggie-git';
 import { resolveSkills as defaultResolveSkills } from './skills.js';
-import { getRenderer as defaultGetRenderer } from '@linktogo/ai-renderers';
+import { getRenderer as defaultGetRenderer } from '@linktogo/maggie-renderers';
 
-const BRANCH = 'ai-sync/update-skills';
+const BRANCH = 'maggie/update-skills';
 const COMMIT_MESSAGE = 'chore: sync AI agent skills';
 const PR_TITLE = 'Sync AI agent skills';
-const PR_BODY = 'Automated skill sync from ai-sync.';
+const PR_BODY = 'Automated skill sync from maggie.';
 
 export async function run(config, options = {}) {
   const {

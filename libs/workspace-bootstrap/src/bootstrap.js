@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { mkdir, access, rm } from 'node:fs/promises';
-import { clone as defaultClone, defaultExec } from '@linktogo/ai-git';
+import { clone as defaultClone, defaultExec } from '@linktogo/maggie-git';
 import { EDITORS, launchCommand } from './platform.js';
 import { planInstall } from './installers.js';
 import { initRepos } from './board.js';
@@ -67,7 +67,7 @@ export async function bootstrap(config, options = {}) {
 
   // The board lives beside the checkouts so the viewer and the per-repo hooks
   // agree on one path; the hooks shell out to this CLI to record transitions.
-  const boardPath = boardPathOption ?? path.join(workspaceDir, '.ai-sync', 'board.json');
+  const boardPath = boardPathOption ?? path.join(workspaceDir, '.maggie', 'board.json');
 
   const results = [];
   const workDirs = [];

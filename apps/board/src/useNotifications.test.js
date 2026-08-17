@@ -42,7 +42,7 @@ test('sound toggle persists and gates playSound', async () => {
   const { toggleSound, soundOn } = useNotifications(transitions, ref(0), { notifier: fakeNotifier('granted'), storage, doc: { title: '' }, playSound });
   toggleSound();
   expect(soundOn.value).toBe(true);
-  expect(storage.getItem('ai-sync:sound')).toBe('1');
+  expect(storage.getItem('maggie:sound')).toBe('1');
   transitions.value = [{ name: 'a', status: 'done' }];
   await nextTick();
   expect(playSound).toHaveBeenCalled();
@@ -53,10 +53,10 @@ test('updates the document title badge from the question count', async () => {
   const count = ref(0);
   useNotifications(ref([]), count, { notifier: fakeNotifier('granted'), storage: fakeStorage(), doc });
   await nextTick();
-  expect(doc.title).toBe('ai-sync board');
+  expect(doc.title).toBe('maggie board');
   count.value = 2;
   await nextTick();
-  expect(doc.title).toBe('(2) ai-sync board');
+  expect(doc.title).toBe('(2) maggie board');
 });
 
 test('includes the session title in the notification when present', async () => {

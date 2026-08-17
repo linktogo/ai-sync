@@ -1,4 +1,4 @@
-# Contributing to ai-sync
+# Contributing to maggie
 
 Thanks for taking the time to contribute. This document covers how to get the
 project running locally, what the test bar is, and how changes get merged.
@@ -10,8 +10,8 @@ By participating you agree to abide by the [Code of Conduct](CODE_OF_CONDUCT.md)
 Requirements: **Node.js >= 22** and **npm** (see below — npm is not optional here).
 
 ```bash
-git clone https://github.com/linktogo/ai-sync.git
-cd ai-sync
+git clone https://github.com/linktogo/maggie.git
+cd maggie
 npm ci
 npm test
 ```
@@ -82,12 +82,12 @@ Copilot, Cursor, Windsurf); you do not need to write per-platform variants.
 ## Architecture boundaries
 
 Nx enforces module boundaries by `scope:*` tags (see `eslint.config.js`). Import
-another project only through its package entry (`@linktogo/ai-<name>`), never by
+another project only through its package entry (`@linktogo/maggie-<name>`), never by
 a deep relative path across project roots. `npm run lint` catches violations.
 
 Package naming follows what is published: the five libraries under `libs/` carry
-their public `@linktogo/ai-*` names, while the applications under `apps/` stay
-`private` and keep internal `@ai-sync/*` names, since they are never published on
+their public `@linktogo/maggie-*` names, while the applications under `apps/` stay
+`private` and keep internal `@maggie/*` names, since they are never published on
 their own. Nx project names (`config`, `sync`, …) come from each `project.json`
 and are independent of both.
 
@@ -120,7 +120,7 @@ discussed before you invest in the implementation.
 ## Releasing
 
 Six packages ship from this repository and are versioned **in lockstep**: the
-CLI package `@linktogo/ai-sync` (the repo root) and the five `@linktogo/ai-*`
+CLI package `@linktogo/maggie` (the repo root) and the five `@linktogo/maggie-*`
 libraries under `libs/`. The libraries depend on each other by caret range
 (`^0.1.0`), so a version that moves in one place must move everywhere.
 
@@ -186,12 +186,12 @@ Check what a tarball would actually contain before releasing:
 
 ```bash
 npm pack --dry-run                                # the CLI package
-npm pack --dry-run --workspace @linktogo/ai-renderers # one library
+npm pack --dry-run --workspace @linktogo/maggie-renderers # one library
 ```
 
 ## Reporting bugs and requesting features
 
-Use the [issue templates](https://github.com/linktogo/ai-sync/issues/new/choose).
+Use the [issue templates](https://github.com/linktogo/maggie/issues/new/choose).
 For anything security-sensitive, do **not** open a public issue — follow
 [SECURITY.md](SECURITY.md) instead.
 

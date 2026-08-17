@@ -1,13 +1,13 @@
 {
-  "name": "@ai-sync/sync",
+  "name": "@maggie/sync",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "bin": {
-    "ai-sync": "./bin/sync.js"
+    "maggie": "./bin/sync.js"
   },
   "dependencies": {
-    "@linktogo/ai-config": "^0.6.0",
-    "@linktogo/ai-skill-sync": "^0.6.0"
+    "@linktogo/maggie-config": "^0.6.0",
+    "@linktogo/maggie-skill-sync": "^0.6.0"
   }
 }

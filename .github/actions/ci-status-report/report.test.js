@@ -59,7 +59,7 @@ function runReport(env) {
 
 async function tempCloneDirs() {
   const entries = await readdir(tmpdir());
-  return entries.filter((name) => name.startsWith('ai-sync-status-'));
+  return entries.filter((name) => name.startsWith('maggie-status-'));
 }
 
 test('a deposit writes updates/<login>/<repo>.json on the ci-status branch', async () => {

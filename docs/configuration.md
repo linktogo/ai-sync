@@ -1,6 +1,6 @@
 # Configuration
 
-Both CLIs (`ai-sync` and `ai-workspace`) read the same JSON config describing
+Both CLIs (`maggie` and `maggie-workspace`) read the same JSON config describing
 the target repositories. It can be a local file (`--config`) or live in a **separate repository** fetched
 with `--config-repo` — the latter is how an organization shares one config
 across everyone's machine without committing its repo list into this project.
@@ -47,9 +47,9 @@ Points at an existing checkout outside the workspace folder. Typically
 absolute — a relative value resolves against the **current working directory**,
 not the config file's location.
 
-Only `ai-workspace` consumes it: status tracking, hooks and dependency install
+Only `maggie-workspace` consumes it: status tracking, hooks and dependency install
 are wired up there instead of cloning into `--workspace` (cloning into `path`
-first if it does not exist yet). `ai-sync` ignores it and always clones into its
+first if it does not exist yet). `maggie` ignores it and always clones into its
 own temporary work dir.
 
 ## Where the config comes from
@@ -62,7 +62,7 @@ or neither, is an error.
 Read a local JSON file.
 
 ```bash
-ai-sync --config repos.example.json
+maggie --config repos.example.json
 ```
 
 ### `--config-repo <url>`
@@ -71,14 +71,14 @@ Shallow-clone a git repository into a temp dir and read the config from it.
 This is how a shared, organization-owned config repo is consumed.
 
 ```bash
-ai-sync --config-repo https://github.com/example-org/ai-config.git
+maggie --config-repo https://github.com/example-org/ai-config.git
 ```
 
 The file read defaults to `repos.json` at the repo root. Override it with
 `--config-file <path-in-repo>`:
 
 ```bash
-ai-sync --config-repo <url> --config-file environments/prod.json
+maggie --config-repo <url> --config-file environments/prod.json
 ```
 
 SSH and scp-style repo URLs are rewritten to HTTPS automatically, and the

@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-`ai-sync` is pre-1.0. Only the latest released version receives security fixes.
+`maggie` is pre-1.0. Only the latest released version receives security fixes.
 
 | Version | Supported |
 |---|---|
@@ -14,12 +14,12 @@
 **Please do not report security vulnerabilities through public GitHub issues.**
 
 Report privately through GitHub's
-[private vulnerability reporting](https://github.com/linktogo/ai-sync/security/advisories/new)
+[private vulnerability reporting](https://github.com/linktogo/maggie/security/advisories/new)
 on this repository. If that is unavailable to you, email **security@linktogo.fr**.
 
 Please include:
 
-- the affected component (`ai-sync` CLI, `ai-workspace` CLI, board server, a library);
+- the affected component (`maggie` CLI, `maggie-workspace` CLI, board server, a library);
 - the version or commit you tested;
 - reproduction steps or a proof of concept;
 - the impact you believe it has.
@@ -38,7 +38,7 @@ A few properties of this project are worth knowing before reporting:
   `--pr` is passed. Treat a config file — and the repository serving it via
   `--config-repo` — as trusted input: pointing either at content you do not
   control is equivalent to running that content's install scripts.
-- **`ai-workspace bootstrap` writes Claude Code hooks** into each checkout's
+- **`maggie-workspace bootstrap` writes Claude Code hooks** into each checkout's
   `.claude/settings.local.json`. Those hooks run this CLI's `status` subcommand
   on session events.
 - **The board server (`apps/board/server.js`) is a local development tool.** It

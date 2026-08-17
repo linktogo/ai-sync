@@ -54,7 +54,7 @@ export async function reconcileHooks(config, options = {}) {
     initBoard = initRepos,
   } = options;
 
-  // Assumes boardPath always follows bootstrap()'s <workspaceDir>/.ai-sync/board.json
+  // Assumes boardPath always follows bootstrap()'s <workspaceDir>/.maggie/board.json
   // layout (confirmed during design — see docs/superpowers/specs/2026-07-23-board-startup-hook-reconciliation-design.md).
   const workspaceDir = path.dirname(path.dirname(boardPath));
   const results = [];

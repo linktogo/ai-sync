@@ -416,7 +416,7 @@ test('bootstrap installs hooks per repo and initializes the board (skipped on dr
     initBoard: async (boardPath, names) => { inited = { boardPath, names }; },
     logger: silentLogger(),
   });
-  const boardPath = path.join(ws, '.ai-sync', 'board.json');
+  const boardPath = path.join(ws, '.maggie', 'board.json');
   assert.deepEqual(installed, [
     { dir: path.join(ws, 'a'), repo: 'a', boardPath },
     { dir: path.join(ws, 'b'), repo: 'b', boardPath },
@@ -463,7 +463,7 @@ test('reuses an existing repo at its external "path", installing hooks there, wi
 
   assert.deepEqual(cloned, []);
   assert.deepEqual(hooksInstalled, [
-    { dir: '/abs/external/ext', repo: 'ext', boardPath: path.join(ws, '.ai-sync', 'board.json') },
+    { dir: '/abs/external/ext', repo: 'ext', boardPath: path.join(ws, '.maggie', 'board.json') },
   ]);
   assert.deepEqual(result.results, [{ repo: 'ext', status: 'reused', installed: false }]);
   assert.equal(result.command, `cd "${rel('/abs/external/ext')}" && claude`);

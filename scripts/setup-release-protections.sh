@@ -14,7 +14,7 @@
 set -euo pipefail
 
 OWNER="linktogo"
-REPO="ai-sync"
+REPO="maggie"
 USER="linktogo"
 
 echo "Configuring tag ruleset restricting v* tag creation to the repository Admin role..."

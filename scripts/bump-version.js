@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const REPO_URL = 'https://github.com/linktogo/ai-sync';
+const REPO_URL = 'https://github.com/linktogo/maggie';
 
 export function computeNextVersion(currentVersion, bumpType) {
   const [major, minor, patch] = currentVersion.split('.').map(Number);
@@ -45,7 +45,7 @@ export function updateInternalDependencyRanges(filePath, newVersion) {
   if (!deps) return;
   let changed = false;
   for (const name of Object.keys(deps)) {
-    if (!name.startsWith('@linktogo/ai-')) continue;
+    if (!name.startsWith('@linktogo/maggie-')) continue;
     const next = `^${newVersion}`;
     if (deps[name] !== next) {
       deps[name] = next;

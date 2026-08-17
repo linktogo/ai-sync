@@ -31,7 +31,7 @@ async function fixture(files = { 'fabien/lk-myasso.json': update() }) {
 
 function reader(over, calls = []) {
   return createCiReader({
-    statusRepo: 'https://github.com/linktogo/ai-sync.git',
+    statusRepo: 'https://github.com/linktogo/maggie.git',
     exec: async (file, args, opts) => { calls.push({ args, opts }); return ''; },
     now: () => NOW,
     logger: { log() {}, warn() {} },

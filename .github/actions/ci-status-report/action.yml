@@ -1,5 +1,5 @@
-name: ai-sync CI status report
-description: Report this repository's CI outcome to the ai-sync board.
+name: maggie CI status report
+description: Report this repository's CI outcome to the maggie board.
 inputs:
   token:
     description: Token with write access to the status repository's ci-status branch.
@@ -7,7 +7,7 @@ inputs:
   status-repo:
     description: owner/name of the repository holding the ci-status branch.
     required: false
-    default: linktogo/ai-sync
+    default: linktogo/maggie
   branch:
     description: Branch holding the updates/ folder.
     required: false
