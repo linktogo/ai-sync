@@ -79,6 +79,8 @@ or not the server is running.
 
 ## What the UI does
 
+![The board in English](images/board/board-en.png)
+
 - **Four columns**, one per status.
 - **Browser notification** plus a tab-title badge whenever a repo moves into
   `question` (an agent is blocked on you) or `done`. An optional sound toggle is
@@ -98,6 +100,17 @@ the whole UI (columns, filters, banners, history table and charts, notification
 bodies, relative times) to French, German or Spanish, and the choice is
 persisted in `localStorage` under `maggie:locale` and re-applied on the next
 visit. Switching also updates `<html lang>`.
+
+The same board in French, German and Spanish:
+
+![The board in French](images/board/board-fr.png)
+![The board in German](images/board/board-de.png)
+![The board in Spanish](images/board/board-es.png)
+
+Charts and the history table follow along — the Chart.js series are relabelled
+and redrawn on a language change:
+
+![The history page in Spanish](images/board/history-es.png)
 
 Translations live in `apps/board/src/locales/<code>.js`, keyed by flat dotted
 keys, with `en.js` as the source catalog: a key missing from another locale
