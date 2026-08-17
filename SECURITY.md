@@ -2,12 +2,13 @@
 
 ## Supported versions
 
-`maggie` is pre-1.0. Only the latest released version receives security fixes.
+Only the latest released version of `maggie` receives security fixes. The `0.x`
+releases published under the former `ai-sync` name are no longer maintained.
 
 | Version | Supported |
 |---|---|
-| 0.1.x | ✅ |
-| < 0.1 | ❌ |
+| 1.0.x | ✅ |
+| 0.x (`ai-sync`) | ❌ |
 
 ## Reporting a vulnerability
 

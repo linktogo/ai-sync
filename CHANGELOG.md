@@ -4,9 +4,49 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-While the version is below `1.0.0`, minor releases may contain breaking changes.
+From `1.0.0` onward, breaking changes only ship in a major release. The `0.x`
+line, released under the project's former `ai-sync` name, allowed breaking
+changes in minor releases.
 
 ## [Unreleased]
+
+## [1.0.0] - 2026-08-17
+
+### Changed
+
+- **BREAKING — the project is renamed from `ai-sync` to `maggie`.** The
+  repository moved to <https://github.com/linktogo/maggie>, and every published
+  package, CLI binary and on-disk state directory follows the new name:
+
+  | Before | After |
+  |---|---|
+  | `@linktogo/ai-sync` | `@linktogo/maggie` |
+  | `@linktogo/ai-ci-status` | `@linktogo/maggie-ci-status` |
+  | `@linktogo/ai-config` | `@linktogo/maggie-config` |
+  | `@linktogo/ai-git` | `@linktogo/maggie-git` |
+  | `@linktogo/ai-renderers` | `@linktogo/maggie-renderers` |
+  | `@linktogo/ai-skill-sync` | `@linktogo/maggie-skill-sync` |
+  | `@linktogo/ai-workspace-bootstrap` | `@linktogo/maggie-workspace-bootstrap` |
+  | `ai-sync` (CLI) | `maggie` |
+  | `ai-workspace` (CLI) | `maggie-workspace` |
+  | `<workspace>/.ai-sync/` | `<workspace>/.maggie/` |
+
+  The `@linktogo/ai-*` packages remain on npm at `0.6.0` and receive no further
+  releases. GitHub redirects the old repository URL, so existing clones keep
+  fetching until their remote is updated.
+
+  To migrate an installation:
+
+  ```bash
+  npm uninstall -g @linktogo/ai-sync
+  npm install -g @linktogo/maggie
+  git remote set-url origin https://github.com/linktogo/maggie.git
+  mv <workspace>/.ai-sync <workspace>/.maggie   # preserves the board history
+  ```
+
+  Workspaces bootstrapped by an earlier version also carry `ai-workspace status`
+  hooks in their `.claude/settings.local.json`; re-run `maggie-workspace
+  bootstrap` to rewrite them.
 
 ## [0.6.0] - 2026-08-15
 
@@ -97,10 +137,11 @@ Initial release.
 - Starter skills library for NestJS, Postgres, Next.js, React, Angular, Vue, Nx,
   Firebase, and Cloudflare Workers.
 
-[Unreleased]: https://github.com/linktogo/ai-sync/compare/v0.6.0...HEAD
-[0.6.0]: https://github.com/linktogo/ai-sync/compare/v0.5.0...v0.6.0
-[0.5.0]: https://github.com/linktogo/ai-sync/compare/v0.4.0...v0.5.0
-[0.4.0]: https://github.com/linktogo/ai-sync/compare/v0.3.0...v0.4.0
-[0.3.0]: https://github.com/linktogo/ai-sync/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/linktogo/ai-sync/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/linktogo/ai-sync/releases/tag/v0.1.0
+[Unreleased]: https://github.com/linktogo/maggie/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/linktogo/maggie/compare/v0.6.0...v1.0.0
+[0.6.0]: https://github.com/linktogo/maggie/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/linktogo/maggie/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/linktogo/maggie/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/linktogo/maggie/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/linktogo/maggie/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/linktogo/maggie/releases/tag/v0.1.0
