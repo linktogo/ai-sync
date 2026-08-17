@@ -1,0 +1,73 @@
+export default {
+  'nav.board': 'Board',
+  'nav.history': 'Verlauf',
+  'nav.language': 'Sprache',
+
+  'notifications.enable': 'aktivieren',
+  'notifications.sound': 'Ton',
+  'notifications.blocked': 'Benachrichtigungen vom Browser blockiert.',
+  'notification.question': 'Ein Agent wartet auf deine Eingabe',
+  'notification.done': 'Arbeit abgeschlossen',
+
+  'banner.disconnected': 'getrennt — neuer Versuch beim nächsten Poll…',
+  'banner.ciDesync': 'CI nicht synchron — {reason}',
+  'banner.ciUnavailable': 'CI-Status nicht verfügbar — {reason}',
+
+  'status.todo': 'Zu erledigen',
+  'status.inprogress': 'In Arbeit',
+  'status.question': 'Frage',
+  'status.done': 'Erledigt',
+
+  'summary.repos': 'Repos',
+  'summary.percentDone': '{percent} % erledigt',
+
+  'filter.searchRepo': '🔍 Repo filtern…',
+  'filter.techAll': 'Technologie: alle',
+  'filter.ciAll': 'CI: alle',
+  'filter.ciFailure': 'fehlgeschlagen',
+  'filter.ciOk': 'OK',
+  'filter.ciUnknown': 'unbekannt',
+
+  'card.noActiveSession': 'Keine aktive Session',
+  'card.confirmClose': 'Session „{title}“ von {repo} als erledigt markieren?',
+
+  'session.untitled': '(ohne Titel)',
+  'session.showMore': 'mehr anzeigen',
+  'session.showLess': 'weniger anzeigen',
+  'session.tokens': '{count} Tokens',
+  'session.usageTooltip': 'Eingabe {input} · Ausgabe {output} · Cache geschrieben {cacheWrite} · Cache gelesen {cacheRead}',
+
+  'detail.ci': 'Continuous Integration',
+  'detail.ciUnavailable': 'Nicht verfügbar — {reason}',
+  'detail.ciEmpty': 'Kein Status gemeldet.',
+  'detail.history': 'Verlauf',
+
+  'history.tabPeriod': 'Nach Zeitraum',
+  'history.tabProject': 'Nach Projekt',
+  'history.modeTokens': 'Tokens',
+  'history.day': 'Tag',
+  'history.week': 'Woche',
+  'history.month': 'Monat',
+  'history.year': 'Jahr',
+  'history.empty': 'Noch keine abgeschlossene Session.',
+
+  'chart.input': 'Eingabe',
+  'chart.output': 'Ausgabe',
+  'chart.cacheWrite': 'Cache geschrieben',
+  'chart.cacheRead': 'Cache gelesen',
+  'chart.cost': 'Kosten (€)',
+  'chart.unknownModel': 'Unbekanntes Modell',
+
+  'table.repo': 'Repo',
+  'table.title': 'Titel',
+  'table.started': 'Gestartet',
+  'table.ended': 'Beendet',
+  'table.duration': 'Dauer',
+  'table.total': 'Gesamt',
+  'table.durationMinutes': '{minutes} Min.',
+
+  'time.secondsAgo': 'vor {n} s',
+  'time.minutesAgo': 'vor {n} Min.',
+  'time.hoursAgo': 'vor {n} Std.',
+  'time.daysAgo': 'vor {n} T.',
+};

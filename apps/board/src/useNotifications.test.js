@@ -1,6 +1,9 @@
-import { test, expect, vi } from 'vitest';
+import { test, expect, vi, afterEach } from 'vitest';
 import { ref, nextTick } from 'vue';
 import { useNotifications } from './useNotifications.js';
+import { DEFAULT_LOCALE, locale, setLocale } from './i18n.js';
+
+afterEach(() => { locale.value = DEFAULT_LOCALE; });
 
 function fakeNotifier(permission = 'granted') {
   const instances = [];
@@ -66,4 +69,19 @@ test('includes the session title in the notification when present', async () => 
   transitions.value = [{ name: 'oc-auth', sessionId: 's1', title: 'fix login redirect', status: 'question' }];
   await nextTick();
   expect(notifier.instances[0].title).toBe('oc-auth · fix login redirect → question');
+});
+
+test('notification bodies are written in the selected language', async () => {
+  const transitions = ref([]);
+  const notifier = fakeNotifier('granted');
+  useNotifications(transitions, ref(0), { notifier, storage: fakeStorage(), doc: { title: '' } });
+
+  transitions.value = [{ name: 'oc-auth', status: 'question' }];
+  await nextTick();
+  expect(notifier.instances[0].opts.body).toBe('An agent is waiting for your input');
+
+  setLocale('es', { storage: null, doc: null });
+  transitions.value = [{ name: 'oc-auth', status: 'done' }];
+  await nextTick();
+  expect(notifier.instances[1].opts.body).toBe('Trabajo terminado');
 });

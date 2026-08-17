@@ -2,6 +2,9 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { Chart, BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
 import { tokenTotal } from './useHistoryStats.js';
+import { useI18n } from './i18n.js';
+
+const { t, locale } = useI18n();
 
 Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
@@ -27,7 +30,7 @@ function render() {
     data: {
       labels: props.totals.map((t) => t.repo),
       datasets: [{
-        label: props.mode === 'tokens' ? 'Tokens' : 'Coût (€)',
+        label: props.mode === 'tokens' ? t('history.modeTokens') : t('chart.cost'),
         backgroundColor: '#2563eb',
         data: values.value,
       }],
@@ -44,7 +47,7 @@ function render() {
 }
 
 onMounted(render);
-watch([() => props.totals, () => props.mode], render);
+watch([() => props.totals, () => props.mode, locale], render);
 onUnmounted(() => { chart?.destroy(); chart = null; });
 </script>
 
@@ -52,7 +55,7 @@ onUnmounted(() => { chart?.destroy(); chart = null; });
   <div class="relative h-64">
     <canvas ref="canvas" data-test="project-bar-canvas"></canvas>
     <p v-if="totals.length === 0" class="absolute inset-0 flex items-center justify-center text-xs text-slate-400">
-      Aucune session terminée pour l'instant.
+      {{ t('history.empty') }}
     </p>
   </div>
 </template>

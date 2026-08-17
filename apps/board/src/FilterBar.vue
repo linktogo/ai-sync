@@ -1,4 +1,8 @@
 <script setup>
+import { useI18n } from './i18n.js';
+
+const { t } = useI18n();
+
 defineProps({
   name: { type: String, default: '' },
   tech: { type: String, default: '' },
@@ -14,7 +18,7 @@ defineEmits(['update:name', 'update:tech', 'update:ci']);
       data-test="search"
       :value="name"
       @input="$emit('update:name', $event.target.value)"
-      placeholder="🔍 filtrer un repo…"
+      :placeholder="t('filter.searchRepo')"
       class="border border-slate-200 rounded-lg shadow-sm px-3 py-1.5 text-sm bg-white flex-1 min-w-0 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
     />
     <select
@@ -23,7 +27,7 @@ defineEmits(['update:name', 'update:tech', 'update:ci']);
       @change="$emit('update:tech', $event.target.value)"
       class="border border-slate-200 rounded-lg shadow-sm px-3 py-1.5 text-sm bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
     >
-      <option value="">techno : toutes</option>
+      <option value="">{{ t('filter.techAll') }}</option>
       <option v-for="t in technologies" :key="t" :value="t">{{ t }}</option>
     </select>
     <select
@@ -32,10 +36,10 @@ defineEmits(['update:name', 'update:tech', 'update:ci']);
       @change="$emit('update:ci', $event.target.value)"
       class="border border-slate-300 rounded-md px-3 py-1.5 text-sm bg-white text-slate-600"
     >
-      <option value="">CI : tous</option>
-      <option value="failure">en échec</option>
-      <option value="ok">OK</option>
-      <option value="unknown">inconnu</option>
+      <option value="">{{ t('filter.ciAll') }}</option>
+      <option value="failure">{{ t('filter.ciFailure') }}</option>
+      <option value="ok">{{ t('filter.ciOk') }}</option>
+      <option value="unknown">{{ t('filter.ciUnknown') }}</option>
     </select>
   </div>
 </template>

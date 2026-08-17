@@ -1,6 +1,9 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { formatTokens } from './formatTokens.js';
+import { useI18n } from './i18n.js';
+
+const { t } = useI18n();
 
 const props = defineProps({
   entries: { type: Array, required: true },
@@ -18,7 +21,7 @@ function totalOf(entry) {
 function durationLabel(entry) {
   if (!entry.startedAt || !entry.endedAt) return '';
   const ms = new Date(entry.endedAt).getTime() - new Date(entry.startedAt).getTime();
-  return `${Math.max(0, Math.round(ms / 60000))} min`;
+  return t('table.durationMinutes', { minutes: Math.max(0, Math.round(ms / 60000)) });
 }
 
 function sortBy(key) {
@@ -54,28 +57,28 @@ const rows = computed(() => {
     <input
       data-test="history-repo-filter"
       v-model="repoFilter"
-      placeholder="🔍 filtrer un repo…"
+      :placeholder="t('filter.searchRepo')"
       class="border border-slate-200 rounded-lg shadow-sm px-3 py-1.5 text-sm bg-white mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
     />
     <table class="w-full text-sm text-left">
       <thead>
         <tr class="text-slate-500 bg-slate-50 uppercase tracking-wide text-xs border-b border-slate-200">
-          <th class="py-2 px-3 cursor-pointer" data-test="sort-repo" @click="sortBy('repo')">Repo</th>
-          <th class="py-2 px-3 cursor-pointer" data-test="sort-title" @click="sortBy('title')">Titre</th>
-          <th class="py-2 px-3">Démarrée</th>
-          <th class="py-2 px-3">Terminée</th>
-          <th class="py-2 px-3">Durée</th>
-          <th class="py-2 px-3 text-right">Input</th>
-          <th class="py-2 px-3 text-right">Output</th>
-          <th class="py-2 px-3 text-right">Cache écrit</th>
-          <th class="py-2 px-3 text-right">Cache lu</th>
-          <th class="py-2 px-3 text-right cursor-pointer" data-test="sort-total" @click="sortBy('total')">Total</th>
+          <th class="py-2 px-3 cursor-pointer" data-test="sort-repo" @click="sortBy('repo')">{{ t('table.repo') }}</th>
+          <th class="py-2 px-3 cursor-pointer" data-test="sort-title" @click="sortBy('title')">{{ t('table.title') }}</th>
+          <th class="py-2 px-3">{{ t('table.started') }}</th>
+          <th class="py-2 px-3">{{ t('table.ended') }}</th>
+          <th class="py-2 px-3">{{ t('table.duration') }}</th>
+          <th class="py-2 px-3 text-right">{{ t('chart.input') }}</th>
+          <th class="py-2 px-3 text-right">{{ t('chart.output') }}</th>
+          <th class="py-2 px-3 text-right">{{ t('chart.cacheWrite') }}</th>
+          <th class="py-2 px-3 text-right">{{ t('chart.cacheRead') }}</th>
+          <th class="py-2 px-3 text-right cursor-pointer" data-test="sort-total" @click="sortBy('total')">{{ t('table.total') }}</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="e in rows" :key="`${e.repo}-${e.sessionId}`" data-test="history-row" class="border-b border-slate-100 odd:bg-slate-50/60 hover:bg-slate-50">
           <td class="py-1.5 px-3">{{ e.repo }}</td>
-          <td class="py-1.5 px-3">{{ e.title ?? '(sans titre)' }}</td>
+          <td class="py-1.5 px-3">{{ e.title ?? t('session.untitled') }}</td>
           <td class="py-1.5 px-3">{{ e.startedAt }}</td>
           <td class="py-1.5 px-3">{{ e.endedAt }}</td>
           <td class="py-1.5 px-3">{{ durationLabel(e) }}</td>
@@ -89,6 +92,6 @@ const rows = computed(() => {
         </tr>
       </tbody>
     </table>
-    <p v-if="rows.length === 0" class="text-xs text-slate-400 mt-2">Aucune session terminée pour l'instant.</p>
+    <p v-if="rows.length === 0" class="text-xs text-slate-400 mt-2">{{ t('history.empty') }}</p>
   </div>
 </template>

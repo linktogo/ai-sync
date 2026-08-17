@@ -2,6 +2,9 @@
 import { ref, computed } from 'vue';
 import { relativeTime } from './useRelativeTime.js';
 import { formatTokens } from './formatTokens.js';
+import { useI18n } from './i18n.js';
+
+const { t } = useI18n();
 
 const PROMPT_CLIP = 140;
 
@@ -29,7 +32,12 @@ const totalTokens = computed(() => {
 const usageTooltip = computed(() => {
   if (!usage.value) return '';
   const u = usage.value;
-  return `input ${u.inputTokens} · output ${u.outputTokens} · cache écrit ${u.cacheCreationInputTokens} · cache lu ${u.cacheReadInputTokens}`;
+  return t('session.usageTooltip', {
+    input: u.inputTokens,
+    output: u.outputTokens,
+    cacheWrite: u.cacheCreationInputTokens,
+    cacheRead: u.cacheReadInputTokens,
+  });
 });
 
 function open() { emit('open', props.session.sessionId); }
@@ -52,10 +60,10 @@ function onDragStart(e) {
     @keydown.space.prevent="open"
     @dragstart="onDragStart"
   >
-    <div class="font-medium text-slate-800 text-sm truncate">{{ session.title ?? '(sans titre)' }}</div>
+    <div class="font-medium text-slate-800 text-sm truncate">{{ session.title ?? t('session.untitled') }}</div>
     <div class="text-xs text-slate-500">
       {{ session.lastEvent }} · {{ when }}
-      <span v-if="usage" data-test="token-badge" :title="usageTooltip" class="inline-block ml-1 bg-slate-200/70 text-slate-600 font-medium px-1.5 py-0.5 rounded">{{ formatTokens(totalTokens) }} tokens</span>
+      <span v-if="usage" data-test="token-badge" :title="usageTooltip" class="inline-block ml-1 bg-slate-200/70 text-slate-600 font-medium px-1.5 py-0.5 rounded">{{ t('session.tokens', { count: formatTokens(totalTokens) }) }}</span>
     </div>
     <p v-if="prompt" class="mt-1 text-xs text-slate-600 whitespace-pre-wrap">
       {{ displayedPrompt }}
@@ -65,7 +73,7 @@ function onDragStart(e) {
         data-test="toggle-prompt"
         class="text-blue-600 hover:underline"
         @click="toggle"
-      >{{ expanded ? 'voir moins' : 'voir plus' }}</button>
+      >{{ expanded ? t('session.showLess') : t('session.showMore') }}</button>
     </p>
   </div>
 </template>

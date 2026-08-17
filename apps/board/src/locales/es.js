@@ -1,0 +1,73 @@
+export default {
+  'nav.board': 'Tablero',
+  'nav.history': 'Historial',
+  'nav.language': 'Idioma',
+
+  'notifications.enable': 'activar',
+  'notifications.sound': 'sonido',
+  'notifications.blocked': 'Notificaciones bloqueadas por el navegador.',
+  'notification.question': 'Un agente espera tu respuesta',
+  'notification.done': 'Trabajo terminado',
+
+  'banner.disconnected': 'desconectado — nuevo intento en el próximo sondeo…',
+  'banner.ciDesync': 'CI desincronizado — {reason}',
+  'banner.ciUnavailable': 'Estado de CI no disponible — {reason}',
+
+  'status.todo': 'Por hacer',
+  'status.inprogress': 'En curso',
+  'status.question': 'Pregunta',
+  'status.done': 'Hecho',
+
+  'summary.repos': 'repos',
+  'summary.percentDone': '{percent} % completado',
+
+  'filter.searchRepo': '🔍 filtrar un repo…',
+  'filter.techAll': 'tecnología: todas',
+  'filter.ciAll': 'CI: todos',
+  'filter.ciFailure': 'con fallo',
+  'filter.ciOk': 'OK',
+  'filter.ciUnknown': 'desconocido',
+
+  'card.noActiveSession': 'Ninguna sesión activa',
+  'card.confirmClose': '¿Marcar la sesión «{title}» de {repo} como terminada?',
+
+  'session.untitled': '(sin título)',
+  'session.showMore': 'ver más',
+  'session.showLess': 'ver menos',
+  'session.tokens': '{count} tokens',
+  'session.usageTooltip': 'entrada {input} · salida {output} · caché escrita {cacheWrite} · caché leída {cacheRead}',
+
+  'detail.ci': 'Integración continua',
+  'detail.ciUnavailable': 'No disponible — {reason}',
+  'detail.ciEmpty': 'Ningún estado reportado.',
+  'detail.history': 'Historial',
+
+  'history.tabPeriod': 'Por periodo',
+  'history.tabProject': 'Por proyecto',
+  'history.modeTokens': 'Tokens',
+  'history.day': 'Día',
+  'history.week': 'Semana',
+  'history.month': 'Mes',
+  'history.year': 'Año',
+  'history.empty': 'Aún no hay sesiones terminadas.',
+
+  'chart.input': 'Entrada',
+  'chart.output': 'Salida',
+  'chart.cacheWrite': 'Caché escrita',
+  'chart.cacheRead': 'Caché leída',
+  'chart.cost': 'Coste (€)',
+  'chart.unknownModel': 'Modelo desconocido',
+
+  'table.repo': 'Repo',
+  'table.title': 'Título',
+  'table.started': 'Iniciada',
+  'table.ended': 'Terminada',
+  'table.duration': 'Duración',
+  'table.total': 'Total',
+  'table.durationMinutes': '{minutes} min',
+
+  'time.secondsAgo': 'hace {n} s',
+  'time.minutesAgo': 'hace {n} min',
+  'time.hoursAgo': 'hace {n} h',
+  'time.daysAgo': 'hace {n} d',
+};

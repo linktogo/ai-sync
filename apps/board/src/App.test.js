@@ -5,6 +5,7 @@ import { createMemoryHistory } from 'vue-router';
 import App from './App.vue';
 import Column from './Column.vue';
 import { createBoardRouter } from './router.js';
+import { DEFAULT_LOCALE, locale, STORAGE_KEY } from './i18n.js';
 
 // The /history route mounts real chart components; jsdom has no <canvas>
 // support, so Chart.js is mocked the same way the dedicated chart test
@@ -19,7 +20,11 @@ vi.mock('chart.js', () => {
   return { Chart, BarController: {}, BarElement: {}, CategoryScale: {}, LinearScale: {}, Tooltip: {}, Legend: {} };
 });
 
-afterEach(() => { vi.restoreAllMocks(); });
+afterEach(() => {
+  vi.restoreAllMocks();
+  locale.value = DEFAULT_LOCALE;
+  window.localStorage.clear();
+});
 
 function routedFetch() {
   return vi.fn().mockImplementation((url) => {
@@ -146,7 +151,7 @@ test('the CI filter hides repos that do not match', async () => {
 test('shows a desync banner when the server reports a sync error', async () => {
   const fetchImpl = ciRoutedFetch({ ci: { repos: {}, lastSyncError: 'could not read from remote' } });
   const { wrapper } = await mountApp(fetchImpl);
-  expect(wrapper.get('[data-test=ci-desync]').text()).toContain('désynchronisé');
+  expect(wrapper.get('[data-test=ci-desync]').text()).toContain('CI out of sync');
 });
 
 test('shows a board-wide banner when CI is unavailable, distinct from the desync banner', async () => {
@@ -162,7 +167,7 @@ test('shows a board-wide banner when CI is unavailable, distinct from the desync
   expect(wrapper.find('[data-test=ci-desync]').exists()).toBe(false);
 });
 
-test('clicking the Historique tab navigates to /history and shows history entries instead of the board', async () => {
+test('clicking the History tab navigates to /history and shows history entries instead of the board', async () => {
   const fetchImpl = vi.fn().mockImplementation((url) => {
     if (url === '/api/config') return Promise.resolve({ json: async () => ({ repos: {} }) });
     if (url === '/api/history') {
@@ -240,4 +245,30 @@ test('declining the confirm on drop does not call the close API', async () => {
   await doneColumn.vm.$emit('close-session', { repo: 'b', sessionId: 's1' });
   await settle();
   expect(fetchImpl.mock.calls.some(([u]) => u === '/api/sessions/close')).toBe(false);
+});
+
+test('renders in English by default, with the four columns in English', async () => {
+  const { wrapper } = await mountApp(routedFetch());
+  expect(wrapper.get('[data-test=view-history]').text()).toBe('History');
+  const columns = wrapper.findAll('section h2');
+  expect(columns.map((c) => c.text().replace(/\s*\(\d+\)$/, ''))).toEqual(['To do', 'In progress', 'Question', 'Done']);
+  expect(wrapper.text()).toContain('No active session');
+});
+
+test('picking a language re-renders the whole board in it and remembers the choice', async () => {
+  const { wrapper } = await mountApp(routedFetch());
+  await wrapper.get('[data-test=locale]').setValue('fr');
+  await settle();
+  expect(wrapper.get('[data-test=view-history]').text()).toBe('Historique');
+  expect(wrapper.findAll('section h2')[0].text()).toContain('À faire');
+  expect(wrapper.text()).toContain('Aucune session active');
+  expect(window.localStorage.getItem(STORAGE_KEY)).toBe('fr');
+
+  await wrapper.get('[data-test=locale]').setValue('de');
+  await settle();
+  expect(wrapper.get('[data-test=view-history]').text()).toBe('Verlauf');
+
+  await wrapper.get('[data-test=locale]').setValue('es');
+  await settle();
+  expect(wrapper.get('[data-test=view-history]').text()).toBe('Historial');
 });

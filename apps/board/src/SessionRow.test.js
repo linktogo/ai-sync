@@ -20,7 +20,7 @@ function session(overrides = {}) {
 test('renders the title and a relative time', () => {
   const w = mount(SessionRow, { props: { session: session(), now } });
   expect(w.text()).toContain('fix login redirect');
-  expect(w.text()).toContain('il y a 1 min');
+  expect(w.text()).toContain('1 min ago');
 });
 
 test('emits "open" with the session id on click', async () => {
@@ -73,7 +73,7 @@ test('the token badge tooltip breaks down usage by type', () => {
       now,
     },
   });
-  expect(w.get('[data-test=token-badge]').attributes('title')).toBe('input 1 · output 2 · cache écrit 3 · cache lu 4');
+  expect(w.get('[data-test=token-badge]').attributes('title')).toBe('input 1 · output 2 · cache write 3 · cache read 4');
 });
 
 test('dragstart sets the drag payload to the repo name and session id', async () => {
