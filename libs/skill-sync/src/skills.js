@@ -12,7 +12,7 @@ export async function resolveSkills(skillsDir, technologies, { warn = console.wa
     } catch (err) {
       if (err.code === 'ENOENT') {
         const message = `No skills directory for technology "${techno}" (${technoDir})`;
-        if (strict) throw new Error(message);
+        if (strict) throw new Error(message, { cause: err });
         warn(message);
         continue;
       }
