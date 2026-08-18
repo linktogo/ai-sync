@@ -35,6 +35,7 @@ export default {
   'session.showMore': 'ver más',
   'session.showLess': 'ver menos',
   'session.tokens': '{count} tokens',
+  'session.worktreeTooltip': 'Aislado en un worktree de git · rama {branch}',
   'session.usageTooltip': 'entrada {input} · salida {output} · caché escrita {cacheWrite} · caché leída {cacheRead}',
 
   'detail.ci': 'Integración continua',

@@ -156,6 +156,28 @@ test('claude + --worktree adds a worktree, installs in it, and launches there', 
   await rm(ws, { recursive: true, force: true });
 });
 
+test('claude + --worktree passes the worktree branch to installRepoHooks', async () => {
+  const ws = await mkdtemp(path.join(tmpdir(), 'ws-'));
+  const hookCalls = [];
+  const present = new Set([path.join(ws, 'a'), path.join(ws, 'a.feat-x')]);
+  await bootstrap(config, {
+    workspaceDir: ws,
+    editor: 'claude',
+    worktree: 'feat/x',
+    repoFilter: 'a',
+    install: false,
+    clone: async () => { throw new Error('should not clone'); },
+    exec: async () => {},
+    exists: async (p) => present.has(p),
+    installRepoHooks: async (dir, repo, boardPath, opts) => { hookCalls.push({ dir, repo, opts }); },
+    logger: silentLogger(),
+  });
+  assert.equal(hookCalls.length, 1);
+  assert.equal(hookCalls[0].dir, path.join(ws, 'a.feat-x'));
+  assert.equal(hookCalls[0].opts.worktree, 'feat/x');
+  await rm(ws, { recursive: true, force: true });
+});
+
 test('reuses existing worktrees and launches at the workspace root for multiple repos', async () => {
   const ws = await mkdtemp(path.join(tmpdir(), 'ws-'));
   const execCalls = [];
