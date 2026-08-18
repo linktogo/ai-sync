@@ -58,6 +58,12 @@ node apps/workspace/bin/workspace.js $CFG --workspace ~/work/myorg --worktree fe
 #   cd "~/work/myorg/example-api.feat-login" && claude
 ```
 
+When a checkout runs in a worktree, its status hooks are wired with
+`--worktree <branch>`, so every session started there records the branch on the
+board and its card shows a worktree badge (see [Status tracking](#status-tracking)).
+
+![Session card showing a worktree badge](images/worktree-badge/card.png)
+
 ## Status tracking
 
 Bootstrap wires each checkout to report its kanban status into a shared

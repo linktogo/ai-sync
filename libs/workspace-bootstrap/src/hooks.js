@@ -12,12 +12,13 @@ export const HOOK_EVENTS = [
   { event: 'SessionEnd', action: 'session-end', matcher: undefined },
 ];
 
-export function hookSettings(repo, boardPath, { command = 'maggie-workspace' } = {}) {
+export function hookSettings(repo, boardPath, { command = 'maggie-workspace', worktree } = {}) {
   const hooks = {};
+  const worktreeFlag = worktree ? ` --worktree ${worktree}` : '';
   for (const { event, action, state, matcher } of HOOK_EVENTS) {
     const cmd = action === 'session-end'
       ? `${command} session-end ${repo} --board ${boardPath}`
-      : `${command} status ${repo} ${state} --board ${boardPath} --event ${event}`;
+      : `${command} status ${repo} ${state} --board ${boardPath} --event ${event}${worktreeFlag}`;
     const group = { hooks: [{ type: 'command', command: cmd }] };
     if (matcher) group.matcher = matcher;
     hooks[event] = [group];
@@ -26,7 +27,7 @@ export function hookSettings(repo, boardPath, { command = 'maggie-workspace' } =
 }
 
 export async function installHooks(checkoutDir, repo, boardPath, opts = {}) {
-  const { read = readFile, write = writeFile, ensureDir = mkdir, command } = opts;
+  const { read = readFile, write = writeFile, ensureDir = mkdir, command, worktree } = opts;
   const dir = path.join(checkoutDir, '.claude');
   const file = path.join(dir, 'settings.local.json');
   let existing = {};
@@ -35,7 +36,7 @@ export async function installHooks(checkoutDir, repo, boardPath, opts = {}) {
   } catch (err) {
     if (err.code !== 'ENOENT') throw err;
   }
-  const { hooks } = hookSettings(repo, boardPath, { command });
+  const { hooks } = hookSettings(repo, boardPath, { command, worktree });
   const merged = { ...existing, hooks: { ...existing.hooks, ...hooks } };
   await ensureDir(dir, { recursive: true });
   await write(file, JSON.stringify(merged, null, 2) + '\n');

@@ -70,6 +70,12 @@ function onDragStart(e) {
     <div class="font-medium text-slate-800 text-sm truncate">{{ session.title ?? t('session.untitled') }}</div>
     <div class="text-xs text-slate-500">
       {{ session.lastEvent }} · {{ when }}
+      <span
+        v-if="session.worktree"
+        data-test="worktree-badge"
+        :title="t('session.worktreeTooltip', { branch: session.worktree })"
+        class="inline-flex items-center ml-1 bg-violet-100 text-violet-700 font-medium px-1.5 py-0.5 rounded"
+      >⎇ {{ session.worktree }}</span>
       <span v-if="usage" data-test="token-badge" :title="usageTooltip" class="inline-block ml-1 bg-slate-200/70 text-slate-600 font-medium px-1.5 py-0.5 rounded">{{ t('session.tokens', { count: formatTokens(totalTokens) }) }}</span>
     </div>
     <p v-if="prompt" class="mt-1 text-xs text-slate-600 whitespace-pre-wrap">

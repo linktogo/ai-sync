@@ -84,6 +84,7 @@ test('setSessionStatus creates a new session on a repo not yet on the board, sto
     title: 'first prompt',
     lastPrompt: 'first prompt',
     startedAt: '2026-06-16T10:00:00Z',
+    worktree: null,
     usage: null,
     pendingMessages: [],
     events: [{ event: 'Notification', at: '2026-06-16T10:00:00Z' }],
@@ -146,6 +147,29 @@ test('setSessionStatus sets startedAt only on the first write and preserves it a
     write: async () => {}, move: async () => {}, ensureDir: async () => {}, tmpSuffix: '.tmp',
   });
   assert.equal(board.repos.a.sessions.s1.startedAt, 'T0');
+});
+
+test('setSessionStatus records the worktree on the first write and defaults to null without one', async () => {
+  const io = { write: async () => {}, move: async () => {}, ensureDir: async () => {}, tmpSuffix: '.tmp' };
+  const withWorktree = await setSessionStatus('/x', 'a', 's1', 'inprogress', { ...io, worktree: 'feat/login' });
+  assert.equal(withWorktree.repos.a.sessions.s1.worktree, 'feat/login');
+  const withoutWorktree = await setSessionStatus('/x', 'a', 's1', 'inprogress', io);
+  assert.equal(withoutWorktree.repos.a.sessions.s1.worktree, null);
+});
+
+test('setSessionStatus sets worktree only on the first write and preserves it afterwards', async () => {
+  const read = async () => JSON.stringify({
+    version: 2,
+    repos: { a: { sessions: { s1: {
+      status: 'inprogress', updatedAt: 'T1', lastEvent: 'x', title: 't', lastPrompt: 'p',
+      startedAt: 'T0', worktree: 'feat/login', usage: null, events: [],
+    } } } },
+  });
+  const board = await setSessionStatus('/x', 'a', 's1', 'question', {
+    worktree: 'other/branch', read,
+    write: async () => {}, move: async () => {}, ensureDir: async () => {}, tmpSuffix: '.tmp',
+  });
+  assert.equal(board.repos.a.sessions.s1.worktree, 'feat/login');
 });
 
 test('setSessionStatus overwrites usage when passed and preserves the previous value when omitted', async () => {

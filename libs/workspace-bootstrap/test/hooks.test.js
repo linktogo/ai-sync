@@ -19,6 +19,33 @@ test('hookSettings maps the four events to their commands', () => {
   assert.equal(cmd('SessionEnd'), 'node /a/bin/workspace.js session-end oc-be --board /ws/.maggie/board.json');
 });
 
+test('hookSettings appends --worktree to status commands but not session-end when a worktree is given', () => {
+  const s = hookSettings('oc-be', '/b.json', { command: 'maggie-workspace', worktree: 'feat/login' });
+  const cmd = (e) => s.hooks[e][0].hooks[0].command;
+  assert.equal(cmd('UserPromptSubmit'),
+    'maggie-workspace status oc-be inprogress --board /b.json --event UserPromptSubmit --worktree feat/login');
+  assert.equal(cmd('Stop'),
+    'maggie-workspace status oc-be question --board /b.json --event Stop --worktree feat/login');
+  assert.equal(cmd('SessionEnd'), 'maggie-workspace session-end oc-be --board /b.json');
+});
+
+test('hookSettings omits the worktree flag when no worktree is given', () => {
+  const s = hookSettings('a', '/b.json');
+  assert.ok(!s.hooks.Stop[0].hooks[0].command.includes('--worktree'));
+});
+
+test('installHooks forwards the worktree flag into the written commands', async () => {
+  let written;
+  await installHooks('/ws/a', 'a', '/b.json', {
+    command: 'maggie-workspace',
+    worktree: 'feat/login',
+    read: async () => { const e = new Error('x'); e.code = 'ENOENT'; throw e; },
+    write: async (_f, data) => { written = JSON.parse(data); },
+    ensureDir: async () => {},
+  });
+  assert.match(written.hooks.UserPromptSubmit[0].hooks[0].command, /--worktree feat\/login$/);
+});
+
 test('hookSettings defaults the command to maggie-workspace', () => {
   const s = hookSettings('a', '/b.json');
   assert.match(s.hooks.Stop[0].hooks[0].command, /^maggie-workspace status a question /);

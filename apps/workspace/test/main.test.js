@@ -129,6 +129,26 @@ test('main routes the status subcommand to setSessionStatus using the piped sess
   }]);
 });
 
+test('status subcommand forwards --worktree to setSessionStatus', async () => {
+  let received;
+  await main(['status', 'a', 'inprogress', '--board', '/b.json', '--worktree', 'feat/login'], {
+    setSessionStatus: async (_p, _r, _sid, _s, o) => { received = o; },
+    stdin: ttyStdin(),
+    logger: silentLogger(),
+  });
+  assert.equal(received.worktree, 'feat/login');
+});
+
+test('status subcommand omits worktree when the flag is absent', async () => {
+  let received;
+  await main(['status', 'a', 'inprogress', '--board', '/b.json'], {
+    setSessionStatus: async (_p, _r, _sid, _s, o) => { received = o; },
+    stdin: ttyStdin(),
+    logger: silentLogger(),
+  });
+  assert.ok(!('worktree' in received));
+});
+
 test('status subcommand requires repo and state', async () => {
   await assert.rejects(
     () => main(['status', 'oc-be', '--board', '/b.json'], { setSessionStatus: async () => {}, logger: silentLogger() }),

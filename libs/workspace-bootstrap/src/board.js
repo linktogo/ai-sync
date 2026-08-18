@@ -53,7 +53,7 @@ export async function writeBoard(boardPath, board, opts = {}) {
 
 export async function setSessionStatus(boardPath, repo, sessionId, state, opts = {}) {
   const {
-    lastEvent = 'manual', title, lastPrompt, usage, startedAt,
+    lastEvent = 'manual', title, lastPrompt, usage, startedAt, worktree,
     now = () => new Date().toISOString(), ...io
   } = opts;
   if (!STATES.includes(state)) {
@@ -71,6 +71,7 @@ export async function setSessionStatus(boardPath, repo, sessionId, state, opts =
     title: prevSession?.title ?? title ?? null,               // set once, never overwritten
     lastPrompt: lastPrompt ?? prevSession?.lastPrompt ?? null, // overwritten every UserPromptSubmit
     startedAt: prevSession?.startedAt ?? startedAt ?? at,      // set once, never overwritten
+    worktree: prevSession?.worktree ?? worktree ?? null,       // set once from the hook's --worktree flag
     usage: usage ?? prevSession?.usage ?? null,                // overwritten every Stop
     pendingMessages: prevSession?.pendingMessages ?? [],       // dashboard queue, drained on resume
     events,

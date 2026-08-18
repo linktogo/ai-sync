@@ -17,6 +17,10 @@ changes in minor releases.
   going back to the terminal where the session runs. The message is queued on
   the board (`POST /api/sessions/message`) and relayed into the conversation by
   the `UserPromptSubmit` hook the next time that session takes a turn.
+- Session cards on the board now show a worktree badge when a session runs in
+  a git worktree (bootstrapped with `--worktree <branch>`), so isolated tasks
+  are distinguishable at a glance. The branch name is captured by the status
+  hooks and surfaced with a tooltip.
 - The board dashboard is now translated: English by default, switchable to
   French, German or Spanish from the header picker. The choice is persisted in
   `localStorage` and re-applied on the next visit.

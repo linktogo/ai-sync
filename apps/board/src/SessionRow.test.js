@@ -113,3 +113,15 @@ test('interacting with the message form does not open the session', async () => 
   await w.get('[data-test=message-form]').trigger('click');
   expect(w.emitted('open')).toBeUndefined();
 });
+
+test('shows a worktree badge with the branch when the session runs in a worktree', () => {
+  const w = mount(SessionRow, { props: { session: session({ worktree: 'feat/login' }), now } });
+  const badge = w.get('[data-test=worktree-badge]');
+  expect(badge.text()).toContain('feat/login');
+  expect(badge.attributes('title')).toBe('Isolated in git worktree · branch feat/login');
+});
+
+test('does not show a worktree badge when the session has no worktree', () => {
+  const w = mount(SessionRow, { props: { session: session(), now } });
+  expect(w.find('[data-test=worktree-badge]').exists()).toBe(false);
+});
