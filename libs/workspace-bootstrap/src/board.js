@@ -6,6 +6,10 @@ export const STATES = ['todo', 'inprogress', 'question', 'done'];
 
 export const MAX_EVENTS = 20;
 
+// Messages queued from the dashboard for a session are bounded like events:
+// only the most recent ones are kept if a session is never resumed.
+export const MAX_PENDING_MESSAGES = 20;
+
 export function resolveBoardPath({ board, env = process.env } = {}) {
   const p = board || env.AI_SYNC_BOARD;
   if (!p) throw new Error('No board path (pass --board <path> or set AI_SYNC_BOARD)');
@@ -68,6 +72,7 @@ export async function setSessionStatus(boardPath, repo, sessionId, state, opts =
     lastPrompt: lastPrompt ?? prevSession?.lastPrompt ?? null, // overwritten every UserPromptSubmit
     startedAt: prevSession?.startedAt ?? startedAt ?? at,      // set once, never overwritten
     usage: usage ?? prevSession?.usage ?? null,                // overwritten every Stop
+    pendingMessages: prevSession?.pendingMessages ?? [],       // dashboard queue, drained on resume
     events,
   };
   board.repos[repo] = repoEntry;
@@ -82,6 +87,35 @@ export async function removeSession(boardPath, repo, sessionId, opts = {}) {
   }
   await writeBoard(boardPath, board, opts);
   return board;
+}
+
+// Append a message typed on the board dashboard to a session's queue. The
+// message is delivered into the conversation by the UserPromptSubmit hook the
+// next time that session takes a turn (see takePendingMessages). Returns
+// { queued: false } when the target session is not on the board.
+export async function queueMessage(boardPath, repo, sessionId, text, opts = {}) {
+  const { now = () => new Date().toISOString(), ...io } = opts;
+  const board = await readBoard(boardPath, io);
+  const session = board.repos[repo]?.sessions?.[sessionId];
+  if (!session) return { queued: false };
+  const pending = [...(session.pendingMessages ?? []), { text, at: now() }].slice(-MAX_PENDING_MESSAGES);
+  session.pendingMessages = pending;
+  await writeBoard(boardPath, board, io);
+  return { queued: true, count: pending.length };
+}
+
+// Drain and return the messages queued for a session, clearing the queue.
+// Called from the UserPromptSubmit hook so a resumed session picks up anything
+// sent from the dashboard while it was idle. A no-op (empty array, no write)
+// when the session is unknown or its queue is empty.
+export async function takePendingMessages(boardPath, repo, sessionId, opts = {}) {
+  const board = await readBoard(boardPath, opts);
+  const session = board.repos[repo]?.sessions?.[sessionId];
+  const pending = session?.pendingMessages ?? [];
+  if (pending.length === 0) return [];
+  session.pendingMessages = [];
+  await writeBoard(boardPath, board, opts);
+  return pending;
 }
 
 export async function closeSession(boardPath, repo, sessionId, opts = {}) {

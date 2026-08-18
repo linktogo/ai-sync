@@ -65,3 +65,38 @@ test('says nothing has been reported when no contributor has run CI', () => {
   const w = mount(RepoDetail, { props: { name: 'lk-myasso', session: null, meta: null, now: nowTs, ci: { users: {} } } });
   expect(w.get('[data-test=ci-empty]').text()).toContain('No status reported');
 });
+
+test('shows the message form only when a sessionId is provided', () => {
+  const without = mount(RepoDetail, { props: { name: 'oc-auth', session, meta, now } });
+  expect(without.find('[data-test=detail-message-form]').exists()).toBe(false);
+  const withId = mount(RepoDetail, { props: { name: 'oc-auth', sessionId: 's1', session, meta, now } });
+  expect(withId.find('[data-test=detail-message-form]').exists()).toBe(true);
+});
+
+test('submitting the detail message form emits send-message with repo, session id and text, then clears it', async () => {
+  const w = mount(RepoDetail, { props: { name: 'oc-auth', sessionId: 's1', session, meta, now } });
+  const input = w.get('[data-test=detail-message-input]');
+  await input.setValue('  add a test  ');
+  await w.get('[data-test=detail-message-form]').trigger('submit');
+  expect(w.emitted('send-message')[0]).toEqual([{ repo: 'oc-auth', sessionId: 's1', text: 'add a test' }]);
+  expect(input.element.value).toBe('');
+});
+
+test('a whitespace-only detail message emits nothing and keeps the send button disabled', async () => {
+  const w = mount(RepoDetail, { props: { name: 'oc-auth', sessionId: 's1', session, meta, now } });
+  expect(w.get('[data-test=detail-message-send]').attributes('disabled')).toBeDefined();
+  await w.get('[data-test=detail-message-input]').setValue('   ');
+  await w.get('[data-test=detail-message-form]').trigger('submit');
+  expect(w.emitted('send-message')).toBeUndefined();
+});
+
+test('lists queued pending messages, and shows an empty hint when there are none', () => {
+  const queued = mount(RepoDetail, {
+    props: { name: 'oc-auth', sessionId: 's1', session: { ...session, pendingMessages: [{ text: 'queued one', at: 'T0' }] }, meta, now },
+  });
+  expect(queued.get('[data-test=pending-messages]').text()).toContain('queued one');
+  expect(queued.find('[data-test=pending-empty]').exists()).toBe(false);
+  const empty = mount(RepoDetail, { props: { name: 'oc-auth', sessionId: 's1', session, meta, now } });
+  expect(empty.find('[data-test=pending-messages]').exists()).toBe(false);
+  expect(empty.find('[data-test=pending-empty]').exists()).toBe(true);
+});

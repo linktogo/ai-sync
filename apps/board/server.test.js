@@ -413,3 +413,79 @@ test('startFromArgv logs a warning when both --config and --config-repo are give
   server.close();
   await rm(dir, { recursive: true, force: true });
 });
+
+test('POST /api/sessions/message queues a message onto an existing session', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
+  const boardPath = path.join(dir, 'board.json');
+  await writeFile(boardPath, JSON.stringify({
+    version: 2,
+    repos: { a: { sessions: { s1: { status: 'question', updatedAt: 'T1', lastEvent: 'Stop', pendingMessages: [] } } } },
+  }));
+  const server = createBoardServer({ boardPath, distDir: dir });
+  const port = await listen(server);
+  const res = await fetch(`http://127.0.0.1:${port}/api/sessions/message`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ repo: 'a', sessionId: 's1', message: '  please rebase  ' }),
+  });
+  assert.equal(res.status, 200);
+  assert.deepEqual(await res.json(), { queued: true, count: 1 });
+  const board = JSON.parse(await readFile(boardPath, 'utf8'));
+  assert.equal(board.repos.a.sessions.s1.pendingMessages.length, 1);
+  assert.equal(board.repos.a.sessions.s1.pendingMessages[0].text, 'please rebase');
+  server.close();
+  await rm(dir, { recursive: true, force: true });
+});
+
+test('POST /api/sessions/message returns 404 for an unknown session and leaves the board untouched', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
+  const boardPath = path.join(dir, 'board.json');
+  const original = JSON.stringify({ version: 2, repos: { a: { sessions: {} } } });
+  await writeFile(boardPath, original);
+  const server = createBoardServer({ boardPath, distDir: dir });
+  const port = await listen(server);
+  const res = await fetch(`http://127.0.0.1:${port}/api/sessions/message`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ repo: 'a', sessionId: 'nope', message: 'hi' }),
+  });
+  assert.equal(res.status, 404);
+  assert.deepEqual(await res.json(), { queued: false });
+  assert.equal(await readFile(boardPath, 'utf8'), original);
+  server.close();
+  await rm(dir, { recursive: true, force: true });
+});
+
+test('POST /api/sessions/message returns 400 when repo, sessionId or a non-empty message is missing', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
+  const server = createBoardServer({ boardPath: path.join(dir, 'board.json'), distDir: dir });
+  const port = await listen(server);
+  for (const body of [
+    { repo: 'a', sessionId: 's1' },
+    { repo: 'a', sessionId: 's1', message: '   ' },
+    { sessionId: 's1', message: 'hi' },
+  ]) {
+    const res = await fetch(`http://127.0.0.1:${port}/api/sessions/message`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    assert.equal(res.status, 400);
+  }
+  server.close();
+  await rm(dir, { recursive: true, force: true });
+});
+
+test('POST /api/sessions/message returns 400 for an unparsable body', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'board-'));
+  const server = createBoardServer({ boardPath: path.join(dir, 'board.json'), distDir: dir });
+  const port = await listen(server);
+  const res = await fetch(`http://127.0.0.1:${port}/api/sessions/message`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: '{not json',
+  });
+  assert.equal(res.status, 400);
+  server.close();
+  await rm(dir, { recursive: true, force: true });
+});

@@ -36,11 +36,15 @@ export default {
   'session.showLess': 'ver menos',
   'session.tokens': '{count} tokens',
   'session.usageTooltip': 'entrada {input} · salida {output} · caché escrita {cacheWrite} · caché leída {cacheRead}',
+  'session.messagePlaceholder': 'Mensaje a la sesión…',
+  'session.send': 'Enviar',
 
   'detail.ci': 'Integración continua',
   'detail.ciUnavailable': 'No disponible — {reason}',
   'detail.ciEmpty': 'Ningún estado reportado.',
   'detail.history': 'Historial',
+  'detail.message': 'Mensaje',
+  'detail.messageEmpty': 'Ningún mensaje en cola.',
 
   'history.tabPeriod': 'Por periodo',
   'history.tabProject': 'Por proyecto',

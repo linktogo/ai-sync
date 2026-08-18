@@ -38,11 +38,15 @@ export default {
   'session.showLess': 'show less',
   'session.tokens': '{count} tokens',
   'session.usageTooltip': 'input {input} · output {output} · cache write {cacheWrite} · cache read {cacheRead}',
+  'session.messagePlaceholder': 'Message to the session…',
+  'session.send': 'Send',
 
   'detail.ci': 'Continuous integration',
   'detail.ciUnavailable': 'Unavailable — {reason}',
   'detail.ciEmpty': 'No status reported.',
   'detail.history': 'History',
+  'detail.message': 'Message',
+  'detail.messageEmpty': 'No message queued.',
 
   'history.tabPeriod': 'By period',
   'history.tabProject': 'By project',

@@ -82,3 +82,34 @@ test('dragstart sets the drag payload to the repo name and session id', async ()
   await w.get('[data-test=session-row]').trigger('dragstart', { dataTransfer: { setData, effectAllowed: null } });
   expect(setData).toHaveBeenCalledWith('application/json', JSON.stringify({ repo: 'oc-be', sessionId: 's1' }));
 });
+
+test('typing a message and submitting emits send-message with repo, session id and text, then clears the input', async () => {
+  const w = mount(SessionRow, { props: { session: session(), repoName: 'oc-be', now } });
+  const input = w.get('[data-test=message-input]');
+  await input.setValue('  please rebase on main  ');
+  await w.get('[data-test=message-form]').trigger('submit');
+  expect(w.emitted('send-message')[0]).toEqual([{ repo: 'oc-be', sessionId: 's1', text: 'please rebase on main' }]);
+  expect(w.emitted('open')).toBeUndefined();
+  expect(input.element.value).toBe('');
+});
+
+test('submitting an empty or whitespace-only message emits nothing', async () => {
+  const w = mount(SessionRow, { props: { session: session(), repoName: 'oc-be', now } });
+  await w.get('[data-test=message-input]').setValue('   ');
+  await w.get('[data-test=message-form]').trigger('submit');
+  expect(w.emitted('send-message')).toBeUndefined();
+});
+
+test('the send button is disabled until the message has non-whitespace content', async () => {
+  const w = mount(SessionRow, { props: { session: session(), now } });
+  const button = w.get('[data-test=message-send]');
+  expect(button.attributes('disabled')).toBeDefined();
+  await w.get('[data-test=message-input]').setValue('hi');
+  expect(button.attributes('disabled')).toBeUndefined();
+});
+
+test('interacting with the message form does not open the session', async () => {
+  const w = mount(SessionRow, { props: { session: session(), now } });
+  await w.get('[data-test=message-form]').trigger('click');
+  expect(w.emitted('open')).toBeUndefined();
+});

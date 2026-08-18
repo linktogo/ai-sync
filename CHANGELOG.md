@@ -12,6 +12,11 @@ changes in minor releases.
 
 ### Added
 
+- You can now send a message to a session straight from the board dashboard —
+  from the input on the session card or in the detail side panel — instead of
+  going back to the terminal where the session runs. The message is queued on
+  the board (`POST /api/sessions/message`) and relayed into the conversation by
+  the `UserPromptSubmit` hook the next time that session takes a turn.
 - The board dashboard is now translated: English by default, switchable to
   French, German or Spanish from the header picker. The choice is persisted in
   `localStorage` and re-applied on the next visit.

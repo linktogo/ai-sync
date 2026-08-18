@@ -1,7 +1,19 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import { STATES, resolveBoardPath, readBoard, writeBoard, setSessionStatus, removeSession, closeSession, initRepos } from '../src/board.js';
+import { STATES, MAX_PENDING_MESSAGES, resolveBoardPath, readBoard, writeBoard, setSessionStatus, removeSession, closeSession, queueMessage, takePendingMessages, initRepos } from '../src/board.js';
+
+function memIO(board) {
+  const store = { json: JSON.stringify(board) };
+  return {
+    store,
+    read: async () => store.json,
+    write: async (_file, data) => { store.written = data; },
+    move: async () => { store.json = store.written; },
+    ensureDir: async () => {},
+    tmpSuffix: '.tmp',
+  };
+}
 
 test('STATES are the four kanban columns in order', () => {
   assert.deepEqual(STATES, ['todo', 'inprogress', 'question', 'done']);
@@ -73,6 +85,7 @@ test('setSessionStatus creates a new session on a repo not yet on the board, sto
     lastPrompt: 'first prompt',
     startedAt: '2026-06-16T10:00:00Z',
     usage: null,
+    pendingMessages: [],
     events: [{ event: 'Notification', at: '2026-06-16T10:00:00Z' }],
   });
 });
@@ -336,4 +349,88 @@ test('closeSession stamps endedAt with the current ISO time by default', async (
     tmpSuffix: '.tmp',
   });
   assert.match(appends[0].endedAt, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+});
+
+test('setSessionStatus preserves pendingMessages across a status write', async () => {
+  const read = async () => JSON.stringify({
+    version: 2,
+    repos: { a: { sessions: { s1: {
+      status: 'question', updatedAt: 'T1', lastEvent: 'Stop', title: 't', lastPrompt: 'p',
+      startedAt: 'T0', usage: null, pendingMessages: [{ text: 'hi', at: 'T0' }], events: [],
+    } } } },
+  });
+  const board = await setSessionStatus('/x', 'a', 's1', 'inprogress', {
+    now: () => 'T2', read, write: async () => {}, move: async () => {}, ensureDir: async () => {}, tmpSuffix: '.tmp',
+  });
+  assert.deepEqual(board.repos.a.sessions.s1.pendingMessages, [{ text: 'hi', at: 'T0' }]);
+});
+
+test('queueMessage appends a message with a timestamp to an existing session', async () => {
+  const io = memIO({ version: 2, repos: { a: { sessions: { s1: { status: 'question', pendingMessages: [] } } } } });
+  const result = await queueMessage('/x', 'a', 's1', 'ship it', { now: () => 'T1', ...io });
+  assert.deepEqual(result, { queued: true, count: 1 });
+  const board = JSON.parse(io.store.json);
+  assert.deepEqual(board.repos.a.sessions.s1.pendingMessages, [{ text: 'ship it', at: 'T1' }]);
+});
+
+test('queueMessage appends after existing queued messages, preserving order', async () => {
+  const io = memIO({ version: 2, repos: { a: { sessions: { s1: { status: 'question', pendingMessages: [{ text: 'first', at: 'T0' }] } } } } });
+  await queueMessage('/x', 'a', 's1', 'second', { now: () => 'T1', ...io });
+  const board = JSON.parse(io.store.json);
+  assert.deepEqual(board.repos.a.sessions.s1.pendingMessages, [{ text: 'first', at: 'T0' }, { text: 'second', at: 'T1' }]);
+});
+
+test('queueMessage tolerates a session that has no pendingMessages array yet', async () => {
+  const io = memIO({ version: 2, repos: { a: { sessions: { s1: { status: 'question' } } } } });
+  await queueMessage('/x', 'a', 's1', 'hello', { now: () => 'T1', ...io });
+  const board = JSON.parse(io.store.json);
+  assert.deepEqual(board.repos.a.sessions.s1.pendingMessages, [{ text: 'hello', at: 'T1' }]);
+});
+
+test('queueMessage caps the queue at MAX_PENDING_MESSAGES, dropping the oldest', async () => {
+  const existing = Array.from({ length: MAX_PENDING_MESSAGES }, (_, i) => ({ text: `m${i}`, at: 'old' }));
+  const io = memIO({ version: 2, repos: { a: { sessions: { s1: { status: 'question', pendingMessages: existing } } } } });
+  const result = await queueMessage('/x', 'a', 's1', 'newest', { now: () => 'T1', ...io });
+  assert.equal(result.count, MAX_PENDING_MESSAGES);
+  const board = JSON.parse(io.store.json);
+  const queue = board.repos.a.sessions.s1.pendingMessages;
+  assert.equal(queue.length, MAX_PENDING_MESSAGES);
+  assert.deepEqual(queue[0], { text: 'm1', at: 'old' });
+  assert.deepEqual(queue[queue.length - 1], { text: 'newest', at: 'T1' });
+});
+
+test('queueMessage returns { queued: false } and writes nothing for an unknown session', async () => {
+  const io = memIO({ version: 2, repos: { a: { sessions: {} } } });
+  const result = await queueMessage('/x', 'a', 'nope', 'hi', { now: () => 'T1', ...io });
+  assert.deepEqual(result, { queued: false });
+  assert.equal(io.store.written, undefined);
+});
+
+test('takePendingMessages drains the queue and clears it on the board', async () => {
+  const io = memIO({ version: 2, repos: { a: { sessions: { s1: { status: 'inprogress', pendingMessages: [{ text: 'a', at: 'T0' }, { text: 'b', at: 'T1' }] } } } } });
+  const drained = await takePendingMessages('/x', 'a', 's1', io);
+  assert.deepEqual(drained, [{ text: 'a', at: 'T0' }, { text: 'b', at: 'T1' }]);
+  const board = JSON.parse(io.store.json);
+  assert.deepEqual(board.repos.a.sessions.s1.pendingMessages, []);
+});
+
+test('takePendingMessages returns [] and writes nothing when the queue is empty', async () => {
+  const io = memIO({ version: 2, repos: { a: { sessions: { s1: { status: 'inprogress', pendingMessages: [] } } } } });
+  const drained = await takePendingMessages('/x', 'a', 's1', io);
+  assert.deepEqual(drained, []);
+  assert.equal(io.store.written, undefined);
+});
+
+test('takePendingMessages returns [] for an unknown session', async () => {
+  const io = memIO({ version: 2, repos: { a: { sessions: {} } } });
+  const drained = await takePendingMessages('/x', 'a', 'nope', io);
+  assert.deepEqual(drained, []);
+  assert.equal(io.store.written, undefined);
+});
+
+test('queueMessage stamps an ISO timestamp when no clock is injected', async () => {
+  const io = memIO({ version: 2, repos: { a: { sessions: { s1: { status: 'question', pendingMessages: [] } } } } });
+  await queueMessage('/x', 'a', 's1', 'hi', io);
+  const board = JSON.parse(io.store.json);
+  assert.match(board.repos.a.sessions.s1.pendingMessages[0].at, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
 });

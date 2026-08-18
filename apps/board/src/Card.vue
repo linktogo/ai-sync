@@ -14,7 +14,7 @@ const props = defineProps({
   now: { type: Number, default: () => Date.now() },
   ci: { type: Object, default: null },
 });
-const emit = defineEmits(['open']);
+const emit = defineEmits(['open', 'send-message']);
 
 const isQuestion = computed(() => props.status === 'question');
 const style = computed(() => STATUS_STYLES[props.status]);
@@ -53,7 +53,7 @@ function open(sessionId) {
     </div>
     <p v-if="sessions.length === 0" class="mt-1 text-xs text-slate-400">{{ t('card.noActiveSession') }}</p>
     <div v-else class="mt-2 flex flex-col gap-1.5">
-      <SessionRow v-for="s in sessions" :key="s.sessionId" :session="s" :repo-name="name" :now="now" @open="open" />
+      <SessionRow v-for="s in sessions" :key="s.sessionId" :session="s" :repo-name="name" :now="now" @open="open" @send-message="$emit('send-message', $event)" />
     </div>
   </div>
 </template>

@@ -36,11 +36,15 @@ export default {
   'session.showLess': 'weniger anzeigen',
   'session.tokens': '{count} Tokens',
   'session.usageTooltip': 'Eingabe {input} · Ausgabe {output} · Cache geschrieben {cacheWrite} · Cache gelesen {cacheRead}',
+  'session.messagePlaceholder': 'Nachricht an die Sitzung…',
+  'session.send': 'Senden',
 
   'detail.ci': 'Continuous Integration',
   'detail.ciUnavailable': 'Nicht verfügbar — {reason}',
   'detail.ciEmpty': 'Kein Status gemeldet.',
   'detail.history': 'Verlauf',
+  'detail.message': 'Nachricht',
+  'detail.messageEmpty': 'Keine Nachricht in der Warteschlange.',
 
   'history.tabPeriod': 'Nach Zeitraum',
   'history.tabProject': 'Nach Projekt',

@@ -75,3 +75,9 @@ test('badges expose state through aria-label, not colour alone', () => {
   const overflow = w.get('[data-test=ci-overflow]');
   expect(overflow.attributes('aria-label')).toBeTruthy();
 });
+
+test('forwards send-message from a session row up to the parent', async () => {
+  const w = mount(Card, { props: { name: 'oc-be', sessions: [session()], status: 'question', now } });
+  await w.findComponent(SessionRow).vm.$emit('send-message', { repo: 'oc-be', sessionId: 's1', text: 'hi' });
+  expect(w.emitted('send-message')[0]).toEqual([{ repo: 'oc-be', sessionId: 's1', text: 'hi' }]);
+});
