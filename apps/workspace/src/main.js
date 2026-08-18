@@ -46,14 +46,15 @@ async function runStatus(argv, deps = {}) {
   const { values, positionals } = parseArgs({
     args: argv,
     allowPositionals: true,
-    options: { board: { type: 'string' }, event: { type: 'string' }, session: { type: 'string' } },
+    options: { board: { type: 'string' }, event: { type: 'string' }, session: { type: 'string' }, worktree: { type: 'string' } },
   });
   const [repo, state] = positionals;
-  if (!repo || !state) throw new Error('Usage: maggie-workspace status <repo> <state> [--board <path>] [--event <name>] [--session <id>]');
+  if (!repo || !state) throw new Error('Usage: maggie-workspace status <repo> <state> [--board <path>] [--event <name>] [--session <id>] [--worktree <branch>]');
   const boardPath = resolveBoardPath({ board: values.board });
   const payload = await readStdinJSON(stdin);
   const sessionId = values.session ?? payload.session_id ?? 'manual';
   const opts = { lastEvent: values.event ?? 'manual' };
+  if (values.worktree) opts.worktree = values.worktree;
   if (payload.hook_event_name === 'UserPromptSubmit' && typeof payload.prompt === 'string') {
     opts.title = truncate(payload.prompt, TITLE_MAX);
     opts.lastPrompt = payload.prompt;

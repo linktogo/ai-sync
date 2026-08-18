@@ -82,3 +82,15 @@ test('dragstart sets the drag payload to the repo name and session id', async ()
   await w.get('[data-test=session-row]').trigger('dragstart', { dataTransfer: { setData, effectAllowed: null } });
   expect(setData).toHaveBeenCalledWith('application/json', JSON.stringify({ repo: 'oc-be', sessionId: 's1' }));
 });
+
+test('shows a worktree badge with the branch when the session runs in a worktree', () => {
+  const w = mount(SessionRow, { props: { session: session({ worktree: 'feat/login' }), now } });
+  const badge = w.get('[data-test=worktree-badge]');
+  expect(badge.text()).toContain('feat/login');
+  expect(badge.attributes('title')).toBe('Isolated in git worktree · branch feat/login');
+});
+
+test('does not show a worktree badge when the session has no worktree', () => {
+  const w = mount(SessionRow, { props: { session: session(), now } });
+  expect(w.find('[data-test=worktree-badge]').exists()).toBe(false);
+});

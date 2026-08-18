@@ -114,7 +114,7 @@ export async function bootstrap(config, options = {}) {
     }
     workDirs.push(workDir);
 
-    if (!dryRun) await installRepoHooks(workDir, repo.name, boardPath, { command: hookCommand });
+    if (!dryRun) await installRepoHooks(workDir, repo.name, boardPath, { command: hookCommand, worktree });
 
     let installed = false;
     if (install) {
