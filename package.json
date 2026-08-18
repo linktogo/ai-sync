@@ -49,7 +49,7 @@
     "maggie-workspace": "apps/workspace/bin/workspace.js"
   },
   "dependencies": {
-    "@inquirer/prompts": "^7.2.0",
+    "@inquirer/prompts": "^8.5.2",
     "@linktogo/maggie-config": "^1.0.0",
     "@linktogo/maggie-skill-sync": "^1.0.0",
     "@linktogo/maggie-workspace-bootstrap": "^1.0.0"
