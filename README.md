@@ -15,6 +15,10 @@ It ships two CLIs — `maggie` (push skills to repos) and `maggie-workspace`
 (bootstrap a local workspace + status board) — plus a kanban dashboard, as an
 [Nx](https://nx.dev) monorepo on npm workspaces.
 
+[![The maggie workspace board](docs/images/board/board-en.png)](docs/board-dashboard.md)
+
+_The workspace board — one kanban column per status, fed live by each repo's agent hooks. See [Board dashboard](docs/board-dashboard.md)._
+
 ## Why
 
 Every repository in an organization ends up with its own drifting copy of the
