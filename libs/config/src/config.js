@@ -42,7 +42,7 @@ export function parseConfig(raw) {
   try {
     parsed = JSON.parse(raw);
   } catch (err) {
-    throw new Error(`Invalid JSON in config: ${err.message}`);
+    throw new Error(`Invalid JSON in config: ${err.message}`, { cause: err });
   }
   const valid = knownTargets();
   const defaultTargets = parsed.defaultTargets ?? [];
