@@ -35,3 +35,13 @@ export async function mavenCommand(workDir, { exists, platform = process.platfor
   if (await exists(wrapper)) return wrapper;
   return platform === 'win32' ? 'mvn.cmd' : 'mvn';
 }
+
+// Build the "node <script>" string Claude Code hooks use to invoke a script
+// by absolute path. Claude Code runs hook commands through a POSIX-style
+// shell even on Windows, so an unquoted Windows path's backslashes get
+// consumed as shell escape characters — `C:\workspace\...\workspace.js`
+// becomes `C:workspace...workspacejs`, which the shell then reports as
+// "command not found". Quoting keeps the backslashes literal on every OS.
+export function nodeScriptCommand(scriptPath) {
+  return `node "${scriptPath}"`;
+}

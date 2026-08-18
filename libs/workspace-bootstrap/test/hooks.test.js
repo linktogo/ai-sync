@@ -8,15 +8,15 @@ test('hookSettings maps the four events to their commands', () => {
   const cmd = (e) => s.hooks[e][0].hooks[0].command;
   assert.equal(s.hooks.UserPromptSubmit[0].matcher, undefined);
   assert.equal(cmd('UserPromptSubmit'),
-    'node /a/bin/workspace.js status oc-be inprogress --board /ws/.maggie/board.json --event UserPromptSubmit');
+    'node /a/bin/workspace.js status oc-be inprogress --board "/ws/.maggie/board.json" --event UserPromptSubmit');
   assert.equal(s.hooks.Notification[0].matcher, 'permission_prompt|idle_prompt');
   assert.equal(cmd('Notification'),
-    'node /a/bin/workspace.js status oc-be question --board /ws/.maggie/board.json --event Notification');
+    'node /a/bin/workspace.js status oc-be question --board "/ws/.maggie/board.json" --event Notification');
   assert.equal(cmd('Stop'),
-    'node /a/bin/workspace.js status oc-be question --board /ws/.maggie/board.json --event Stop');
+    'node /a/bin/workspace.js status oc-be question --board "/ws/.maggie/board.json" --event Stop');
   assert.equal(s.hooks.Stop[0].hooks[0].type, 'command');
   assert.equal(s.hooks.SessionEnd[0].matcher, undefined);
-  assert.equal(cmd('SessionEnd'), 'node /a/bin/workspace.js session-end oc-be --board /ws/.maggie/board.json');
+  assert.equal(cmd('SessionEnd'), 'node /a/bin/workspace.js session-end oc-be --board "/ws/.maggie/board.json"');
 });
 
 test('hookSettings defaults the command to maggie-workspace', () => {

@@ -11,6 +11,7 @@ import {
   readTranscriptUsage as defaultReadTranscriptUsage,
   resolveHistoryPath,
   appendHistoryEntry as defaultAppendHistoryEntry,
+  nodeScriptCommand,
 } from '@linktogo/maggie-workspace-bootstrap';
 
 const TITLE_MAX = 60;
@@ -164,7 +165,7 @@ async function runBootstrapMain(argv, deps = {}) {
     dryRun: values['dry-run'],
     offline: values.offline,
     onExisting: isInteractive ? onExisting : undefined,
-    hookCommand: fileURLToPath(new URL('../bin/workspace.js', import.meta.url)),
+    hookCommand: nodeScriptCommand(fileURLToPath(new URL('../bin/workspace.js', import.meta.url))),
     logger,
   });
 

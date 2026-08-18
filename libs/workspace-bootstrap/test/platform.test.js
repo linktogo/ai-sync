@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import { pnpmCommand, launchCommand, mavenCommand } from '../src/platform.js';
+import { pnpmCommand, launchCommand, mavenCommand, nodeScriptCommand } from '../src/platform.js';
 
 test('pnpmCommand uses the .cmd shim on Windows', () => {
   assert.equal(pnpmCommand('win32'), 'pnpm.cmd');
@@ -69,4 +69,18 @@ test('mavenCommand defaults to the current platform', async () => {
   const expected = process.platform === 'win32' ? 'mvn.cmd' : 'mvn';
   const cmd = await mavenCommand('/work/app', { exists: async () => false });
   assert.equal(cmd, expected);
+});
+
+test('nodeScriptCommand quotes the script path', () => {
+  assert.equal(nodeScriptCommand('/cli/workspace.js'), 'node "/cli/workspace.js"');
+});
+
+test('nodeScriptCommand keeps a Windows path\'s backslashes literal by quoting', () => {
+  // Claude Code hooks run through a POSIX-style shell even on Windows, where
+  // an unquoted backslash escapes the next character. Quoting is what
+  // prevents `C:\workspace\...` from losing its backslashes.
+  assert.equal(
+    nodeScriptCommand('C:\\workspace\\maggie\\apps\\workspace\\bin\\workspace.js'),
+    'node "C:\\workspace\\maggie\\apps\\workspace\\bin\\workspace.js"',
+  );
 });

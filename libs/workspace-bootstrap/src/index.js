@@ -2,3 +2,4 @@ export { bootstrap, formatTimestamp } from './bootstrap.js';
 export { resolveBoardPath, readBoard, setSessionStatus, removeSession, closeSession } from './board.js';
 export { reconcileHooks } from './reconcile.js';
 export { readTranscriptUsage, resolveHistoryPath, appendHistoryEntry } from './tokens.js';
+export { nodeScriptCommand } from './platform.js';

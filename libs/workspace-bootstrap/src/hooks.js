@@ -16,8 +16,8 @@ export function hookSettings(repo, boardPath, { command = 'maggie-workspace' } =
   const hooks = {};
   for (const { event, action, state, matcher } of HOOK_EVENTS) {
     const cmd = action === 'session-end'
-      ? `${command} session-end ${repo} --board ${boardPath}`
-      : `${command} status ${repo} ${state} --board ${boardPath} --event ${event}`;
+      ? `${command} session-end ${repo} --board "${boardPath}"`
+      : `${command} status ${repo} ${state} --board "${boardPath}" --event ${event}`;
     const group = { hooks: [{ type: 'command', command: cmd }] };
     if (matcher) group.matcher = matcher;
     hooks[event] = [group];

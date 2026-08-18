@@ -10,10 +10,10 @@ const hookCommand = '/cli/workspace.js';
 
 function expectedHooks(repo) {
   return {
-    UserPromptSubmit: `${hookCommand} status ${repo} inprogress --board ${boardPath} --event UserPromptSubmit`,
-    Notification: `${hookCommand} status ${repo} question --board ${boardPath} --event Notification`,
-    Stop: `${hookCommand} status ${repo} question --board ${boardPath} --event Stop`,
-    SessionEnd: `${hookCommand} session-end ${repo} --board ${boardPath}`,
+    UserPromptSubmit: `${hookCommand} status ${repo} inprogress --board "${boardPath}" --event UserPromptSubmit`,
+    Notification: `${hookCommand} status ${repo} question --board "${boardPath}" --event Notification`,
+    Stop: `${hookCommand} status ${repo} question --board "${boardPath}" --event Stop`,
+    SessionEnd: `${hookCommand} session-end ${repo} --board "${boardPath}"`,
   };
 }
 
@@ -158,7 +158,7 @@ test('default exists/readCurrentHooks/installRepoHooks work end-to-end against t
   const settings = JSON.parse(await readFile(path.join(checkout, '.claude', 'settings.local.json'), 'utf8'));
   assert.equal(
     settings.hooks.UserPromptSubmit[0].hooks[0].command,
-    `${hookCommand} status a inprogress --board ${bp} --event UserPromptSubmit`,
+    `${hookCommand} status a inprogress --board "${bp}" --event UserPromptSubmit`,
   );
 
   const results2 = await reconcileHooks(config, { boardPath: bp, hookCommand, initBoard: async () => {} });

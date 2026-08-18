@@ -5,7 +5,7 @@ import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { loadConfig, loadConfigFromRepo, resolveConfigSource } from '@linktogo/maggie-config';
-import { reconcileHooks, resolveHistoryPath, closeSession } from '@linktogo/maggie-workspace-bootstrap';
+import { reconcileHooks, resolveHistoryPath, closeSession, nodeScriptCommand } from '@linktogo/maggie-workspace-bootstrap';
 import { createCiReader } from './ciReader.js';
 
 // Resolve the board file the server should read. Explicit --board and the
@@ -168,7 +168,7 @@ export async function startFromArgv(argv, {
         { config: configSrc ? path.resolve(configSrc) : null, configRepo, configFile: values['config-file'] },
         { loadConfig: loadConfigDep, loadConfigFromRepo: loadConfigFromRepoDep },
       );
-      const hookCommand = fileURLToPath(new URL('../workspace/bin/workspace.js', import.meta.url));
+      const hookCommand = nodeScriptCommand(fileURLToPath(new URL('../workspace/bin/workspace.js', import.meta.url)));
       const results = await reconcileHooks(config, { boardPath, hookCommand });
       for (const r of results) {
         if (r.status === 'repointed') log(`  ✓ ${r.repo}: hooks repointed`);
