@@ -106,6 +106,10 @@ switching back to the terminal where the session runs, you can type a reply from
 the board — from the input on the session card, or in the detail side panel,
 which also lists any messages still queued.
 
+![The message box on a session card](images/board/send-message-card.png)
+
+![The message box and queued messages in the detail side panel](images/board/send-message-detail.png)
+
 Sending posts `{ repo, sessionId, message }` to `POST /api/sessions/message`.
 The server appends the message to that session's `pendingMessages` queue in
 `board.json` (bounded to the last 20). Because maggie only observes sessions
