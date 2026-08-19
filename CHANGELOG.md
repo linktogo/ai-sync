@@ -12,6 +12,11 @@ changes in minor releases.
 
 ### Added
 
+- You can now send a message to a session straight from the board dashboard —
+  from the input on the session card or in the detail side panel — instead of
+  going back to the terminal where the session runs. The message is queued on
+  the board (`POST /api/sessions/message`) and relayed into the conversation by
+  the `UserPromptSubmit` hook the next time that session takes a turn.
 - Session cards on the board now show a worktree badge when a session runs in
   a git worktree (bootstrapped with `--worktree <branch>`), so isolated tasks
   are distinguishable at a glance. The branch name is captured by the status

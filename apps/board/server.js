@@ -5,7 +5,7 @@ import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { loadConfig, loadConfigFromRepo, resolveConfigSource } from '@linktogo/maggie-config';
-import { reconcileHooks, resolveHistoryPath, closeSession } from '@linktogo/maggie-workspace-bootstrap';
+import { reconcileHooks, resolveHistoryPath, closeSession, queueMessage } from '@linktogo/maggie-workspace-bootstrap';
 import { createCiReader } from './ciReader.js';
 
 // Resolve the board file the server should read. Explicit --board and the
@@ -106,6 +106,27 @@ async function serveCloseSession(boardPath, req, res) {
   res.end(JSON.stringify(result));
 }
 
+async function serveQueueMessage(boardPath, req, res) {
+  let body;
+  try {
+    body = await readJSONBody(req);
+  } catch {
+    res.writeHead(400, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: 'invalid JSON body' }));
+    return;
+  }
+  const { repo, sessionId } = body ?? {};
+  const message = typeof body?.message === 'string' ? body.message.trim() : '';
+  if (!repo || !sessionId || !message) {
+    res.writeHead(400, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: 'repo, sessionId and a non-empty message are required' }));
+    return;
+  }
+  const result = await queueMessage(boardPath, repo, sessionId, message);
+  res.writeHead(result.queued ? 200 : 404, { 'content-type': 'application/json' });
+  res.end(JSON.stringify(result));
+}
+
 async function serveStatic(distDir, pathname, res) {
   const rel = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
   const file = path.join(distDir, rel);
@@ -135,6 +156,7 @@ export function createBoardServer({ boardPath, distDir, config = null, ciReader 
       if (url.pathname === '/api/config') return serveConfig(config, res);
       if (url.pathname === '/api/ci') return await serveCi(ciReader, config, res);
       if (url.pathname === '/api/sessions/close' && req.method === 'POST') return await serveCloseSession(boardPath, req, res);
+      if (url.pathname === '/api/sessions/message' && req.method === 'POST') return await serveQueueMessage(boardPath, req, res);
       return await serveStatic(distDir, url.pathname, res);
     } catch (err) {
       res.writeHead(500, { 'content-type': 'text/plain' });

@@ -1,6 +1,7 @@
 import { test, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
 import Column from './Column.vue';
+import Card from './Card.vue';
 
 function mountColumn(status) {
   return mount(Column, { props: { title: 'Done', status, entries: [], now: 0 } });
@@ -59,4 +60,12 @@ test('renders cards unharmed when no CI map is given', () => {
   const w = mount(Column, { props: { title: 'To do', status: 'todo', entries: [{ name: 'oc-be', sessions: [session] }], now } });
   expect(w.text()).toContain('oc-be');
   expect(w.findAll('[data-test=ci-badge]')).toHaveLength(0);
+});
+
+test('forwards send-message emitted by a card up to the parent', async () => {
+  const w = mount(Column, {
+    props: { title: 'Question', status: 'question', entries: [{ name: 'oc-be', sessions: [{ sessionId: 's1', status: 'question', lastEvent: 'Stop', updatedAt: 'T', title: 't', lastPrompt: 'p', events: [] }] }], now: 0 },
+  });
+  await w.findComponent(Card).vm.$emit('send-message', { repo: 'oc-be', sessionId: 's1', text: 'go' });
+  expect(w.emitted('send-message')[0]).toEqual([{ repo: 'oc-be', sessionId: 's1', text: 'go' }]);
 });

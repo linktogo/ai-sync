@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, onUnmounted, computed } from 'vue';
+import { onMounted, onUnmounted, computed, ref } from 'vue';
 import { relativeTime } from './useRelativeTime.js';
 import { visibleBadges, pillClass } from './ciBadge.js';
 import { useI18n } from './i18n.js';
@@ -8,14 +8,24 @@ const { t } = useI18n();
 
 const props = defineProps({
   name: { type: String, default: null },
+  sessionId: { type: String, default: null },
   session: { type: Object, default: null },
   meta: { type: Object, default: null },
   now: { type: Number, default: () => Date.now() },
   ci: { type: Object, default: null },
 });
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'send-message']);
 
 const ciUsers = computed(() => visibleBadges(props.ci?.users, Infinity).shown);
+
+const draft = ref('');
+const pending = computed(() => props.session?.pendingMessages ?? []);
+function send() {
+  const text = draft.value.trim();
+  if (!text) return;
+  emit('send-message', { repo: props.name, sessionId: props.sessionId, text });
+  draft.value = '';
+}
 
 function onKey(e) { if (e.key === 'Escape') emit('close'); }
 onMounted(() => window.addEventListener('keydown', onKey));
@@ -38,6 +48,33 @@ onUnmounted(() => window.removeEventListener('keydown', onKey));
         </div>
       </div>
       <p v-if="session?.lastPrompt" class="mt-3 text-sm text-slate-700 whitespace-pre-wrap">{{ session.lastPrompt }}</p>
+
+      <template v-if="sessionId">
+        <h3 class="mt-4 text-xs font-semibold text-slate-500 uppercase">{{ t('detail.message') }}</h3>
+        <ul v-if="pending.length" data-test="pending-messages" class="mt-1 space-y-1">
+          <li v-for="(m, i) in pending" :key="i" class="text-xs text-slate-600 flex gap-1">
+            <span class="text-slate-400" aria-hidden="true">↩</span>
+            <span class="whitespace-pre-wrap break-words">{{ m.text }}</span>
+          </li>
+        </ul>
+        <p v-else data-test="pending-empty" class="mt-1 text-xs text-slate-400">{{ t('detail.messageEmpty') }}</p>
+        <form data-test="detail-message-form" class="mt-2 flex items-start gap-1" @submit.prevent="send">
+          <textarea
+            v-model="draft"
+            data-test="detail-message-input"
+            rows="2"
+            :placeholder="t('session.messagePlaceholder')"
+            class="min-w-0 flex-1 resize-y rounded border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 focus:border-blue-400 focus:outline-none"
+            @keydown.enter.exact.prevent="send"
+          ></textarea>
+          <button
+            type="submit"
+            data-test="detail-message-send"
+            :disabled="!draft.trim()"
+            class="shrink-0 rounded bg-blue-600 px-2 py-1 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
+          >{{ t('session.send') }}</button>
+        </form>
+      </template>
 
       <h3 class="mt-4 text-xs font-semibold text-slate-500 uppercase">{{ t('detail.ci') }}</h3>
       <p v-if="ci?.unavailable" data-test="ci-unavailable" class="mt-1 text-xs text-slate-500">

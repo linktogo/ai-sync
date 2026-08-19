@@ -13,9 +13,10 @@ const props = defineProps({
   repoName: { type: String, default: '' },
   now: { type: Number, default: () => Date.now() },
 });
-const emit = defineEmits(['open']);
+const emit = defineEmits(['open', 'send-message']);
 
 const expanded = ref(false);
+const draft = ref('');
 const when = computed(() => relativeTime(props.session.updatedAt, props.now));
 const prompt = computed(() => props.session.lastPrompt ?? '');
 const overflows = computed(() => prompt.value.length > PROMPT_CLIP);
@@ -42,6 +43,12 @@ const usageTooltip = computed(() => {
 
 function open() { emit('open', props.session.sessionId); }
 function toggle(e) { e.stopPropagation(); expanded.value = !expanded.value; }
+function send() {
+  const text = draft.value.trim();
+  if (!text) return;
+  emit('send-message', { repo: props.repoName, sessionId: props.session.sessionId, text });
+  draft.value = '';
+}
 function onDragStart(e) {
   e.dataTransfer.setData('application/json', JSON.stringify({ repo: props.repoName, sessionId: props.session.sessionId }));
   e.dataTransfer.effectAllowed = 'move';
@@ -81,5 +88,29 @@ function onDragStart(e) {
         @click="toggle"
       >{{ expanded ? t('session.showLess') : t('session.showMore') }}</button>
     </p>
+    <form
+      data-test="message-form"
+      class="mt-2 flex items-center gap-1"
+      draggable="false"
+      @click.stop
+      @mousedown.stop
+      @dragstart.stop.prevent
+      @submit.prevent="send"
+    >
+      <input
+        v-model="draft"
+        data-test="message-input"
+        type="text"
+        :placeholder="t('session.messagePlaceholder')"
+        class="min-w-0 flex-1 rounded border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 focus:border-blue-400 focus:outline-none"
+        @keydown.stop
+      />
+      <button
+        type="submit"
+        data-test="message-send"
+        :disabled="!draft.trim()"
+        class="shrink-0 rounded bg-blue-600 px-2 py-1 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
+      >{{ t('session.send') }}</button>
+    </form>
   </div>
 </template>

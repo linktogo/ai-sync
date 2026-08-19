@@ -76,6 +76,15 @@ async function onCloseSession({ repo, sessionId }) {
   await props.refresh();
 }
 
+async function onSendMessage({ repo, sessionId, text }) {
+  await props.fetchImpl('/api/sessions/message', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ repo, sessionId, message: text }),
+  });
+  await props.refresh();
+}
+
 const selectedRepo = computed(() => (selected.value ? props.repos[selected.value.name] : null));
 const selectedSession = computed(() => selectedRepo.value?.sessions?.[selected.value?.sessionId] ?? null);
 const selectedMeta = computed(() => (selected.value ? props.config[selected.value.name] ?? null : null));
@@ -99,12 +108,15 @@ const selectedCi = computed(() => (selected.value ? props.ci[selected.value.name
         :title="c.title" :status="c.status" :entries="c.entries" :now="now" :ci="ci"
         @open="selected = $event"
         @close-session="onCloseSession"
+        @send-message="onSendMessage"
       />
     </div>
 
     <RepoDetail
-      :name="selected?.name ?? null" :session="selectedSession" :meta="selectedMeta" :ci="selectedCi" :now="now"
+      :name="selected?.name ?? null" :session-id="selected?.sessionId ?? null"
+      :session="selectedSession" :meta="selectedMeta" :ci="selectedCi" :now="now"
       @close="selected = null"
+      @send-message="onSendMessage"
     />
   </div>
 </template>

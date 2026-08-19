@@ -52,6 +52,8 @@ and prints where it settled, so avoid starting a second instance by accident.
 | `GET /api/board` | The raw `board.json`. Returns an empty board when the file does not exist. |
 | `GET /api/config` | Repo metadata (url, technologies, targets) when started with `--config`. |
 | `GET /api/ci` | Per-contributor CI status — see [CI status](ci-status.md). |
+| `POST /api/sessions/close` | Closes a session: removes it from the board and appends a history entry. Body: `{ repo, sessionId }`. |
+| `POST /api/sessions/message` | Queues a message for a session (see [Messaging a session](#messaging-a-session)). Body: `{ repo, sessionId, message }`. |
 | anything else | The built front-end, with an SPA fallback to `index.html`. |
 
 ## `board.json`
@@ -71,7 +73,9 @@ and prints where it settled, so avoid starting a second instance by accident.
 ```
 
 `status` is one of `todo`, `inprogress`, `question`, `done`. `events` is a
-bounded per-repo history (last 20, newest first).
+bounded per-repo history (last 20, newest first). A session may also carry a
+`pendingMessages` array (`[{ text, at }]`, last 20) holding messages queued from
+the dashboard but not yet delivered — see [Messaging a session](#messaging-a-session).
 
 The version stays `1`: `events` is additive and legacy files are backfilled
 transparently on read. The dashboard only reads the file — writers work whether
@@ -88,9 +92,32 @@ or not the server is running.
 - **Summary header** with per-status counts and a done-progress bar.
 - **Filter bar** narrowing by repo name, technology, or CI state.
 - **Detail side panel** on click: repo URL, technology and target chips, CI
-  breakdown per contributor, and the event timeline.
+  breakdown per contributor, the event timeline, and a **message box** to send a
+  message to the session (see below).
+- **Message box** on each session card (and in the detail panel) to send a
+  message to that session — see [Messaging a session](#messaging-a-session).
 - **Language picker** in the header: English (the default), French, German and
   Spanish. See below.
+
+## Messaging a session
+
+An agent that moves to `question` is blocked waiting on you. Rather than
+switching back to the terminal where the session runs, you can type a reply from
+the board — from the input on the session card, or in the detail side panel,
+which also lists any messages still queued.
+
+![The message box on a session card](images/board/send-message-card.png)
+
+![The message box and queued messages in the detail side panel](images/board/send-message-detail.png)
+
+Sending posts `{ repo, sessionId, message }` to `POST /api/sessions/message`.
+The server appends the message to that session's `pendingMessages` queue in
+`board.json` (bounded to the last 20). Because maggie only observes sessions
+through Claude Code hooks — it never drives them — the message is not pushed into
+a live terminal. Instead it is **delivered on the session's next turn**: the
+`UserPromptSubmit` hook drains the queue and prints the messages to stdout, which
+Claude Code adds to the conversation context. So the session picks up whatever
+you queued the next time it runs a prompt.
 
 ## Language
 

@@ -247,6 +247,46 @@ test('status subcommand does not compute usage on UserPromptSubmit even with a t
   assert.equal(received.usage, undefined);
 });
 
+test('status subcommand drains queued dashboard messages and relays them on UserPromptSubmit', async () => {
+  const logs = [];
+  let takeArgs;
+  await main(['status', 'a', 'inprogress', '--board', '/b.json', '--event', 'UserPromptSubmit'], {
+    setSessionStatus: async () => {},
+    takePendingMessages: async (boardPath, repo, sessionId) => {
+      takeArgs = { boardPath, repo, sessionId };
+      return [{ text: 'first message', at: 'T0' }, { text: 'second message', at: 'T1' }];
+    },
+    stdin: pipedStdin({ session_id: 'sess-1', hook_event_name: 'UserPromptSubmit', prompt: 'go' }),
+    logger: { log: (m) => logs.push(m), warn() {}, error() {} },
+  });
+  assert.deepEqual(takeArgs, { boardPath: path.resolve('/b.json'), repo: 'a', sessionId: 'sess-1' });
+  assert.match(logs[0], /Message\(s\) sent from the board dashboard/);
+  assert.match(logs[0], /- first message/);
+  assert.match(logs[0], /- second message/);
+});
+
+test('status subcommand does not drain messages on non-UserPromptSubmit events', async () => {
+  let called = false;
+  await main(['status', 'a', 'question', '--board', '/b.json', '--event', 'Stop'], {
+    setSessionStatus: async () => {},
+    takePendingMessages: async () => { called = true; return []; },
+    stdin: pipedStdin({ session_id: 'sess-1', hook_event_name: 'Stop' }),
+    logger: silentLogger(),
+  });
+  assert.equal(called, false);
+});
+
+test('status subcommand relays nothing when the queue is empty on UserPromptSubmit', async () => {
+  const logs = [];
+  await main(['status', 'a', 'inprogress', '--board', '/b.json', '--event', 'UserPromptSubmit'], {
+    setSessionStatus: async () => {},
+    takePendingMessages: async () => [],
+    stdin: pipedStdin({ session_id: 'sess-1', hook_event_name: 'UserPromptSubmit', prompt: 'go' }),
+    logger: { log: (m) => logs.push(m), warn() {}, error() {} },
+  });
+  assert.deepEqual(logs, ['a [sess-1] → inprogress']);
+});
+
 test('status subcommand falls back to an empty payload when stdin is piped but empty', async () => {
   let receivedSessionId;
   await main(['status', 'a', 'done', '--board', '/b.json'], {

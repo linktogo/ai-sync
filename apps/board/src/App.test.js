@@ -272,3 +272,31 @@ test('picking a language re-renders the whole board in it and remembers the choi
   await settle();
   expect(wrapper.get('[data-test=view-history]').text()).toBe('Historial');
 });
+
+test('a session send-message posts the queued message to the API and refreshes the board', async () => {
+  const calls = [];
+  const fetchImpl = vi.fn().mockImplementation((url) => {
+    calls.push(url);
+    if (url === '/api/config') return Promise.resolve({ json: async () => ({ repos: {} }) });
+    if (url === '/api/sessions/message') return Promise.resolve({ json: async () => ({ queued: true, count: 1 }) });
+    return Promise.resolve({ json: async () => ({
+      version: 2,
+      repos: { b: { sessions: { s1: { status: 'question', lastEvent: 'Stop', updatedAt: 'T', title: 'fix login', lastPrompt: 'fix login', events: [] } } } },
+    }) });
+  });
+  const { wrapper } = await mountApp(fetchImpl);
+  const boardCallsBefore = calls.filter((u) => u === '/api/board').length;
+
+  const questionColumn = wrapper.findAllComponents(Column)[2];
+  await questionColumn.vm.$emit('send-message', { repo: 'b', sessionId: 's1', text: 'please rebase' });
+  await settle();
+
+  const messageCall = fetchImpl.mock.calls.find(([u]) => u === '/api/sessions/message');
+  expect(messageCall[1]).toMatchObject({
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ repo: 'b', sessionId: 's1', message: 'please rebase' }),
+  });
+  const boardCallsAfter = calls.filter((u) => u === '/api/board').length;
+  expect(boardCallsAfter).toBeGreaterThan(boardCallsBefore);
+});

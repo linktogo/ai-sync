@@ -10,7 +10,7 @@ const props = defineProps({
   now: { type: Number, default: () => Date.now() },
   ci: { type: Object, default: () => ({}) },
 });
-const emit = defineEmits(['open', 'close-session']);
+const emit = defineEmits(['open', 'close-session', 'send-message']);
 
 const style = computed(() => STATUS_STYLES[props.status]);
 const isDropTarget = computed(() => props.status === 'done');
@@ -42,7 +42,7 @@ function onDrop(e) {
                dragOver ? 'ring-2 ring-emerald-400' : '']"
       v-on="isDropTarget ? { dragover: onDragOver, dragleave: onDragLeave, drop: onDrop } : {}"
     >
-      <Card v-for="e in entries" :key="e.name" :name="e.name" :sessions="e.sessions" :status="status" :now="now" :ci="ci[e.name] ?? null" @open="$emit('open', $event)" />
+      <Card v-for="e in entries" :key="e.name" :name="e.name" :sessions="e.sessions" :status="status" :now="now" :ci="ci[e.name] ?? null" @open="$emit('open', $event)" @send-message="$emit('send-message', $event)" />
     </div>
   </section>
 </template>

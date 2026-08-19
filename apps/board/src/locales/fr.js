@@ -37,11 +37,15 @@ export default {
   'session.tokens': '{count} tokens',
   'session.worktreeTooltip': 'Isolé dans un worktree git · branche {branch}',
   'session.usageTooltip': 'entrée {input} · sortie {output} · cache écrit {cacheWrite} · cache lu {cacheRead}',
+  'session.messagePlaceholder': 'Message à la session…',
+  'session.send': 'Envoyer',
 
   'detail.ci': 'Intégration continue',
   'detail.ciUnavailable': 'Indisponible — {reason}',
   'detail.ciEmpty': 'Aucun statut remonté.',
   'detail.history': 'Historique',
+  'detail.message': 'Message',
+  'detail.messageEmpty': 'Aucun message en attente.',
 
   'history.tabPeriod': 'Par période',
   'history.tabProject': 'Par projet',

@@ -8,6 +8,7 @@ import {
   readBoard as defaultReadBoard,
   setSessionStatus as defaultSetSessionStatus,
   removeSession as defaultRemoveSession,
+  takePendingMessages as defaultTakePendingMessages,
   readTranscriptUsage as defaultReadTranscriptUsage,
   resolveHistoryPath,
   appendHistoryEntry as defaultAppendHistoryEntry,
@@ -39,6 +40,7 @@ export async function main(argv, deps = {}) {
 async function runStatus(argv, deps = {}) {
   const {
     setSessionStatus = defaultSetSessionStatus,
+    takePendingMessages = defaultTakePendingMessages,
     readTranscriptUsage = defaultReadTranscriptUsage,
     logger = console,
     stdin = process.stdin,
@@ -63,6 +65,18 @@ async function runStatus(argv, deps = {}) {
     opts.usage = await readTranscriptUsage(payload.transcript_path);
   }
   await setSessionStatus(boardPath, repo, sessionId, state, opts);
+
+  // On a resumed turn, drain any messages queued from the board dashboard and
+  // print them to stdout. Claude Code adds a UserPromptSubmit hook's stdout to
+  // the conversation context, so this relays them into the running session.
+  if (payload.hook_event_name === 'UserPromptSubmit') {
+    const pending = await takePendingMessages(boardPath, repo, sessionId);
+    if (pending.length > 0) {
+      const lines = pending.map((m) => `- ${m.text}`).join('\n');
+      logger.log(`[maggie] Message(s) sent from the board dashboard while you were away:\n${lines}`);
+    }
+  }
+
   logger.log(`${repo} [${sessionId}] → ${state}`);
   return 0;
 }
